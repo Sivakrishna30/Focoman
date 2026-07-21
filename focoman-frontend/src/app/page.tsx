@@ -1,5 +1,5 @@
-import { OmsPrototype } from "@/features/oms/OmsPrototype";
+import { HomePage } from "@/features/home/HomePage";
 
 export default function Home() {
-  return <OmsPrototype />;
+  return <HomePage />;
 }
