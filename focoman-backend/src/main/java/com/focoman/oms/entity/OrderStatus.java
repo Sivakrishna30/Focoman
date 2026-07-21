@@ -1,0 +1,17 @@
+package com.focoman.oms.entity;
+
+public enum OrderStatus {
+    BOOKING_CONFIRMED,
+    SHOOT_SCHEDULED,
+    SHOOT_COMPLETED,
+    RAW_BACKUP,
+    PHOTO_SELECTION,
+    EDITING,
+    PREVIEW,
+    ALBUM_DESIGN,
+    CUSTOMER_APPROVAL,
+    PRINTING,
+    PACKAGING,
+    DELIVERY_READY,
+    COMPLETED
+}
