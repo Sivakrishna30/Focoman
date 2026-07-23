@@ -1,38 +1,53 @@
 package com.focoman.oms.controller;
 
 import com.focoman.oms.dto.OrderResponse;
-import com.focoman.oms.service.OrderService;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.focoman.oms.entity.OrderStatus;
+import com.focoman.oms.service.OmsDbService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/oms/orders")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 public class OrderController {
 
-    private final OrderService orderService;
+    private final OmsDbService omsDbService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
+    public OrderController(OmsDbService omsDbService) {
+        this.omsDbService = omsDbService;
     }
 
     @GetMapping
-    public List<OrderResponse> getOrders(
-            @RequestParam(required = false) UUID employeeId,
-            @RequestParam(required = false) UUID customerId
-    ) {
-        if (employeeId != null) {
-            return orderService.getOrdersByEmployee(employeeId);
+    public List<OrderResponse> getOrders(@RequestParam(required = false) String studioId) {
+        if (studioId != null && !studioId.isBlank()) {
+            return omsDbService.getOrdersByStudio(studioId);
         }
-        if (customerId != null) {
-            return orderService.getOrdersByCustomer(customerId);
+        return omsDbService.getAllOrders();
+    }
+
+    @GetMapping("/track")
+    public ResponseEntity<OrderResponse> trackOrder(@RequestParam String query) {
+        Optional<OrderResponse> match = omsDbService.trackGuestOrder(query);
+        return match.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/customer/{customerIdOrMobile}")
+    public List<OrderResponse> getCustomerOrders(@PathVariable String customerIdOrMobile) {
+        return omsDbService.getOrdersByCustomer(customerIdOrMobile);
+    }
+
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<OrderResponse> updateOrderStatus(@PathVariable UUID orderId, @RequestParam OrderStatus status) {
+        try {
+            OrderResponse updated = omsDbService.updateOrderStatus(orderId, status);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
-        return orderService.getAllOrders();
     }
 }

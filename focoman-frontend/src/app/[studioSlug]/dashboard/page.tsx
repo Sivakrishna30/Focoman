@@ -120,7 +120,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
               <p className="text-xs text-text-tertiary">Latest activity across all bookings</p>
             </div>
             <Link
-              href={`/${params.studioSlug}/dashboard/oms`}
+              href={`/${studioSlug}/dashboard/oms`}
               className="text-xs font-semibold text-brand-blue-primary hover:underline"
             >
               View all →
@@ -185,7 +185,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
           <div className="mt-6 border-t border-border-divider pt-5 space-y-2">
             <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">Quick Actions</p>
             <Link
-              href={`/${params.studioSlug}/dashboard/oms`}
+              href={`/${studioSlug}/dashboard/oms`}
               className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-app px-3 py-2 text-xs font-semibold text-text-primary transition hover:border-brand-blue-light hover:text-brand-blue-primary"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -194,7 +194,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
               New Order
             </Link>
             <Link
-              href={`/${params.studioSlug}/dashboard/crm`}
+              href={`/${studioSlug}/dashboard/crm`}
               className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-app px-3 py-2 text-xs font-semibold text-text-primary transition hover:border-brand-orange-light hover:text-brand-orange-primary"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,7 +203,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
               Add Customer
             </Link>
             <Link
-              href={`/${params.studioSlug}/dashboard/whatsapp`}
+              href={`/${studioSlug}/dashboard/whatsapp`}
               className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-app px-3 py-2 text-xs font-semibold text-text-primary transition hover:border-green-300 hover:text-green-700"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
