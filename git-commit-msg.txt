@@ -1,1 +1,1 @@
-fix: Remove Vercel secret reference from vercel.json
+fix: Correct TypeScript type mismatch in HomePage workflowTimeline

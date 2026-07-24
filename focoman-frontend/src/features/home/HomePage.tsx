@@ -54,7 +54,7 @@ export function HomePage() {
   // Customer States
   const [customerAuthMode, setCustomerAuthMode] = useState<"guest" | "login" | "signup">("guest");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [foundOrder, setFoundOrder] = useState<{ displayId: string; customerName: string; eventType: string; eventDate: string; status: string; workflowTimeline: Array<{ phase: string; status: string; dueDate: string }> } | null>(null);
+  const [foundOrder, setFoundOrder] = useState<{ displayId: string; customerName: string; eventType: string; eventDate: string; status: string; workflowTimeline: Array<{ stage: string; date: string; completed: boolean }> } | null>(null);
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [customerLoginForm, setCustomerLoginForm] = useState({ identifier: "", password: "" });
   const [customerSignupForm, setCustomerSignupForm] = useState({
@@ -1007,8 +1007,8 @@ export function HomePage() {
                                       <span className={step.completed ? "font-medium text-text-primary" : "text-text-tertiary"}>
                                         {step.stage}
                                       </span>
+                                      <span className="text-text-tertiary">{step.date}</span>
                                     </span>
-                                    <span className="text-text-tertiary">{step.date}</span>
                                   </div>
                                 ))}
                               </div>
