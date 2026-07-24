@@ -1,1 +1,1 @@
-feat: Add deployment guide and Vercel configuration for production hosting
+fix: Configure Railway deployment for monorepo structure
