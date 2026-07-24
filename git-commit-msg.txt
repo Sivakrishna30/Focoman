@@ -1,1 +1,1 @@
-fix: Add nixpacks.toml for Railway monorepo deployment
+fix: Update Dockerfile to build JAR during Docker build process
