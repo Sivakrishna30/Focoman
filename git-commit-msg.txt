@@ -1,1 +1,1 @@
-feat: Move dev portal to home level, add custom modules, and update sidebar navigation
+feat: Add deployment guide and Vercel configuration for production hosting
