@@ -1,1 +1,1 @@
-fix: Update Dockerfile paths for monorepo root context
+fix: Remove Vercel secret reference from vercel.json
