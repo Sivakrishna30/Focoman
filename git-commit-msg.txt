@@ -1,1 +1,1 @@
-fix: Configure Railway deployment for monorepo structure
+fix: Add nixpacks.toml for Railway monorepo deployment
