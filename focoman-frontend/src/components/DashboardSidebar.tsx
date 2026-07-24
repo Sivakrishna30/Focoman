@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   {
     label: "Dev Portal",
     sublabel: "Testing",
-    href: (slug: string) => `/${slug}/dashboard/dev-portal`,
+    href: (_slug: string) => `/devportal`,
     module: "dev" as const,
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

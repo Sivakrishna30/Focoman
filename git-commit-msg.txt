@@ -1,1 +1,1 @@
-feat: Add Dev Portal, Vercel hosting strategy, Dockerfile, and testing mode visibility
+feat: Move dev portal to home level, add custom modules, and update sidebar navigation
