@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { fetchOrdersForUser } from "@/services/omsApi";
-import type { MockUser, Order } from "@/types/oms";
+import { fetchOrdersForUser, type OmsOrder } from "@/services/omsApi";
+import type { MockUser } from "@/types/oms";
 import { formatCurrency, formatDate, formatStatus } from "./formatters";
 import { mockUsers } from "./mockUsers";
 
@@ -18,7 +18,7 @@ const statusStyles: Record<string, string> = {
 
 export function OmsPrototype() {
   const [currentUser, setCurrentUser] = useState<MockUser | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OmsOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,7 +159,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OrdersList({ orders }: { orders: Order[] }) {
+function OrdersList({ orders }: { orders: OmsOrder[] }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-default bg-white">
       <div className="hidden grid-cols-[1.3fr_1.2fr_1fr_1.1fr_1fr_1fr] gap-4 border-b border-border-divider px-4 py-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary md:grid">
