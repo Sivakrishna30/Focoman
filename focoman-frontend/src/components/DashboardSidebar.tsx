@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
-import { canAccessModule, getStudioBySlug, Plan } from "@/services/mockDb";
+export type Plan = "basic" | "professional" | "complete";
 
 interface DashboardSidebarProps {
   studioSlug: string;
@@ -97,7 +97,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName }: Da
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const accessible = item.module === null || canAccessModule(plan, item.module);
+          const accessible = item.module === null || item.module === "oms" || plan === "professional" || plan === "complete";
           const href = item.href(studioSlug);
           const isActive = pathname === href;
 

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FocomanLogo, FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { Navbar } from "@/components/Navbar";
-import { MOCK_ORDERS, MOCK_STUDIOS, OrderMock } from "@/services/mockDb";
 import { authApi } from "@/services/authApi";
 
 export function HomePage() {
@@ -55,7 +54,7 @@ export function HomePage() {
   // Customer States
   const [customerAuthMode, setCustomerAuthMode] = useState<"guest" | "login" | "signup">("guest");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [foundOrder, setFoundOrder] = useState<OrderMock | null>(null);
+  const [foundOrder, setFoundOrder] = useState<{ displayId: string; customerName: string; eventType: string; eventDate: string; status: string; workflowTimeline: Array<{ phase: string; status: string; dueDate: string }> } | null>(null);
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [customerLoginForm, setCustomerLoginForm] = useState({ identifier: "", password: "" });
   const [customerSignupForm, setCustomerSignupForm] = useState({
@@ -175,13 +174,10 @@ export function HomePage() {
       return;
     }
 
-    const match = MOCK_ORDERS.find(
-      (o) =>
-        o.orderId.toLowerCase() === query ||
-        o.displayId.toLowerCase().includes(query) ||
-        o.customerMobile.includes(query)
-    );
-    setFoundOrder(match || null);
+    // TODO: Backend integration needed
+    // Endpoint: GET /api/oms/orders/search?query={query}
+    // Currently showing placeholder - will implement when backend endpoint is ready
+    setFoundOrder(null);
   };
 
   const handleCustomerAuth = async (e: React.FormEvent) => {
@@ -244,6 +240,11 @@ export function HomePage() {
           <p className="mx-auto mt-6 max-w-2xl text-base text-text-secondary sm:text-lg lg:text-xl">
             Empowering photography studio owners to streamline orders, manage teams, track pre and post event workflows, and delight clients effortlessly.
           </p>
+
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <button onClick={() => router.push("/pricing")} className="rounded-xl bg-brand-blue-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-600">Start Free Trial</button>
+            <button onClick={() => router.push("/studio-marketplace")} className="rounded-xl border border-brand-blue-light bg-white px-6 py-3 text-sm font-bold text-brand-blue-primary shadow-sm transition hover:bg-brand-blue-background">Find Studios Near Me</button>
+          </div>
         </div>
       </section>
 
@@ -444,7 +445,7 @@ export function HomePage() {
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                Studio Owner & Admin
+                Studio Admin
               </button>
               <button
                 onClick={() => {
@@ -484,13 +485,13 @@ export function HomePage() {
             )}
 
             {/* ======================================================== */}
-            {/* PORTAL 1: STUDIO OWNER & ADMIN PORTAL                   */}
+            {/* PORTAL 1: STUDIO ADMIN PORTAL                             */}
             {/* ======================================================== */}
             {activePortal === "admin" && (
               <div>
                 <div className="mb-6 flex flex-col gap-3 border-b border-border-divider pb-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-text-primary">Studio Owner & Admin Portal</h3>
+                    <h3 className="text-lg font-bold text-text-primary">Studio Admin Portal</h3>
                     <p className="text-xs text-text-tertiary">Full system access to OMS, CRM, and Studio ERP</p>
                   </div>
                   <div className="inline-flex rounded-lg bg-surface-app p-1 text-xs font-semibold shrink-0">
@@ -1042,20 +1043,12 @@ export function HomePage() {
 
                         <div className="space-y-3">
                           <h5 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Your Bookings & Orders</h5>
-                          {MOCK_ORDERS.slice(0, 2).map((order) => (
-                            <div key={order.orderId} className="rounded-xl border border-border-default p-4 bg-white shadow-xs">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <span className="font-mono text-xs text-brand-orange-primary font-bold">{order.displayId}</span>
-                                  <h6 className="text-sm font-bold text-text-primary">{order.eventType}</h6>
-                                  <p className="text-xs text-text-secondary">Event Date: {order.eventDate}</p>
-                                </div>
-                                <span className="rounded-full bg-brand-orange-background px-3 py-1 text-xs font-bold text-brand-orange-primary">
-                                  {order.status.replace("_", " ")}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                          <div className="rounded-xl border border-border-default p-4 bg-white shadow-xs">
+                            <p className="text-xs text-text-secondary italic">
+                              {/* TODO: Fetch customer's orders from backend once authenticated */}
+                              Your orders will appear here once you log in
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ) : (

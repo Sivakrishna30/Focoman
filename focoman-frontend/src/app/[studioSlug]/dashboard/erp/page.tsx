@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { getStudioBySlug, getEmployeesByStudio, EmployeeMock } from "@/services/mockDb";
-import { notFound } from "next/navigation";
+import { erpApi, EmployeeDTO } from "@/services/erpApi";
 import { authApi, JoinRequestDTO } from "@/services/authApi";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
 const ROLE_COLORS: Record<string, string> = {
   PHOTOGRAPHER: "bg-brand-blue-background text-brand-blue-primary",
@@ -25,46 +26,44 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function ErpPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
-  const studio = getStudioBySlug(studioSlug);
-  if (!studio) notFound();
-
-  const initialCrew = getEmployeesByStudio(studio.studioId);
-  const [crewList, setCrewList] = useState<EmployeeMock[]>(initialCrew);
-  const [selected, setSelected] = useState<EmployeeMock | null>(null);
+  const [studioId, setStudioId] = useState<string>("");
+  const [crewList, setCrewList] = useState<EmployeeDTO[]>([]);
+  const [selected, setSelected] = useState<EmployeeDTO | null>(null);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Join Requests state
   const [pendingRequests, setPendingRequests] = useState<JoinRequestDTO[]>([]);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   useEffect(() => {
-    authApi.getPendingJoinRequests(studio.studioId).then((reqs) => setPendingRequests(reqs));
-  }, [studio.studioId]);
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${BACKEND_URL}/api/studios/${encodeURIComponent(studioSlug)}`, { cache: "no-store" });
+        if (!res.ok) { setError("Studio not found"); return; }
+        const studio = await res.json();
+        setStudioId(studio.studioId);
+        const data = await erpApi.getEmployees(studio.studioId);
+        setCrewList(data);
+        const reqs = await authApi.getPendingJoinRequests(studio.studioId);
+        setPendingRequests(reqs);
+      } catch {
+        setError("Unable to load ERP data from backend.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
+  }, [studioSlug]);
 
   const handleApprove = async (req: JoinRequestDTO) => {
     const res = await authApi.approveJoinRequest(req.requestId);
     if (res.success) {
       setActionFeedback(`Approved ${req.applicantName}. Added to active crew list!`);
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== req.requestId));
-      
-      // Add to crew list
-      const newCrew: EmployeeMock = {
-        employeeId: `emp-${Math.floor(100 + Math.random() * 900)}`,
-        name: req.applicantName,
-        role: req.primaryExpertise.toUpperCase().includes("VIDEO") ? "VIDEOGRAPHER" : "PHOTOGRAPHER",
-        primaryRole: req.primaryExpertise,
-        secondaryRoles: req.skills,
-        activeOrders: 0,
-        completedOrders: 0,
-        phone: req.mobile,
-        email: req.email,
-        joinedDate: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
-        status: "ACTIVE",
-        employeeCode: `${studio.prefix}-MEM-${Math.floor(100 + Math.random() * 900)}`,
-        crewHandle: req.username,
-      };
-      setCrewList((prev) => [newCrew, ...prev]);
     }
   };
 
@@ -78,6 +77,9 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
   const filtered = crewList.filter((e) => roleFilter === "ALL" || e.role === roleFilter);
 
+  if (loading) return <div className="p-8 text-sm text-text-secondary">Loading ERP data from database...</div>;
+  if (error) return <div className="p-8 text-sm text-red-600">{error}</div>;
+
   return (
     <div className="flex h-full">
       {/* Crew & Requests Panel */}
@@ -87,7 +89,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-extrabold text-text-primary">Studio Enterprise Resource Planning (ERP)</h1>
-              <p className="text-xs text-text-tertiary">{crewList.length} active crew members · {studio.brandName}</p>
+              <p className="text-xs text-text-tertiary">{crewList.length} active crew members · Database records</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -155,10 +157,10 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
           <div className="flex-1 overflow-y-auto p-6 space-y-3">
             {filtered.map((emp) => (
               <div
-                key={emp.employeeId}
+                key={emp.id}
                 onClick={() => setSelected(emp)}
                 className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
-                  selected?.employeeId === emp.employeeId
+                  selected?.id === emp.id
                     ? "border-brand-purple-primary bg-brand-purple-background/30 shadow-xs"
                     : "border-border-default bg-white hover:border-brand-purple-light hover:shadow-xs"
                 }`}
@@ -173,9 +175,9 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                       {emp.crewHandle} · <span className="font-mono text-brand-purple-primary font-semibold">{emp.employeeCode}</span>
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {emp.secondaryRoles?.map((skill, idx) => (
+                      {emp.skills?.split(",").map((skill, idx) => (
                         <span key={idx} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-text-secondary">
-                          {skill}
+                          {skill.trim()}
                         </span>
                       ))}
                     </div>
@@ -184,7 +186,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
                 <div className="text-right">
                   <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${ROLE_COLORS[emp.role] || "bg-gray-100 text-gray-700"}`}>
-                    {emp.primaryRole}
+                    {emp.role}
                   </span>
                   <p className="mt-1 text-[11px] text-text-secondary font-medium">
                     {emp.activeOrders} active task{emp.activeOrders !== 1 ? "s" : ""}
@@ -275,7 +277,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
               </div>
               <div>
                 <h2 className="text-lg font-bold text-text-primary">{selected.name}</h2>
-                <p className="text-xs text-text-secondary">{selected.primaryRole}</p>
+                <p className="text-xs text-text-secondary">{selected.role}</p>
                 <span className="mt-1 inline-block text-xs text-text-secondary font-medium">{selected.status}</span>
               </div>
             </div>
@@ -298,8 +300,8 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
             <div className="rounded-xl border border-border-default p-4 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Contact Details</h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div><p className="text-text-tertiary">Phone</p><p className="font-semibold text-text-primary">{selected.phone}</p></div>
-                <div><p className="text-text-tertiary">Email</p><p className="font-semibold text-text-primary">{selected.email}</p></div>
+                <div><p className="text-text-tertiary">Phone</p><p className="font-semibold text-text-primary">{selected.mobile}</p></div>
+                <div><p className="text-text-tertiary">Email</p><p className="font-semibold text-text-primary">{selected.email || "—"}</p></div>
               </div>
             </div>
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+content = '''
 "use client";
 import { useEffect, useMemo, useState, use } from "react";
 import { omsApi, OmsOrder, OrderStatus, StudioProfile } from "@/services/omsApi";
@@ -240,3 +242,8 @@ export default function OmsPage({
     </div>
   );
 }
+'''.strip()
+
+with open(r"c:\Users\DELL\Downloads\FocoMan\focoman-frontend\src\app\[studioSlug]\dashboard\oms\page.tsx", 'w', encoding='utf-8') as f:
+    f.write(content)
+print("OMS page file written successfully")

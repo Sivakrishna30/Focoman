@@ -51,6 +51,12 @@ public class OmsDbService {
         );
         studioRepository.save(luminary);
 
+        // Marketplace studios for location-based discovery.
+        studioRepository.save(new StudioEntity("STU-100202", "CHN", "Chennai Frames Studio", "Chennai Frames", "hello@chennaiframes.in", "+91 98840 11223", "Chennai", OffsetDateTime.now()));
+        studioRepository.save(new StudioEntity("STU-100203", "MAD", "Madras Lens Collective", "Madras Lens", "book@madraslens.in", "+91 99401 22334", "Chennai", OffsetDateTime.now()));
+        studioRepository.save(new StudioEntity("STU-100204", "MUM", "Mumbai Moment Makers", "Moment Makers Mumbai", "hello@momentmakers.in", "+91 98201 33445", "Mumbai", OffsetDateTime.now()));
+        studioRepository.save(new StudioEntity("STU-100205", "BLR", "Bangalore Story Studio", "Story Studio Bangalore", "book@storystudio.in", "+91 99000 44556", "Bangalore", OffsetDateTime.now()));
+
         // Seed Studio Owner
         UserEntity owner = new UserEntity(
                 "RAJ-ADM-001",
@@ -150,28 +156,6 @@ public class OmsDbService {
     }
 
     private OrderResponse toResponse(OrderEntity entity) {
-        UUID studioUuid = null;
-        UUID customerUuid = null;
-        UUID employeeUuid = null;
-        try {
-            studioUuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
-            customerUuid = UUID.nameUUIDFromBytes(entity.getCustomerId() != null ? entity.getCustomerId().getBytes() : "cust".getBytes());
-            employeeUuid = UUID.nameUUIDFromBytes(entity.getAssignedEmployeeId() != null ? entity.getAssignedEmployeeId().getBytes() : "emp".getBytes());
-        } catch (Exception ignored) {}
-
-        return new OrderResponse(
-                entity.getId(),
-                entity.getCustomerName(),
-                entity.getEventType(),
-                entity.getEventDate(),
-                entity.getStatus() != null ? entity.getStatus().name() : OrderStatus.BOOKING_CONFIRMED.name(),
-                entity.getAssignedEmployee(),
-                entity.getAmount(),
-                entity.getCreatedDate(),
-                entity.getLastUpdated(),
-                studioUuid,
-                customerUuid,
-                employeeUuid
-        );
+        return new OrderResponse(entity.getId(), entity.getDisplayId(), entity.getStudioId(), entity.getCustomerName(), entity.getCustomerMobile(), entity.getEventType(), entity.getEventDate(), entity.getStatus() != null ? entity.getStatus().name() : OrderStatus.BOOKING_CONFIRMED.name(), entity.getAssignedEmployee(), entity.getAssignedEmployeeId(), entity.getAmount(), entity.getCreatedDate(), entity.getLastUpdated());
     }
 }

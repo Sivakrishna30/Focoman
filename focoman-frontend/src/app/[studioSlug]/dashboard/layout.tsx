@@ -1,29 +1,12 @@
 import { notFound } from "next/navigation";
-import { getStudioBySlug } from "@/services/mockDb";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
-export default async function DashboardLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ studioSlug: string }>;
-}) {
-  const { studioSlug } = await params;
-  const studio = getStudioBySlug(studioSlug);
-  if (!studio) notFound();
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-surface-app">
-      <DashboardSidebar
-        studioSlug={studioSlug}
-        plan={studio.plan}
-        studioName={studio.studioName}
-        ownerName={studio.ownerName}
-      />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </div>
-  );
+export default async function DashboardLayout({ children, params }: { children: React.ReactNode; params: Promise<{ studioSlug: string }> }) {
+  const { studioSlug } = await params;
+  const response = await fetch(`${BACKEND_URL}/api/studios/${encodeURIComponent(studioSlug)}`, { cache: "no-store" });
+  if (!response.ok) notFound();
+  const studio = await response.json();
+  return <div className="flex h-screen overflow-hidden bg-surface-app"><DashboardSidebar studioSlug={studioSlug} plan="professional" studioName={studio.studioName} ownerName={studio.ownerName} /><main className="flex-1 overflow-y-auto">{children}</main></div>;
 }

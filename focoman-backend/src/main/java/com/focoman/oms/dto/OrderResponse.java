@@ -7,16 +7,16 @@ import java.util.UUID;
 
 public record OrderResponse(
         UUID orderId,
+        String displayId,
+        String studioId,
         String customerName,
+        String customerMobile,
         String eventType,
         LocalDate eventDate,
         String status,
         String assignedEmployee,
+        String assignedEmployeeId,
         BigDecimal amount,
         OffsetDateTime createdDate,
-        OffsetDateTime lastUpdated,
-        UUID studioId,
-        UUID customerId,
-        UUID employeeId
-) {
-}
+        OffsetDateTime lastUpdated
+) {}

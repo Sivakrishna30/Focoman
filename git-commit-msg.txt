@@ -1,0 +1,1 @@
+feat: Complete CRM, ERP, and Payment modules with full backend integration

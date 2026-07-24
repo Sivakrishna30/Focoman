@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  getStudioBySlug,
-  getDashboardStats,
-  getOrdersByStudio,
-} from "@/services/mockDb";
+import { omsApi } from "@/services/omsApi";
 
 const STATUS_COLORS: Record<string, string> = {
   LEAD: "bg-gray-100 text-gray-600",
@@ -32,85 +28,119 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default async function DashboardPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = await params;
-  const studio = getStudioBySlug(studioSlug);
-  if (!studio) notFound();
+  
+  try {
+    const studio = await omsApi.getStudio(studioSlug);
+    const orders = await omsApi.getOrders(studio.studioId);
+    
+    // Calculate stats from orders
+    const completed = orders.filter(o => o.status === "COMPLETED").length;
+    const pending = orders.filter(o => !["COMPLETED", "OVER_SLA"].includes(o.status)).length;
+    const overSla = orders.filter(o => o.status === "OVER_SLA").length;
+    const totalRevenue = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+    
+    // Calculate top customers by revenue
+    const customerMap = new Map<string, { name: string; totalOrders: number; totalRevenue: number }>();
+    orders.forEach(order => {
+      const key = order.customerName;
+      if (!customerMap.has(key)) {
+        customerMap.set(key, { name: order.customerName, totalOrders: 0, totalRevenue: 0 });
+      }
+      const customer = customerMap.get(key)!;
+      customer.totalOrders += 1;
+      customer.totalRevenue += order.amount || 0;
+    });
+    
+    const topCustomers = Array.from(customerMap.values())
+      .sort((a, b) => b.totalRevenue - a.totalRevenue)
+      .slice(0, 5)
+      .map((c, idx) => ({ ...c, customerId: `cust-${idx}` }));
+    
+    const stats = {
+      totalOrders: orders.length,
+      completed,
+      pending,
+      overSla,
+      totalRevenue,
+      pendingRevenue: 0, // TODO: Backend should provide pending payment data
+      topCustomers,
+    };
+    
+    const recentOrders = orders.slice(0, 5);
 
-  const stats = getDashboardStats(studio.studioId);
-  const recentOrders = getOrdersByStudio(studio.studioId).slice(0, 5);
+    const statCards = [
+      {
+        label: "Total Orders",
+        value: stats.totalOrders,
+        sub: "All time",
+        color: "border-brand-blue-light bg-brand-blue-background/40",
+        textColor: "text-brand-blue-primary",
+      },
+      {
+        label: "Completed",
+        value: stats.completed,
+        sub: "Delivered",
+        color: "border-green-200 bg-green-50",
+        textColor: "text-green-700",
+      },
+      {
+        label: "In Progress",
+        value: stats.pending,
+        sub: "Active orders",
+        color: "border-amber-200 bg-amber-50",
+        textColor: "text-amber-700",
+      },
+      {
+        label: "Over SLA",
+        value: stats.overSla,
+        sub: stats.overSla > 0 ? "Needs attention" : "All on track",
+        color: stats.overSla > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50",
+        textColor: stats.overSla > 0 ? "text-red-600" : "text-green-600",
+      },
+      {
+        label: "Revenue Collected",
+        value: `₹${(stats.totalRevenue / 1000).toFixed(0)}K`,
+        sub: "Payments received",
+        color: "border-brand-purple-light bg-brand-purple-background/40",
+        textColor: "text-brand-purple-primary",
+      },
+      {
+        label: "Pending Collections",
+        value: `₹${(stats.pendingRevenue / 1000).toFixed(0)}K`,
+        sub: "Balance due",
+        color: "border-orange-200 bg-orange-50",
+        textColor: "text-brand-orange-primary",
+      },
+    ];
 
-  const statCards = [
-    {
-      label: "Total Orders",
-      value: stats.totalOrders,
-      sub: "All time",
-      color: "border-brand-blue-light bg-brand-blue-background/40",
-      textColor: "text-brand-blue-primary",
-    },
-    {
-      label: "Completed",
-      value: stats.completed,
-      sub: "Delivered",
-      color: "border-green-200 bg-green-50",
-      textColor: "text-green-700",
-    },
-    {
-      label: "In Progress",
-      value: stats.pending,
-      sub: "Active orders",
-      color: "border-amber-200 bg-amber-50",
-      textColor: "text-amber-700",
-    },
-    {
-      label: "Over SLA",
-      value: stats.overSla,
-      sub: stats.overSla > 0 ? "Needs attention" : "All on track",
-      color: stats.overSla > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50",
-      textColor: stats.overSla > 0 ? "text-red-600" : "text-green-600",
-    },
-    {
-      label: "Revenue Collected",
-      value: `₹${(stats.totalRevenue / 1000).toFixed(0)}K`,
-      sub: "Payments received",
-      color: "border-brand-purple-light bg-brand-purple-background/40",
-      textColor: "text-brand-purple-primary",
-    },
-    {
-      label: "Pending Collections",
-      value: `₹${(stats.pendingRevenue / 1000).toFixed(0)}K`,
-      sub: "Balance due",
-      color: "border-orange-200 bg-orange-50",
-      textColor: "text-brand-orange-primary",
-    },
-  ];
+    return (
+      <div className="px-6 py-8 lg:px-10">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-extrabold text-text-primary">
+            Good morning, {studio.ownerName.split(" ")[0]}
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Here&apos;s an overview of <span className="font-semibold">{studio.brandName}</span>
+          </p>
+        </div>
 
-  return (
-    <div className="px-6 py-8 lg:px-10">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-text-primary">
-          Good morning, {studio.ownerName.split(" ")[0]}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          Here&apos;s an overview of <span className="font-semibold">{studio.brandName}</span>
-        </p>
-      </div>
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              className={`rounded-2xl border p-5 ${card.color}`}
+            >
+              <p className="text-xs font-semibold text-text-secondary">{card.label}</p>
+              <p className={`mt-2 text-3xl font-extrabold ${card.textColor}`}>{card.value}</p>
+              <p className="mt-1 text-xs text-text-tertiary">{card.sub}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {statCards.map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-2xl border p-5 ${card.color}`}
-          >
-            <p className="text-xs font-semibold text-text-secondary">{card.label}</p>
-            <p className={`mt-2 text-3xl font-extrabold ${card.textColor}`}>{card.value}</p>
-            <p className="mt-1 text-xs text-text-tertiary">{card.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Content: Recent Orders + Top Customers */}
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        {/* Main Content: Recent Orders + Top Customers */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
 
         {/* Recent Orders (2/3 width) */}
         <div className="lg:col-span-2 rounded-2xl border border-border-default bg-white p-6">
@@ -146,8 +176,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
                 </div>
                 <div className="ml-4 flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-xs font-bold text-text-primary">₹{order.paidAmount.toLocaleString()}</p>
-                    <p className="text-[10px] text-text-tertiary">of ₹{order.amount.toLocaleString()}</p>
+                    <p className="text-xs font-bold text-text-primary">₹{order.amount.toLocaleString()}</p>
+                    <p className="text-[10px] text-text-tertiary">Order amount</p>
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold whitespace-nowrap ${STATUS_COLORS[order.status]}`}>
                     {STATUS_LABELS[order.status]}
@@ -216,5 +246,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error("Failed to fetch dashboard data:", error);
+    notFound();
+  }
 }

@@ -4,6 +4,12 @@ import { useState, use } from "react";
 import { getStudioBySlug, DEFAULT_WHATSAPP_SETTINGS, WhatsAppSettings } from "@/services/mockDb";
 import { notFound } from "next/navigation";
 
+// TODO: Replace mockDb with real backend API
+// Need backend endpoints:
+// - GET /api/studios/{prefix} for studio info
+// - GET /api/integrations/whatsapp/settings?studioId={studioId} for WhatsApp settings
+// - PUT /api/integrations/whatsapp/settings for updating WhatsApp settings
+
 const NOTIFICATION_CONFIG = [
   {
     group: "Lead & Booking",
