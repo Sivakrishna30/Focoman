@@ -10,6 +10,7 @@ interface DashboardSidebarProps {
   plan: Plan;
   studioName: string;
   ownerName: string;
+  appEnv?: string;
 }
 
 const NAV_ITEMS = [
@@ -20,6 +21,17 @@ const NAV_ITEMS = [
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
+    label: "Dev Portal",
+    sublabel: "Testing",
+    href: (slug: string) => `/${slug}/dashboard/dev-portal`,
+    module: "dev" as const,
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
       </svg>
     ),
   },
@@ -69,7 +81,7 @@ const NAV_ITEMS = [
   },
 ];
 
-export function DashboardSidebar({ studioSlug, plan, studioName, ownerName }: DashboardSidebarProps) {
+export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appEnv }: DashboardSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -97,7 +109,9 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName }: Da
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const accessible = item.module === null || item.module === "oms" || plan === "professional" || plan === "complete";
+          const isDevPortal = item.module === "dev";
+          const isTestingMode = appEnv === "testing";
+          const accessible = isDevPortal ? isTestingMode : (item.module === null || item.module === "oms" || plan === "professional" || plan === "complete");
           const href = item.href(studioSlug);
           const isActive = pathname === href;
 
@@ -105,7 +119,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName }: Da
             return (
               <div
                 key={item.label}
-                title={`Upgrade to access ${item.label}`}
+                title={isDevPortal ? "Only visible in testing mode" : `Upgrade to access ${item.label}`}
                 className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 opacity-40"
               >
                 <span className="text-text-tertiary">{item.icon}</span>
@@ -113,9 +127,15 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName }: Da
                   <p className="text-xs font-semibold text-text-tertiary truncate">{item.label}</p>
                   {item.sublabel && <p className="text-[10px] text-text-tertiary">{item.sublabel}</p>}
                 </div>
-                <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                {isDevPortal ? (
+                  <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                ) : (
+                  <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                )}
               </div>
             );
           }
