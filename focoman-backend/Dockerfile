@@ -1,8 +1,8 @@
 # Build stage
 FROM maven:3.9.13-eclipse-temurin-17 AS builder
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
+COPY focoman-backend/pom.xml .
+COPY focoman-backend/src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
