@@ -14,15 +14,29 @@ public class JdbcUrlEnvironmentPostProcessor implements EnvironmentPostProcessor
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         MutablePropertySources propertySources = environment.getPropertySources();
         
-        // Railway sometimes provides the database URL without the jdbc: prefix
+        // Railway provides DATABASE_URL or SPRING_DATASOURCE_URL without the jdbc: prefix
         // This ensures the URL has the correct format for JDBC before the datasource is created
-        String datasourceUrl = environment.getProperty("SPRING_DATASOURCE_URL");
-        if (datasourceUrl != null && !datasourceUrl.isEmpty() && !datasourceUrl.startsWith("jdbc:")) {
+        String rawUrl = environment.getProperty("SPRING_DATASOURCE_URL");
+        if (rawUrl == null || rawUrl.isEmpty()) {
+            rawUrl = environment.getProperty("DATABASE_URL");
+        }
+
+        if (rawUrl != null && !rawUrl.isEmpty() && !rawUrl.startsWith("jdbc:")) {
+            String jdbcUrl = "jdbc:" + rawUrl;
+            
             Properties properties = new Properties();
-            properties.setProperty("SPRING_DATASOURCE_URL", "jdbc:" + datasourceUrl);
+            properties.setProperty("spring.datasource.url", jdbcUrl);
+            properties.setProperty("SPRING_DATASOURCE_URL", jdbcUrl);
+            
+            // Set driver class for PostgreSQL if the URL is postgresql
+            if (rawUrl.startsWith("postgresql:")) {
+                properties.setProperty("spring.datasource.driver-class-name", "org.postgresql.Driver");
+                properties.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQLDialect");
+            }
             
             // Add the corrected property to the environment with highest priority
             propertySources.addFirst(new PropertiesPropertySource("jdbcUrlFix", properties));
+            System.out.println("ADAPTED JDBC URL: " + jdbcUrl);
         }
     }
 }

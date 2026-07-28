@@ -13,21 +13,25 @@ The PostgreSQL JDBC driver requires URLs to start with `jdbc:postgresql://`, but
 - **Correct**: `jdbc:postgresql://postgres:...@postgres.railway.internal:5432/railway`
 
 ## Solution
-Created a Spring Boot event listener (`DatasourceConfig.java`) that intercepts the environment preparation phase and automatically adds the `jdbc:` prefix if it's missing.
+Created a Spring Boot `EnvironmentPostProcessor` (`JdbcUrlEnvironmentPostProcessor.java`) that intercepts the environment preparation phase and automatically adds the `jdbc:` prefix if it's missing. This processor handles both `SPRING_DATASOURCE_URL` and the default Railway `DATABASE_URL`.
 
 ### Files Modified
-1. **Created**: `focoman-backend/src/main/java/com/focoman/config/DatasourceConfig.java`
-   - Implements `ApplicationListener<ApplicationEnvironmentPreparedEvent>`
-   - Runs early in the Spring Boot startup process
-   - Checks if `SPRING_DATASOURCE_URL` is missing the `jdbc:` prefix
-   - Automatically prepends `jdbc:` if needed
+1. **Created**: `focoman-backend/src/main/java/com/focoman/config/JdbcUrlEnvironmentPostProcessor.java`
+   - Implements `EnvironmentPostProcessor`
+   - Automatically detects PostgreSQL URLs missing the `jdbc:` prefix
+   - Sets the correct driver class and Hibernate dialect for PostgreSQL
+2. **Registered**: `focoman-backend/src/main/resources/META-INF/spring.factories`
+   - Ensures the processor runs during Spring Boot startup
 
 ### How It Works
-1. The `ApplicationEnvironmentPreparedEvent` fires when the Spring Environment is ready but before the application context is created
-2. The listener checks the `SPRING_DATASOURCE_URL` property
-3. If the URL doesn't start with `jdbc:`, it prepends it
-4. The corrected URL is added to the environment property sources with highest priority
-5. When the datasource is created later, it uses the corrected URL
+1. The `EnvironmentPostProcessor` runs very early in the Spring Boot lifecycle
+2. It checks for `SPRING_DATASOURCE_URL` or `DATABASE_URL` environment variables
+3. If a URL is found starting with `postgresql://`, it:
+   - Prepends `jdbc:` to create a valid JDBC URL
+   - Sets `spring.datasource.url` to the corrected value
+   - Sets `spring.datasource.driver-class-name` to `org.postgresql.Driver`
+   - Sets `spring.jpa.database-platform` to `org.hibernate.dialect.PostgreSQLDialect`
+4. These properties are added to the environment with the highest priority, overriding any incorrect settings
 
 ## Testing
 After deploying to Railway, the application should now:
