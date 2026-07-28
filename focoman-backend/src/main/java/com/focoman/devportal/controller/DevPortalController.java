@@ -47,4 +47,10 @@ public class DevPortalController {
     public ResponseEntity<TaskResponse> assignTask(@PathVariable String taskId, @RequestParam String assignedTo) {
         return ResponseEntity.ok(devPortalService.assignTask(taskId, assignedTo));
     }
+
+    @DeleteMapping("/tasks/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable String taskId) {
+        devPortalService.deleteTask(taskId);
+        return ResponseEntity.ok().build();
+    }
 }

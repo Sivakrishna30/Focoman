@@ -25,10 +25,11 @@ public class DevPortalService {
     public void seedTasks() {
         if (taskRepository.count() > 0) return;
 
-        taskRepository.save(new TaskEntity("TASK-001", "Setup Vercel hosting for frontend", "Deploy Next.js app to Vercel with environment variables", "TASK", "HIGH", "IN_PROGRESS", "Dev Team", "Siva Krishna", "FRONTEND", OffsetDateTime.now(), OffsetDateTime.now()));
-        taskRepository.save(new TaskEntity("TASK-002", "Setup Railway for backend", "Deploy Spring Boot to Railway with PostgreSQL", "TASK", "HIGH", "OPEN", "Dev Team", "Siva Krishna", "BACKEND", OffsetDateTime.now(), OffsetDateTime.now()));
-        taskRepository.save(new TaskEntity("BUG-001", "Fix CRM page loading state", "CRM page shows loading spinner indefinitely on slow network", "BUG", "MEDIUM", "IN_PROGRESS", "Frontend Dev", "Siva Krishna", "FRONTEND", OffsetDateTime.now(), OffsetDateTime.now()));
-        taskRepository.save(new TaskEntity("FEAT-001", "Add WhatsApp notification templates", "Create template management UI for WhatsApp messages", "FEATURE", "MEDIUM", "OPEN", null, "Siva Krishna", "BACKEND", OffsetDateTime.now(), OffsetDateTime.now()));
+        // Add team members as initial users (no roles - everyone is a team member)
+        taskRepository.save(new TaskEntity("TASK-001", "Team Member - Siva", "Siva Krishna", "TASK", "HIGH", "OPEN", "Siva", "System", "TEAM", OffsetDateTime.now(), OffsetDateTime.now()));
+        taskRepository.save(new TaskEntity("TASK-002", "Team Member - Asif", "Asif", "TASK", "HIGH", "OPEN", "Asif", "System", "TEAM", OffsetDateTime.now(), OffsetDateTime.now()));
+        taskRepository.save(new TaskEntity("TASK-003", "Team Member - Rohith", "Rohith", "TASK", "HIGH", "OPEN", "Rohith", "System", "TEAM", OffsetDateTime.now(), OffsetDateTime.now()));
+        taskRepository.save(new TaskEntity("TASK-004", "Team Member - Manohar", "Manohar", "TASK", "HIGH", "OPEN", "Manohar", "System", "TEAM", OffsetDateTime.now(), OffsetDateTime.now()));
     }
 
     public List<TaskResponse> getAllTasks() {
@@ -61,6 +62,11 @@ public class DevPortalService {
         task.setAssignedTo(assignedTo);
         task.setUpdatedAt(OffsetDateTime.now());
         return toResponse(taskRepository.save(task));
+    }
+
+    public void deleteTask(String taskId) {
+        TaskEntity task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found"));
+        taskRepository.delete(task);
     }
 
     private TaskResponse toResponse(TaskEntity e) {

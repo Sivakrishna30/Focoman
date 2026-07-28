@@ -30,4 +30,6 @@ export const devPortalApi = {
     request<TaskDTO>(`/api/dev/tasks/${encodeURIComponent(taskId)}/status?status=${encodeURIComponent(status)}`, { method: "PUT" }),
   assignTask: (taskId: string, assignedTo: string) =>
     request<TaskDTO>(`/api/dev/tasks/${encodeURIComponent(taskId)}/assign?assignedTo=${encodeURIComponent(assignedTo)}`, { method: "PUT" }),
+  deleteTask: (taskId: string) =>
+    request<void>(`/api/dev/tasks/${encodeURIComponent(taskId)}`, { method: "DELETE" }),
 };

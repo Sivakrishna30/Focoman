@@ -25,17 +25,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Dev Portal",
-    sublabel: "Testing",
-    href: (_slug: string) => `/devportal`,
-    module: "dev" as const,
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-      </svg>
-    ),
-  },
-  {
     label: "Order Management",
     sublabel: "OMS",
     href: (slug: string) => `/${slug}/dashboard/oms`,

@@ -1218,12 +1218,10 @@ export function HomePage() {
                 Configure Studio ERP Page
               </button>
               <button
-                onClick={() => {
-                  alert("Support team notified! We will contact you shortly for migration assistance.");
-                }}
+                onClick={() => router.push("/devportal")}
                 className="rounded-xl border border-border-default bg-white px-4 py-2.5 text-xs font-bold text-text-primary hover:bg-gray-50 transition"
               >
-                Reach Out for Migration
+                Dev Portal (Team Only)
               </button>
               <button
                 onClick={() => router.push(`/${createdStudioInfo.prefix.toLowerCase()}/dashboard`)}
@@ -1235,6 +1233,24 @@ export function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Footer with Dev Portal Link */}
+      <footer className="border-t border-border-divider bg-white py-6 mt-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="text-xs text-text-tertiary">
+              © 2026 Focoman. All rights reserved.
+            </div>
+            <div className="flex gap-6">
+              <a href="/devportal" className="text-xs font-semibold text-brand-purple-primary hover:underline">
+                Dev Portal (Internal)
+              </a>
+              <span className="text-xs text-text-tertiary">|</span>
+              <span className="text-xs text-text-tertiary">Team: Siva, Asif, Rohith, Manohar</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
