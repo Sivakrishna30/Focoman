@@ -6,6 +6,7 @@ spring:
   datasource:
     # PostgreSQL for production (Railway will provide SPRING_DATASOURCE_URL)
     # H2 for local development (fallback)
+    # Ensure JDBC prefix is present (Railway sometimes provides URL without it)
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/focomandb;MODE=PostgreSQL;AUTO_SERVER=TRUE}
     driverClassName: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
