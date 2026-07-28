@@ -40,19 +40,37 @@ When you link PostgreSQL to your backend, Railway **automatically** sets:
 DATABASE_URL=postgresql://user:password@host:port/database
 ```
 
-#### Required Variables for Spring Boot:
+#### Railway PostgreSQL Variables (Auto-Generated)
 
-You need to **map** the Railway `DATABASE_URL` to Spring Boot's expected format. Add these environment variables to your **backend service** (not the PostgreSQL service):
-
-**Option A: Using Railway's Built-in Mapping (Recommended)**
-
-In your backend service → **Variables** tab, add:
+When you add PostgreSQL to Railway, these variables are **automatically created** in the PostgreSQL service:
 
 ```env
-# Database Connection
+DATABASE_PUBLIC_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}/${{PGDATABASE}}"
+DATABASE_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}"
+PGDATA="/var/lib/postgresql/data/pgdata"
+PGDATABASE="railway"
+PGHOST="${{RAILWAY_PRIVATE_DOMAIN}}"
+PGPASSWORD="pVAmAGfPdsTxvatXtMMymeeXWoFAqSvN"
+PGPORT="5432"
+PGUSER="postgres"
+POSTGRES_DB="railway"
+POSTGRES_PASSWORD="pVAmAGfPdsTxvatXtMMymeeXWoFAqSvN"
+POSTGRES_USER="postgres"
+```
+
+#### Required Variables for Spring Boot (Add to Backend Service)
+
+You need to add these variables to your **backend service** (not the PostgreSQL service) to connect to the database:
+
+**Option A: Using Railway Variable Substitution (Recommended)**
+
+In your backend service → **Variables** tab → **New Variable**, add:
+
+```env
+# Database Connection (maps Railway PostgreSQL to Spring Boot)
 SPRING_DATASOURCE_URL=${{Postgres.DATABASE_URL}}
-SPRING_DATASOURCE_USERNAME=${{Postgres.USER}}
-SPRING_DATASOURCE_PASSWORD=${{Postgres.PASSWORD}}
+SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
+SPRING_DATASOURCE_PASSWORD=${{Postgres.POSTGRES_PASSWORD}}
 SPRING_DATASOURCE_DRIVER=org.postgresql.Driver
 SPRING_JPA_DIALECT=org.hibernate.dialect.PostgreSQLDialect
 
@@ -72,6 +90,18 @@ SERVER_PORT=8080
 LOG_LEVEL=INFO
 SQL_LOG_LEVEL=WARN
 HIKARI_LOG_LEVEL=WARN
+```
+
+**Option B: Manual Configuration**
+
+If you prefer to manually enter the values from your PostgreSQL service:
+
+```env
+SPRING_DATASOURCE_URL=postgresql://postgres:pVAmAGfPdsTxvatXtMMymeeXWoFAqSvN@postgres.railway.internal:5432/railway
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=pVAmAGfPdsTxvatXtMMymeeXWoFAqSvN
+SPRING_DATASOURCE_DRIVER=org.postgresql.Driver
+SPRING_JPA_DIALECT=org.hibernate.dialect.PostgreSQLDialect
 ```
 
 **Option B: Manual Configuration**
