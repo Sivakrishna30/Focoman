@@ -1,0 +1,70 @@
+# Production Configuration Overrides
+# This file is activated when APP_ENV=production
+
+spring:
+  datasource:
+    # Production uses PostgreSQL (provided via environment variables)
+    # H2 console disabled in production
+    hikari:
+      # Larger pool for production
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:10}
+      # Longer timeouts for production stability
+      connection-timeout: 30000  # 30 seconds
+      idle-timeout: 600000       # 10 minutes
+      max-lifetime: 1800000      # 30 minutes
+      leak-detection-threshold: 60000
+  
+  jpa:
+    # Validate schema in production (don't auto-modify)
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    # Disable SQL logging in production
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: false
+
+# Disable H2 console in production
+  h2:
+    console:
+      enabled: false
+
+# Production logging - less verbose
+logging:
+  level:
+    com.focoman: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    com.zaxxer.hikari: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Server configuration for production
+server:
+  # Use PORT environment variable (Railway provides this)
+  port: ${PORT:${SERVER_PORT:8080}}
+  
+  # Production error handling - don't expose internal details
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: never
+
+# Actuator endpoints for health checks (Railway uses these)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
