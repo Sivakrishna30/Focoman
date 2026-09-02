@@ -1,10 +1,17 @@
-# ThreadSafe Project FOCOMAN
+> [!WARNING]
+> **DOCUMENT STATUS: SUPERSEDED / LEGACY**
+> This document (`srs-mvp.md`) represents the legacy Product Specification.
+> It has been **SUPERSEDED** by the authoritative **[Focoman Product Discovery Document](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)**.
+> 
+> **Key Realignment Notice:**
+> - Phase 1 starts directly from a **Confirmed Order** (OMS-First).
+> - Leads, enquiries, quotations, negotiations, and Google Calendar integrations are **OUT OF SCOPE** for Phase 1 core order workflows.
+> - High-level order statuses are simplified to: **`Awaiting Event` → `Post-Event In Progress` → `Completed`**.
 
-# Software Requirements Specification (SRS)
-
-Version: 1.0 (MVP)
+# ThreadSafe Project FOCOMAN — Legacy SRS (Superseded)
 
 ## 1. Introduction
+
 
 ### 1.1 Purpose
 

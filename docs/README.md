@@ -1,38 +1,35 @@
 # FOCOMAN Documentation
 
-Project documentation is organized by purpose.
+> [!IMPORTANT]
+> The primary entry point and source-of-truth reference map for all project documentation is **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)**.
+> All developers and AI coding agents MUST consult **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)** before making project-level decisions.
 
-## Product
+Project documentation is organized by purpose:
 
-- `product/srs-mvp.md`
+- **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)** — Master Navigation Map & Source-of-Truth Index
 
-## Technical
+## Quick Category Links
 
-- `technical/technical-design-mvp.md`
-- `technical/tech-stack.md`
-- `technical/recommended-architecture.md`
-- `technical/database/erp-schema.md`
-- `technical/database/erp-schema.sql`
-- `technical/database/oms-first-schema.md`
-- `technical/database/oms-first-schema.sql`
+### Product
+- `product/srs-mvp.md` (Superseded legacy reference)
 
-## Process
+### Technical Architecture & Design
+- `technical/technical-design-mvp.md` (Active technical design)
+- `technical/tech-stack.md` (Active target stack)
+- `technical/recommended-architecture.md` (Active target architecture)
+- `technical/deployment-guide.md` (Active Cloud Run deployment guide)
+- `technical/vercel-hosting-strategy.md`
 
-- `process/sdlc-progress.md`
-
-## Design
-
+### Design System
 - `design/brand-design-system.md`
 
-## Common
+### Setup & Operational Guides
+- `QUICK_SETUP_GUIDE.md`
+- `DEVPORTAL_SETUP.md`
+- `ISSUE_ANALYSIS.md`
 
-- `common/hld-design.png`
-- `common/lld-design.png`
-
-## Assets
-
+### Brand Assets
 Brand image assets are stored outside this folder in:
-
 ```text
 assets/brand/
 ```

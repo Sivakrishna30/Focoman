@@ -1,147 +1,80 @@
-# FOCOMAN - Deployment Guide
+# FOCOMAN Deployment Guide — Google Cloud Run & Firebase
 
-## Prerequisites
-- GitHub repository connected
-- Railway.app account
-- Neon PostgreSQL database
-- Vercel account
+**Document Type:** Technical Deployment Guide  
+**Status:** Active Target Specification  
+**Project:** Focoman  
+**Supersedes:** Legacy Railway / PostgreSQL Deployment Guide  
 
-## Step 1: Deploy Backend to Railway
+---
 
-1. **Connect Repository:**
-   - Go to https://railway.app
-   - New Project → Deploy from GitHub
-   - Select `Sivakrishna30/Focoman` repository
-   - Select `focoman-backend` as the service
+## 1. Architecture Overview
 
-2. **Configure Environment Variables in Railway:**
-   ```
-   SERVER_PORT=8080
-   SPRING_DATASOURCE_URL=jdbc:postgresql://...
-   SPRING_DATASOURCE_USERNAME=railway
-   SPRING_DATASOURCE_PASSWORD=...
-   JWT_SECRET=your-jwt-secret-key-here
-   ```
+Focoman is deployed as a single containerized Next.js 15 application on **Google Cloud Run**, integrated with **Firebase Authentication** and **Google Cloud Firestore**.
 
-3. **Deploy:**
-   - Railway will auto-build using the Dockerfile
-   - Wait for build to complete
-   - Railway will provide a URL like `https://focoman-backend.up.railway.app`
+```text
+GitHub (Sivakrishna30/Focoman)
+        ↓
+GitHub Actions CI/CD Pipeline
+        ↓
+Docker Container Build (Next.js Standalone)
+        ↓
+Google Cloud Run Deployment
+        ↓
+Firebase Services (Firestore & Firebase Auth)
+```
 
-## Step 2: Deploy Frontend to Vercel
+---
 
-1. **Deploy:**
-   ```bash
-   cd focoman-frontend
-   vercel --prod
-   ```
-   Or use Vercel dashboard:
-   - Import from GitHub repository
-   - Select `focoman-frontend` folder
-   - Deploy
+## 2. Prerequisites
 
-2. **Configure Environment Variables in Vercel:**
-   ```
-   NEXT_PUBLIC_BACKEND_URL=https://focoman-backend.up.railway.app
-   NEXT_PUBLIC_APP_ENV=testing
-   ```
+1. **Google Cloud Platform (GCP) Project** with billing enabled.
+2. **Firebase Project** created and linked to the GCP Project.
+3. **Firestore Database** initialized in Native Mode.
+4. **Firebase Authentication** enabled (Email/Password & Anonymous Auth).
+5. **Google Cloud Run API & Container Registry / Artifact Registry** enabled.
+6. **GitHub Repository Secrets** configured for automated deployment.
 
-3. **Custom Domain (Optional):**
-   - Add domain in Vercel dashboard
-   - Update DNS records
-   - Example: `https://focoman.com`
+---
 
-## Step 3: Setup Database (Neon)
+## 3. Environment Variables Strategy
 
-1. **Create Database:**
-   - Go to https://neon.tech
-   - Sign up / Login
-   - Create new project: `focoman-db`
-   - Copy connection string
+### Web Application (`apps/web`)
 
-2. **Connection String Format:**
-   ```
-   postgresql://username:password@ep-xxx.us-east-2.aws.neon.tech/focoman?sslmode=require
-   ```
+| Variable | Description | Exposed to Client? |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Client API Key | Yes |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | Yes |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | GCP / Firebase Project ID | Yes |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin SDK Private Key | **NO (Server-Only)** |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin Service Account Email | **NO (Server-Only)** |
+| `WHATSAPP_BUSINESS_API_TOKEN` | WhatsApp API Credentials | **NO (Server-Only)** |
 
-3. **Update Railway Environment:**
-   - Paste connection string as `SPRING_DATASOURCE_URL`
-   - Extract username and password from connection string
-   - Set `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD`
+---
 
-## Step 4: Verify Deployment
+## 4. Google Cloud Run Deployment Steps
 
-1. **Test Backend:**
-   ```bash
-   curl https://focoman-backend.up.railway.app/api/crm/customers?studioId=STU-100201
-   ```
-   Should return JSON with customers
+### Step 1: Container Build
 
-2. **Test Frontend:**
-   - Open https://focoman.vercel.app
-   - Login with test credentials
-   - Verify CRM, ERP, OMS pages load
+Using the project Dockerfile:
+```bash
+docker build -t gcr.io/[PROJECT_ID]/focoman-web:latest -f apps/web/Dockerfile .
+```
 
-3. **Test Dev Portal:**
-   - Navigate to https://focoman.vercel.app/devportal
-   - Should show task list (only in testing mode)
+### Step 2: Deploy to Cloud Run
 
-## Environment Variables Summary
+```bash
+gcloud run deploy focoman-web \
+  --image gcr.io/[PROJECT_ID]/focoman-web:latest \
+  --platform managed \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --min-instances 0 \
+  --max-instances 10
+```
 
-### Frontend (Vercel)
-| Variable | Value | Required |
-|----------|-------|----------|
-| `NEXT_PUBLIC_BACKEND_URL` | `https://focoman-backend.up.railway.app` | Yes |
-| `NEXT_PUBLIC_APP_ENV` | `testing` or `production` | Yes |
+---
 
-### Backend (Railway)
-| Variable | Value | Required |
-|----------|-------|----------|
-| `SERVER_PORT` | `8080` | No (default) |
-| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://...` | Yes (production) |
-| `SPRING_DATASOURCE_USERNAME` | `...` | Yes (production) |
-| `SPRING_DATASOURCE_PASSWORD` | `...` | Yes (production) |
-| `JWT_SECRET` | `...` | Yes (production) |
+## 5. Superseded Railway & Relational Deployment Notes
 
-## Database Migration
-
-The app supports both H2 (local) and PostgreSQL (production):
-
-- **Local:** Uses `./data/focomandb` (H2 file database)
-- **Production:** Uses PostgreSQL via environment variables
-
-No manual migration needed - Hibernate `ddl-auto: update` will create tables automatically.
-
-## Cost Estimate
-
-| Service | Monthly Cost |
-|---------|--------------|
-| Vercel (Frontend) | Free |
-| Railway (Backend) | $5-10 |
-| Neon (Database) | Free (0.5GB) |
-| **Total** | **$5-10/month** |
-
-## Troubleshooting
-
-### Backend won't start
-- Check Railway logs for errors
-- Verify PostgreSQL connection string
-- Ensure all environment variables are set
-
-### Frontend can't connect to backend
-- Verify `NEXT_PUBLIC_BACKEND_URL` in Vercel
-- Check CORS settings in backend
-- Test backend URL directly in browser
-
-### Database connection issues
-- Verify Neon database is active
-- Check connection string format
-- Ensure SSL mode is enabled (`sslmode=require`)
-
-## Next Steps
-
-1. Set up monitoring (Railway metrics / Vercel Analytics)
-2. Configure custom domain
-3. Set up CI/CD for automatic deployments
-4. Add error tracking (Sentry)
-5. Configure backup strategy for database
+- Legacy deployment instructions using `railway.json`, `nixpacks.toml`, Railway, Neon PostgreSQL, or Cloud SQL are **SUPERSEDED** and archived.
+- Google Cloud Run + Firebase represents the active production deployment target.

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@focoman/types": ["packages/types/src/index.ts"],
+      "@focoman/validation": ["packages/validation/src/index.ts"],
+      "@focoman/domain": ["packages/domain/src/index.ts"],
+      "@focoman/db": ["packages/db/src/index.ts"],
+      "@focoman/auth": ["packages/auth/src/index.ts"],
+      "@focoman/config": ["packages/config/src/index.ts"]
+    }
+  }
+}

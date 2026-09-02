@@ -1,0 +1,13 @@
+{
+  "name": "@focoman/validation",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@focoman/types": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc --noEmit"
+  }
+}

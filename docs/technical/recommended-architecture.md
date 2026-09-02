@@ -1,313 +1,98 @@
-# FOCOMAN Recommended Architecture
+# FOCOMAN Recommended Architecture Specification
 
-This is an architectural decision that will affect Focoman for years. Given the product stage (MVP to startup to SaaS), Focoman should not start with microservices.
+**Document Type:** Technical Architecture Specification  
+**Status:** Active Target Specification  
+**Project:** Focoman  
+**Supersedes:** Legacy Dual-Service (Java Backend + Next.js Frontend) Architecture  
 
-## Recommended Architecture
+---
+
+## 1. Overview & Architecture Philosophy
+
+Focoman uses an **Integrated Modular Monolith** built entirely in **TypeScript** using **Next.js 15 (App Router)** deployed to **Google Cloud Run**, with **Firebase Authentication** and **Google Cloud Firestore**.
+
+Rather than splitting the project into a separately deployed Spring Boot backend service and a separately deployed frontend app, Focoman combines client UI rendering and trusted server-side business logic within one integrated application monorepo.
+
+```text
+                               FOCOMAN INTEGRATED APPLICATION
+                                              │
+                                              ▼
+                                Next.js 15 App Router (TypeScript)
+                                              │
+                       ┌──────────────────────┴──────────────────────┐
+                       │                                             │
+                       ▼                                             ▼
+                 Client Layer                               Server Layer
+          (React Server Components + UI)              (Server Actions + Route Handlers)
+                       │                                             │
+                       │                                             ▼
+                       │                                   Domain & Business Logic
+                       │                                    (packages/domain)
+                       │                                             │
+                       ▼                                             ▼
+           Firebase Auth (Client SDK)                    Firestore (Admin SDK)
+```
+
+---
+
+## 2. Monorepo Repository Structure (`pnpm-workspace.yaml`)
+
+```text
+focoman/
+├── apps/
+│   └── web/                        # Main Next.js 15 integrated web application
+│       ├── app/                    # App Router pages & Server Actions
+│       ├── components/             # React UI components
+│       ├── hooks/                  # Client-side hooks
+│       ├── lib/                    # Web utilities & Firebase client SDK
+│       └── package.json
+│
+├── packages/
+│   ├── types/                      # Shared TypeScript domain contracts
+│   ├── validation/                 # Shared Zod validation schemas
+│   ├── domain/                     # Pure domain logic & workflow engines
+│   ├── db/                         # SERVER-ONLY Firestore Admin SDK wrapper
+│   ├── auth/                       # Firebase Auth session & permission helpers
+│   └── config/                     # Shared environment & system constants
+│
+├── docs/                           # Documentation & Index.md
+├── Agents.md                       # Master Agent Operating Specification
+├── AGENTS.md                       # Workspace Rule Entry Point
+└── CHANGELOG.md                    # Project Change Log
+```
+
+---
+
+## 3. Server Execution Boundary & Security Principles
+
+1. **No Generic Client CRUD:** Generic database CRUD operations are **NOT** exposed directly to the browser.
+2. **Server Actions for Business Mutations:** Privileged operations (order registration, resource assignment, payment confirmation, WhatsApp triggers) run through trusted Next.js Server Actions or API Route Handlers.
+3. **Server-Only Database Access:** `packages/db` uses `"server-only"` imports to prevent Firebase Admin SDK credentials from ever leaking into client browser bundles.
+4. **Firebase Authentication:** Role-based access control for Studio Owner, Studio Member, and Customer (Guest Passkey tracking).
+
+---
+
+## 4. Production Deployment Model
 
 ```text
 GitHub Repository
-│
-├── focoman-frontend/      (Next.js)
-├── focoman-backend/       (Spring Boot)
-└── docs/                  (Project Proposal, Design Docs, APIs)
+       ↓
+GitHub Actions CI/CD Pipeline
+       ↓
+Docker Build (Next.js Standalone Image)
+       ↓
+Google Cloud Run Deployment
+       ↓
+Firebase Services (Firestore & Firebase Auth)
 ```
 
-Keep frontend and backend as separate projects, but in the same Git repository, a monorepo, or separate repositories if preferred. For a small team, a monorepo is often simpler.
+Cloud Run handles zero-downtime deployment, traffic management, and auto-scaling automatically.
 
-## Backend Structure
+---
 
-Within the backend, use a modular monolith.
+## 5. Legacy Architecture Replacement Notes
 
-```text
-com.focoman
-
-├── auth
-├── dashboard
-├── customer
-├── lead
-├── order
-├── employee
-├── payment
-├── notification
-├── integrations
-│     ├── whatsapp
-│     ├── googlecalendar
-│     └── googledrive
-├── common
-├── security
-├── config
-└── exception
-```
-
-Each module contains its own:
-
-```text
-order
-
-├── controller
-├── service
-├── repository
-├── entity
-├── dto
-└── mapper
-```
-
-This is clean, maintainable, and easy to split into microservices later if needed.
-
-## Frontend Structure
-
-```text
-src/
-
-components/
-pages (or app/)
-features/
-
-    orders/
-
-    customers/
-
-    dashboard/
-
-    employees/
-
-services/
-
-hooks/
-
-utils/
-
-types/
-```
-
-Keep business features grouped together rather than grouping by file type alone.
-
-## Why Not Microservices Now?
-
-Microservices add complexity:
-
-- API Gateway
-- Service discovery
-- Distributed logging
-- Distributed transactions
-- Multiple deployments
-- Network communication
-- More DevOps work
-
-For 20 to 200 studios, this complexity usually is not justified.
-
-A modular monolith can comfortably handle thousands of users if designed well.
-
-## Downtime During Deployment
-
-This is solved by deployment strategy, not by microservices alone.
-
-Recommended flow:
-
-```text
-Developer
-
-↓
-
-GitHub
-
-↓
-
-GitHub Actions
-
-↓
-
-Build Docker Image
-
-↓
-
-Deploy to Staging (Pre-Prod)
-
-↓
-
-Automated Tests
-
-↓
-
-Manual Verification
-
-↓
-
-Deploy to Production
-```
-
-## Environments
-
-Maintain separate environments:
-
-```text
-Development
-
-↓
-
-QA / Test
-
-↓
-
-Staging (Pre-Production)
-
-↓
-
-Production
-```
-
-Each environment should have its own:
-
-- Database
-- Configuration
-- Secrets
-- URLs
-
-Never let developers test directly on Production.
-
-## UI Changes
-
-If the frontend only communicates through versioned REST APIs:
-
-```text
-Frontend
-
-↓
-
-REST API
-
-↓
-
-Backend
-```
-
-you can deploy UI independently of the backend, provided the API contract has not changed.
-
-If the API changes:
-
-- Add a new endpoint or a new API version.
-- Keep the old one until the new frontend is deployed.
-- Then remove the old version later.
-
-## Database Changes
-
-Avoid changing tables directly in production.
-
-Use migration tools such as Flyway, commonly used with Spring Boot.
-
-```text
-Version 1
-
-↓
-
-Migration
-
-↓
-
-Version 2
-```
-
-This keeps schema changes repeatable and safe.
-
-## Zero-Downtime Deployment
-
-With Google Cloud Run:
-
-```text
-Version 1
-
-↓
-
-Deploy Version 2
-
-↓
-
-Health Check
-
-↓
-
-Traffic Shift
-
-↓
-
-100% to Version 2
-
-↓
-
-Version 1 Removed
-```
-
-Users typically will not notice the deployment.
-
-## Should Frontend and Backend Be in One Server?
-
-Yes, they can be deployed separately:
-
-```text
-Next.js
-
-↓
-
-Cloud Run Service A
-
-Spring Boot
-
-↓
-
-Cloud Run Service B
-
-Cloud SQL
-```
-
-Advantages:
-
-- Deploy frontend without touching backend.
-- Deploy backend without rebuilding frontend.
-- Independent scaling.
-
-## Recommended Architecture for Focoman
-
-```text
-GitHub (Monorepo)
-
-├── focoman-frontend
-├── focoman-backend
-└── docs
-```
-
-Backend:
-
-- Modular Monolith, feature-based packages
-
-Frontend:
-
-- Feature-based architecture
-
-Deployment:
-
-- Frontend to Google Cloud Run
-- Backend to Google Cloud Run
-- Database to Google Cloud SQL
-- CDN/Security to Cloudflare
-
-CI/CD:
-
-- GitHub Actions
-- Docker
-- Staging to Production
-
-## Migration Path
-
-Phase 1 (Current):
-
-- Modular Monolith
-
-Phase 2 (100+ studios):
-
-- Optimize modules, caching, background jobs
-
-Phase 3 (1,000+ studios or clear scaling needs):
-
-- Extract high-load modules, for example Notifications or Reporting, into independent microservices if they become bottlenecks.
-
-This approach avoids premature complexity while keeping a clear path to scale. For a startup like Focoman, it is generally the best balance of development speed, maintainability, deployment safety, and future growth.
+- **Spring Boot 3 / Java 17 Backend**: Replaced by Next.js Server Actions and `packages/domain`.
+- **PostgreSQL / Cloud SQL / Flyway**: Replaced by Google Cloud Firestore.
+- **Railway Artifacts (`railway.json`, `nixpacks.toml`)**: Removed in favor of Cloud Run.
+- **Separate API Service Deployment**: Replaced by single integrated Cloud Run container.
