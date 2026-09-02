@@ -274,7 +274,7 @@ export function HomePage() {
             <div className="rounded-2xl border border-border-divider bg-surface-app p-6">
               <h4 className="font-bold text-sm text-text-primary">Custom Domain Setup</h4>
               <p className="mt-1.5 text-xs text-text-secondary">
-                Connect your studio's custom domain to your public order tracker.
+                Connect your studio&apos;s custom domain to your public order tracker.
               </p>
             </div>
           </div>

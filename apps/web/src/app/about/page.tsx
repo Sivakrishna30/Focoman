@@ -40,7 +40,7 @@ export default function AboutPage() {
               </p>
               <p className="mt-4 text-sm leading-relaxed text-text-secondary sm:text-base">
                 We believe the best software is built by people who understand the daily reality
-                of the business they're solving for — not from a spreadsheet, but from
+                of the business they&apos;re solving for — not from a spreadsheet, but from
                 conversations with the people doing the actual work.
               </p>
               <div className="mt-6 flex flex-wrap gap-4">
