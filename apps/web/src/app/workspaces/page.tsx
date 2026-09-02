@@ -22,7 +22,9 @@ export default function WorkspacesPage() {
       setLoadingUser(false);
       if (user) {
         setLoadingWorkspaces(true);
-        const data = await getUserWorkspacesAction(user.uid);
+        // CHG-011: Pass the Firebase ID token (JWT), not the UID — identity is verified server-side.
+        const idToken = await user.getIdToken();
+        const data = await getUserWorkspacesAction(idToken);
         setWorkspaces(data);
         setLoadingWorkspaces(false);
       } else {
