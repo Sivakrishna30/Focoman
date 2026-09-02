@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { StudioMember } from "@focoman/types";
 import { getStudioMembersAction, createMemberAction } from "@/actions/memberActions";
+import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
 
 const SKILL_LABELS: Record<string, string> = {
   PHOTOGRAPHY: "Photographer",
@@ -27,6 +28,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   const [skillFilter, setSkillFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [idToken, setIdToken] = useState<string | null>(null);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -42,7 +44,13 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   const loadCrew = async () => {
     try {
       setLoading(true);
-      const data = await getStudioMembersAction(studioSlug);
+      const token = await getCurrentUserIdToken(false);
+      setIdToken(token);
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      const data = await getStudioMembersAction(studioSlug, token);
       setCrewList(data);
     } finally {
       setLoading(false);
@@ -67,7 +75,15 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     setIsSubmitting(true);
     setModalError(null);
 
+    const token = await getCurrentUserIdToken(true);
+    if (!token) {
+      setModalError("Authentication error. Please sign in again.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const res = await createMemberAction({
+      idToken: token,
       studioId: studioSlug,
       name: form.name,
       email: form.email,

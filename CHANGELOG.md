@@ -4,7 +4,28 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
-## CHG-001 — Agent Instruction System & Governance Integration
+## CHG-010 — Security Hardening: memoryStore Removal, Authorization Layer, ID Hardening & Error Transparency
+
+- **Task:** CHG-010 — Backend Security & Integrity Hardening (Audit Conditions from CHG-009 Independent Review)
+- **Date:** 2026-09-02
+- **Area:** `packages/db`, `apps/web/src/lib/serverAuth.ts`, `apps/web/src/actions/*`, `apps/web/src/app/[studioSlug]/dashboard/*`, `apps/web/src/app/onboarding/register-studio/page.tsx`
+- **Change:**
+  1. **`memoryStore` removed** from `@focoman/db`. `getFirestoreServerInstance()` now throws a clear `Error` if Firebase Admin credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) or Firestore Emulator are not configured. No in-memory fallback exists by design.
+  2. **New `serverAuth.ts` authorization module** (`apps/web/src/lib/serverAuth.ts`). Provides `requireVerifiedUser(idToken)` (Firebase Admin `verifyIdToken`) and `requireStudioMember(uid, studioId, role?)` (Firestore membership lookup). Both throw descriptive errors — never silently pass.
+  3. **All mutating Server Actions** (`orderActions`, `memberActions`, `customerActions`, `studioActions`) now enforce `requireVerifiedUser` + `requireStudioMember` before any database write. `createMemberAction` additionally enforces `STUDIO_OWNER` role. `registerStudioAction` no longer trusts client-supplied `ownerUid`/`ownerName`/`ownerEmail` — all identity fields are extracted server-side from the verified token.
+  4. **Collision-safe ID generation**: All ID generation replaced from `Date.now().slice(-6)` to `crypto.randomUUID()` and from `Math.random()` to `crypto.randomBytes(4).toString('hex')` for the customer-facing tracking passkey.
+  5. **Silent `[]` error fallbacks removed**: `getStudioOrdersAction`, `getOrderTasksAction`, `getStudioMembersAction`, `getStudioCustomersAction` now throw on error. Firestore failures propagate to callers and Next.js error boundaries — empty arrays no longer mask database failures.
+  6. **Dashboard layout loads real studio data**: `layout.tsx` calls `getStudioBySlug()` from `@focoman/db`. Passes real `studio.name` and `studio.ownerName` to sidebar. Unknown studio slugs route to `notFound()`.
+  7. **Dashboard page loads real orders**: `page.tsx` calls `getOrdersByStudio()` — the hardcoded `const orders: Order[] = []` is removed.
+  8. **UI pages updated**: `oms/page.tsx`, `crm/page.tsx`, `erp/page.tsx`, `onboarding/register-studio/page.tsx` now call `getCurrentUserIdToken()` client-side and pass the token to all protected Server Actions.
+- **Reason:** Address all conditions raised in the independent audit of CHG-009: no-fake-data rule violation (memoryStore), authorization gap (identity without studio membership check), collision-unsafe IDs, silent error swallowing, and placeholder data in the dashboard.
+- **Specification Reference:** `Agents.md` Rule 6 (No Fake Data / No Silent Fallback), Rule 7 (Security & Permissions), `docs/technical/identity-and-auth-architecture.md`.
+- **Verification:** TypeScript compilation: 0 errors (`npx tsc --noEmit`).
+- **Notes:** After this change, the app requires Firebase Admin credentials in the environment at startup. Locally, use `.env.local` with service account keys or set `FIRESTORE_EMULATOR_HOST` for the Firestore Emulator.
+
+---
+
+
 
 - **Task:** T01 — Agent Instruction Framework Setup
 - **Date:** 2026-09-02

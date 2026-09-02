@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { subscribeToAuthState } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, getCurrentUserIdToken } from "@/lib/firebaseAuth";
 import { registerStudioAction, checkStudioSlugAvailabilityAction } from "@/actions/studioActions";
 import { User } from "firebase/auth";
 
@@ -65,14 +65,20 @@ export default function RegisterStudioPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    // CHG-010: Get a fresh ID token — UID and profile are verified server-side from the token.
+    const idToken = await getCurrentUserIdToken(true);
+    if (!idToken) {
+      setErrorMessage("Authentication error. Please sign in again.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const res = await registerStudioAction({
       name: form.name,
       city: form.city,
       website: form.website || undefined,
       instagram: form.instagram || undefined,
-      ownerUid: currentUser.uid,
-      ownerName: currentUser.displayName || "Studio Owner",
-      ownerEmail: currentUser.email || "",
+      idToken,
     });
 
     setIsSubmitting(false);

@@ -9,6 +9,7 @@ import {
   updateTaskStatusAction,
   updatePaymentStatusAction,
 } from "@/actions/orderActions";
+import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
@@ -42,6 +43,7 @@ export default function OmsPage({
   const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [idToken, setIdToken] = useState<string | null>(null);
 
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -62,7 +64,14 @@ export default function OmsPage({
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const data = await getStudioOrdersAction(studioSlug);
+      const token = await getCurrentUserIdToken(false);
+      setIdToken(token);
+      if (!token) {
+        console.error("[OmsPage] No auth token — user must be signed in.");
+        setLoading(false);
+        return;
+      }
+      const data = await getStudioOrdersAction(studioSlug, token);
       setOrders(data);
       if (selected) {
         const refreshed = data.find((o) => o.id === selected.id);
@@ -79,19 +88,28 @@ export default function OmsPage({
 
   // Load tasks when an order is selected
   useEffect(() => {
-    if (selected) {
-      void getOrderTasksAction(selected.id).then(setSelectedTasks);
+    if (selected && idToken) {
+      void getOrderTasksAction(selected.id, idToken).then(setSelectedTasks);
     } else {
       setSelectedTasks([]);
     }
-  }, [selected?.id]);
+  }, [selected?.id, idToken]);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError(null);
 
+    // Refresh token before mutation
+    const token = await getCurrentUserIdToken(true);
+    if (!token) {
+      setFormError("Authentication error. Please sign in again.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const res = await createOrderAction({
+      idToken: token,
       studioId: studioSlug,
       customerName: newOrderForm.customerName,
       customerPhone: newOrderForm.customerPhone || undefined,
@@ -118,8 +136,10 @@ export default function OmsPage({
   };
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
-    if (!selected) return;
+    if (!selected || !idToken) return;
     const res = await updateTaskStatusAction({
+      idToken,
+      studioId: studioSlug,
       taskId,
       orderId: selected.id,
       status: newStatus,
@@ -131,8 +151,10 @@ export default function OmsPage({
   };
 
   const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
-    if (!selected) return;
+    if (!selected || !idToken) return;
     const res = await updatePaymentStatusAction({
+      idToken,
+      studioId: studioSlug,
       orderId: selected.id,
       paymentStatus: newPaymentStatus,
     });

@@ -1,19 +1,26 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { getCustomersByStudio, saveCustomer } from "@focoman/db";
 import { Customer } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Customer Management
+ * CHG-010: Authorization enforced on all actions.
+ * IDs use crypto.randomUUID() — collision-safe.
+ * Errors are thrown, not swallowed into empty arrays.
  */
 
-export async function getStudioCustomersAction(studioSlug: string): Promise<Customer[]> {
-  try {
-    return await getCustomersByStudio(studioSlug);
-  } catch (err) {
-    console.error("[getStudioCustomersAction] Error:", err);
-    return [];
-  }
+export async function getStudioCustomersAction(
+  studioSlug: string,
+  idToken: string
+): Promise<Customer[]> {
+  // Authorization: must be an active studio member to view customers
+  const decoded = await requireVerifiedUser(idToken);
+  await requireStudioMember(decoded.uid, studioSlug);
+  // Errors propagate — no silent [] fallback
+  return await getCustomersByStudio(studioSlug);
 }
 
 export async function createCustomerAction(input: {
@@ -22,8 +29,13 @@ export async function createCustomerAction(input: {
   phone?: string;
   email?: string;
   address?: string;
+  idToken: string;
 }): Promise<{ success: boolean; customer?: Customer; error?: string }> {
   try {
+    // Authorization: must be an active studio member to create customers
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId);
+
     if (!input.name || input.name.trim().length === 0) {
       return { success: false, error: "Customer name is required." };
     }
@@ -31,7 +43,7 @@ export async function createCustomerAction(input: {
       return { success: false, error: "Studio ID is required." };
     }
 
-    const customerId = `CUS-${Date.now().toString().slice(-6)}`;
+    const customerId = `CUS-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
     const now = new Date().toISOString();
 
     const customer: Customer = {

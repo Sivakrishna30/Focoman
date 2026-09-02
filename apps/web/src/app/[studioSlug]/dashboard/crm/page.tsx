@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { Customer } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
+import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
 
 export default function CrmPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
@@ -10,6 +11,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   const [selected, setSelected] = useState<Customer | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [idToken, setIdToken] = useState<string | null>(null);
 
   // New Customer Modal
   const [showModal, setShowModal] = useState(false);
@@ -25,7 +27,13 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const data = await getStudioCustomersAction(studioSlug);
+      const token = await getCurrentUserIdToken(false);
+      setIdToken(token);
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      const data = await getStudioCustomersAction(studioSlug, token);
       setCustomers(data);
     } finally {
       setLoading(false);
@@ -41,7 +49,15 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
     setIsSubmitting(true);
     setModalError(null);
 
+    const token = await getCurrentUserIdToken(true);
+    if (!token) {
+      setModalError("Authentication error. Please sign in again.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const res = await createCustomerAction({
+      idToken: token,
       studioId: studioSlug,
       name: form.name,
       phone: form.phone || undefined,

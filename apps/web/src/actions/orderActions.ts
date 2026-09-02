@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes, randomUUID } from "crypto";
 import {
   CreateOrderSchema,
   AssignResourceSchema,
@@ -19,10 +20,15 @@ import {
   saveCustomer,
 } from "@focoman/db";
 import { Order, Task, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Order Lifecycle & Post-Event Production Pipeline
- * Executed securely on the server with Zod schema validation.
+ * CHG-010: All mutating actions now enforce:
+ *   1. requireVerifiedUser — Firebase ID token verification
+ *   2. requireStudioMember — active studio membership check
+ * IDs use crypto.randomUUID() / crypto.randomBytes() — collision-safe.
+ * Errors are thrown, not swallowed.
  */
 
 export async function createOrderAction(rawInput: unknown): Promise<{
@@ -34,9 +40,14 @@ export async function createOrderAction(rawInput: unknown): Promise<{
   try {
     const validated = CreateOrderSchema.parse(rawInput);
 
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-    const passkey = `FOC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const customerId = `CUS-${Date.now().toString().slice(-6)}`;
+    // Authorization: verify identity and studio membership
+    const decoded = await requireVerifiedUser((validated as any).idToken);
+    await requireStudioMember(decoded.uid, validated.studioId);
+
+    // Cryptographically safe IDs
+    const orderId = `ORD-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const passkey = `FOC-${randomBytes(4).toString('hex').toUpperCase()}`;
+    const customerId = `CUS-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
     const now = new Date().toISOString();
 
     const remainingAmount = Math.max(0, validated.finalConfirmedPrice - validated.advanceAmount);
@@ -75,7 +86,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       updatedAt: now,
     };
 
-    // Save Customer Profile if phone or name is provided
+    // Save Customer Profile
     await saveCustomer({
       id: customerId,
       studioId: validated.studioId.toLowerCase(),
@@ -109,24 +120,28 @@ export async function createOrderAction(rawInput: unknown): Promise<{
   }
 }
 
-export async function getStudioOrdersAction(studioSlug: string): Promise<Order[]> {
-  try {
-    return await getOrdersByStudio(studioSlug);
-  } catch (err) {
-    console.error("[getStudioOrdersAction] Error:", err);
-    return [];
-  }
+export async function getStudioOrdersAction(
+  studioSlug: string,
+  idToken: string
+): Promise<Order[]> {
+  // Authorization: verified identity required even for read
+  const decoded = await requireVerifiedUser(idToken);
+  await requireStudioMember(decoded.uid, studioSlug);
+  // Errors propagate — no silent [] fallback
+  return await getOrdersByStudio(studioSlug);
 }
 
-export async function getOrderTasksAction(orderId: string): Promise<Task[]> {
-  try {
-    return await getTasksByOrder(orderId);
-  } catch (err) {
-    console.error("[getOrderTasksAction] Error:", err);
-    return [];
-  }
+export async function getOrderTasksAction(orderId: string, idToken: string): Promise<Task[]> {
+  // Token verification for tasks read — orderId alone is not a public access
+  await requireVerifiedUser(idToken);
+  // Errors propagate — no silent [] fallback
+  return await getTasksByOrder(orderId);
 }
 
+/**
+ * Public endpoint — customer-facing order tracking by passkey.
+ * No authentication required.
+ */
 export async function getOrderByPasskeyAction(passkey: string): Promise<{
   success: boolean;
   order?: Order;
@@ -140,7 +155,6 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
 
     const order = await getOrderByPasskey(passkey);
     if (!order) {
-      // Also fallback check by exact orderId
       const byId = await getOrderById(passkey.trim().toUpperCase());
       if (byId) {
         const tasks = await getTasksByOrder(byId.id);
@@ -169,6 +183,10 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
   try {
     const validated = UpdateTaskStatusSchema.parse(rawInput);
 
+    // Authorization
+    const decoded = await requireVerifiedUser((validated as any).idToken);
+    await requireStudioMember(decoded.uid, (validated as any).studioId);
+
     const updatedTask = await updateTask(validated.taskId, {
       status: validated.status as TaskStatus,
       reworkNotes: validated.reworkNotes,
@@ -178,7 +196,6 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
       return { success: false, error: "Task not found" };
     }
 
-    // Check if all tasks and payments are completed to transition Order to COMPLETED
     const order = await getOrderById(validated.orderId);
     let newOrderStatus: OrderStatus | undefined = undefined;
 
@@ -190,7 +207,6 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
         await updateOrder(validated.orderId, { orderStatus: "COMPLETED" });
         newOrderStatus = "COMPLETED";
       } else if (!isCompletable && order.orderStatus === "AWAITING_EVENT") {
-        // If production work is underway, move to POST_EVENT_IN_PROGRESS
         const hasStarted = allTasks.some((t) => t.status !== "ASSIGNED");
         if (hasStarted) {
           await updateOrder(validated.orderId, { orderStatus: "POST_EVENT_IN_PROGRESS" });
@@ -216,6 +232,11 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
 }> {
   try {
     const validated = UpdatePaymentSchema.parse(rawInput);
+
+    // Authorization
+    const decoded = await requireVerifiedUser((validated as any).idToken);
+    await requireStudioMember(decoded.uid, (validated as any).studioId);
+
     const existing = await getOrderById(validated.orderId);
     if (!existing) return { success: false, error: "Order not found" };
 
@@ -256,6 +277,11 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
 }> {
   try {
     const validated = AssignResourceSchema.parse(rawInput);
+
+    // Authorization
+    const decoded = await requireVerifiedUser((validated as any).idToken);
+    await requireStudioMember(decoded.uid, (validated as any).studioId);
+
     const existing = await getOrderById(validated.orderId);
     if (!existing) return { success: false, error: "Order not found" };
 
@@ -266,7 +292,7 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
         memberId: validated.memberId,
         memberName: validated.memberName,
         skill: validated.skill,
-        availabilityConfirmed: null, // Initial state: pending confirmation
+        availabilityConfirmed: null,
       },
     ];
 

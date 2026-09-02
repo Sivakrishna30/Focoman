@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OrderStatus, Order } from "@focoman/types";
+import { getOrdersByStudio } from "@focoman/db";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "bg-sky-100 text-sky-800 border-sky-300",
@@ -15,14 +16,15 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 
 export default async function DashboardPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = await params;
-  
-  // Real domain initializers for studio operational dashboard
-  const orders: Order[] = [];
-  
+
+  // CHG-010: Load real orders from Firestore — hardcoded empty array removed.
+  // Errors propagate to Next.js error boundary — no silent empty state.
+  const orders: Order[] = await getOrdersByStudio(studioSlug);
+
   const completed = orders.filter(o => o.orderStatus === "COMPLETED").length;
   const awaitingEvent = orders.filter(o => o.orderStatus === "AWAITING_EVENT").length;
   const postEventInProgress = orders.filter(o => o.orderStatus === "POST_EVENT_IN_PROGRESS").length;
-  
+
   const totalRevenue = orders.reduce((sum, o) => sum + (o.pricing.finalConfirmedPrice || 0), 0);
   const pendingRevenue = orders.reduce((sum, o) => sum + (o.pricing.remainingAmount || 0), 0);
 
