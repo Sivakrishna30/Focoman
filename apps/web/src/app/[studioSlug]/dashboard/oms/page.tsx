@@ -280,16 +280,16 @@ export default function OmsPage({
             </button>
           </div>
 
-          {/* Guest Passkey Info Card */}
+          {/* Order Access Code Info Card */}
           <div className="rounded-2xl border border-brand-orange-soft bg-brand-orange-background/30 p-4 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-brand-orange-primary">
-              Customer Guest Passkey
+              Customer Order Access Code
             </span>
             <p className="font-mono text-base font-extrabold text-slate-900">
               {selected.trackingPasskey}
             </p>
             <p className="text-[11px] text-slate-500">
-              Share this passkey with your customer for guest tracking on the home page.
+              Share this access code with your customer for guest order tracking on the home page.
             </p>
           </div>
 

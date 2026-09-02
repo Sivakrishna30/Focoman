@@ -68,7 +68,7 @@ focoman/
 1. **No Generic Client CRUD:** Generic database CRUD operations are **NOT** exposed directly to the browser.
 2. **Server Actions for Business Mutations:** Privileged operations (order registration, resource assignment, payment confirmation, WhatsApp triggers) run through trusted Next.js Server Actions or API Route Handlers.
 3. **Server-Only Database Access:** `packages/db` uses `"server-only"` imports to prevent Firebase Admin SDK credentials from ever leaking into client browser bundles.
-4. **Firebase Authentication:** Role-based access control for Studio Owner, Studio Member, and Customer (Guest Passkey tracking).
+4. **Firebase Authentication (Google Sign-In) & Multi-Studio Memberships:** Single personal identity per person via Firebase UID. Studio entities and memberships are decoupled from user authentication, allowing multi-studio ownership and crew memberships with dynamic workspace switching without separate logins. Customer order tracking uses isolated guest passkeys.
 
 ---
 
@@ -94,5 +94,6 @@ Cloud Run handles zero-downtime deployment, traffic management, and auto-scaling
 
 - **Spring Boot 3 / Java 17 Backend**: Replaced by Next.js Server Actions and `packages/domain`.
 - **PostgreSQL / Cloud SQL / Flyway**: Replaced by Google Cloud Firestore.
+- **Owner-Created Passwords & Separate Studio Login Portals**: Replaced by Google Authentication, single-use invitation tokens, and unified workspace switcher.
 - **Railway Artifacts (`railway.json`, `nixpacks.toml`)**: Removed in favor of Cloud Run.
 - **Separate API Service Deployment**: Replaced by single integrated Cloud Run container.

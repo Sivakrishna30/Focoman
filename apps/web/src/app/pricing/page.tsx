@@ -6,7 +6,7 @@ const PLANS = [
     name: "Studio Starter",
     price: "499",
     tagline: "For solo photographers just getting started.",
-    badge: "BASIC",
+    badge: "STARTER",
     badgeColor: "bg-brand-blue-background text-brand-blue-primary",
     borderHover: "hover:border-brand-blue-light",
     accentColor: "bg-brand-blue-primary",
@@ -14,22 +14,21 @@ const PLANS = [
     ctaText: "Start with Starter",
     modules: ["Order Management System - OMS"],
     features: [
-      "Lead & enquiry capture",
-      "Shoot booking & calendar",
-      "Pre & post event workflow tracker",
-      "Payment advance tracking",
-      "Customer order status portal (no login)",
-      "Drive / gallery link sharing",
+      "Confirmed order lifecycle management",
+      "Shoot date schedule tracking",
+      "Dynamic post-event workflow pipelines",
+      "Payment advance & balance tracking",
+      "Guest order tracking code (zero client login)",
+      "Drive & cloud delivery link sharing",
       "Up to 2 crew members",
-      "Single studio branch",
-      "Email support",
+      "Single studio workspace",
+      "Standard email support",
     ],
     notIncluded: [
-      "Customer Relationship Management - CRM",
-      "Studio Enterprise Resource Planning - ERP",
-      "WhatsApp automated notifications",
-      "Google Calendar sync",
-      "Multi-studio / multi-branch",
+      "Customer Relationship Context - CRM",
+      "Studio Resource Coordination - ERP",
+      "WhatsApp automated operational alerts",
+      "Multi-studio workspace switching",
     ],
   },
   {
@@ -44,25 +43,22 @@ const PLANS = [
     ctaText: "Go Professional",
     modules: [
       "Order Management System - OMS",
-      "Customer Relationship Management - CRM",
-      "Studio Enterprise Resource Planning - ERP",
+      "Customer Relationship Context - CRM",
+      "Studio Resource Coordination - ERP",
     ],
     features: [
       "Everything in Studio Starter",
-      "Full CRM — client directory & event history",
-      "Lead source tracking",
-      "Client lifetime value reports",
-      "Crew member profiles & role management",
-      "Crew handle login (username@studioname)",
-      "Task assignment & workload dashboard",
-      "Activity logs per crew member",
+      "Customer directory & confirmed order history",
+      "Crew member profiles & certified skill tagging",
+      "Personal Google authentication & role assignment",
+      "Production task assignment & workload tracking",
+      "Planned resource availability confirmation",
       "Up to 10 crew members",
-      "Google Calendar sync",
       "Priority email support",
     ],
     notIncluded: [
-      "WhatsApp automated notifications",
-      "Multi-studio / multi-branch",
+      "WhatsApp automated operational alerts",
+      "Multi-studio workspace switching",
     ],
   },
   {
@@ -77,20 +73,18 @@ const PLANS = [
     ctaText: "Get Complete Access",
     modules: [
       "Order Management System - OMS",
-      "Customer Relationship Management - CRM",
-      "Studio Enterprise Resource Planning - ERP",
-      "WhatsApp Automated Notifications",
+      "Customer Relationship Context - CRM",
+      "Studio Resource Coordination - ERP",
+      "WhatsApp Operational Notifications",
     ],
     features: [
       "Everything in Studio Professional",
       "WhatsApp booking confirmation alerts",
       "WhatsApp shoot day reminders (24 hrs prior)",
       "WhatsApp delivery ready notifications",
-      "Birthday & anniversary client reminders",
-      "Multi-studio / multi-branch support",
+      "Multi-studio workspace switching",
       "Unlimited crew members",
-      "Advanced analytics & revenue dashboard",
-      "Dedicated onboarding & data migration support",
+      "Dedicated onboarding assistance",
       "Priority phone & WhatsApp support",
     ],
     notIncluded: [],
@@ -106,86 +100,87 @@ export default function PricingPage() {
       <section className="border-b border-border-divider bg-gradient-to-b from-white to-surface-app px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-            Simple Pricing
+            Simple, Transparent Pricing
           </span>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
-            One Price. Everything Your Studio Needs.
+            Choose the Right Plan for Your Studio
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-text-secondary sm:text-lg">
-            No hidden fees. No per-user charges. Flat monthly pricing in INR — pick the plan that fits your studio size.
+          <p className="mx-auto mt-4 max-w-xl text-base text-text-secondary">
+            Every plan includes our core Order Management System. Upgrade as your team grows and your operations expand.
           </p>
         </div>
       </section>
 
-      {/* Pricing Cards */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+      {/* Pricing Cards Grid */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-3 lg:items-stretch">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col rounded-3xl border border-border-default bg-white p-8 shadow-sm transition ${plan.borderHover} hover:shadow-md`}
+              className={`flex flex-col justify-between rounded-3xl border border-border-default bg-white p-8 shadow-sm transition hover:shadow-md ${plan.borderHover}`}
             >
-              {/* Badge & Name */}
-              <div className="flex items-center justify-between">
-                <span className={`inline-block rounded-full px-3 py-0.5 text-xs font-bold tracking-widest ${plan.badgeColor}`}>
-                  {plan.badge}
-                </span>
-              </div>
-              <h2 className="mt-4 text-xl font-extrabold text-text-primary">{plan.name}</h2>
-              <p className="mt-1 text-xs text-text-secondary">{plan.tagline}</p>
-
-              {/* Price */}
-              <div className="mt-6 flex items-end gap-1">
-                <span className="text-sm font-semibold text-text-secondary">₹</span>
-                <span className="text-5xl font-extrabold tracking-tight text-text-primary">{plan.price}</span>
-                <span className="mb-1 text-sm font-medium text-text-secondary">/ month</span>
-              </div>
-              <p className="mt-1 text-xs text-text-tertiary">Billed monthly · GST applicable</p>
-
-              {/* Modules Included */}
-              <div className="mt-6 rounded-xl bg-surface-app p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">Modules Included</p>
-                <div className="space-y-1.5">
-                  {plan.modules.map((m) => (
-                    <div key={m} className="flex items-center gap-2 text-xs font-medium text-text-primary">
-                      <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${plan.accentColor}`} />
-                      {m}
-                    </div>
-                  ))}
+              <div>
+                {/* Badge & Plan Name */}
+                <div className="flex items-center justify-between">
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${plan.badgeColor}`}>
+                    {plan.badge}
+                  </span>
                 </div>
-              </div>
 
-              {/* Features */}
-              <div className="mt-6 flex-1 space-y-2.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">What&apos;s included</p>
-                {plan.features.map((f) => (
-                  <div key={f} className="flex items-start gap-2.5 text-xs text-text-secondary">
-                    <svg className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${plan.accentColor === "bg-brand-blue-primary" ? "text-brand-blue-primary" : plan.accentColor === "bg-brand-orange-primary" ? "text-brand-orange-primary" : "text-brand-purple-primary"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
-                  </div>
-                ))}
+                <h2 className="mt-4 text-2xl font-extrabold text-text-primary">{plan.name}</h2>
+                <p className="mt-1 text-xs text-text-secondary">{plan.tagline}</p>
 
-                {plan.notIncluded.length > 0 && (
-                  <div className="mt-4 space-y-2 border-t border-border-divider pt-4">
-                    {plan.notIncluded.map((f) => (
-                      <div key={f} className="flex items-start gap-2.5 text-xs text-text-tertiary">
-                        <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        {f}
+                {/* Price */}
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-sm font-semibold text-text-secondary">₹</span>
+                  <span className="text-4xl font-extrabold text-text-primary">{plan.price}</span>
+                  <span className="text-xs text-text-tertiary">/month</span>
+                </div>
+
+                {/* Modules Included */}
+                <div className="mt-6 border-t border-border-divider pt-6">
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Included Modules</p>
+                  <div className="mt-2 space-y-1">
+                    {plan.modules.map((m) => (
+                      <div key={m} className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-status-success font-bold text-[10px]">
+                          ✓
+                        </span>
+                        {m}
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+
+                {/* Features List */}
+                <div className="mt-6 border-t border-border-divider pt-6">
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Features</p>
+                  <ul className="mt-3 space-y-2">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-xs text-text-secondary">
+                        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-sky-100 text-brand-blue-primary text-[9px] font-bold">
+                          ✓
+                        </span>
+                        {f}
+                      </li>
+                    ))}
+                    {plan.notIncluded.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-xs text-text-tertiary opacity-60">
+                        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 text-[9px] font-bold">
+                          ✕
+                        </span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
-              {/* CTA */}
-              <div className="mt-8">
+              {/* CTA Button */}
+              <div className="mt-8 pt-6 border-t border-border-divider">
                 <Link
-                  href="/"
-                  className={`block w-full rounded-xl py-3 text-center text-sm font-semibold text-white transition ${plan.ctaColor}`}
+                  href="/onboarding/register-studio"
+                  className={`block w-full rounded-xl py-3 text-center text-xs font-bold text-white shadow-xs transition ${plan.ctaColor}`}
                 >
                   {plan.ctaText}
                 </Link>
@@ -193,24 +188,12 @@ export default function PricingPage() {
             </div>
           ))}
         </div>
-
-        {/* FAQ note */}
-        <div className="mt-12 rounded-2xl border border-border-default bg-white p-8 text-center">
-          <h3 className="text-lg font-bold text-text-primary">Need a custom plan for your studio chain?</h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
-            If you manage multiple studio branches across cities, or need custom integrations, reach out directly.
-            ThreadSafe works with studios to build tailored pricing.
-          </p>
-          <p className="mt-4 text-sm font-semibold text-brand-blue-primary">
-            Contact us at <span className="underline">hello@focoman.in</span>
-          </p>
-        </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-border-default bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 text-center text-xs text-text-tertiary sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Prices in INR, GST applicable.
+          © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
         </div>
       </footer>
     </div>

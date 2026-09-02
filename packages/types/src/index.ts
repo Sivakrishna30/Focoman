@@ -32,6 +32,18 @@ export interface StudioMember {
   updatedAt: string;
 }
 
+export interface StudioMembership {
+  id: string; // composite: {studioId}_{uid}
+  studioId: string;
+  studioName: string;
+  uid: string;
+  role: 'STUDIO_OWNER' | 'STUDIO_MEMBER';
+  skills?: string[];
+  status: 'ACTIVE' | 'INACTIVE';
+  joinedAt: string;
+  updatedAt: string;
+}
+
 export interface Customer {
   id: string;
   studioId: string;

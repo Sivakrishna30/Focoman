@@ -1,7 +1,7 @@
 import 'server-only';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { Studio, StudioMember, Customer, Order, Task } from '@focoman/types';
+import { Studio, StudioMember, StudioMembership, Customer, Order, Task } from '@focoman/types';
 
 /**
  * Server-Only Firestore Database Access & Repository Boundary
@@ -24,6 +24,7 @@ let isLiveFirestoreActive = false;
 // In-memory fallback store for local development / testing when GCP credentials are not yet provisioned
 const memoryStore = {
   studios: new Map<string, Studio>(),
+  memberships: new Map<string, StudioMembership>(),
   orders: new Map<string, Order>(),
   customers: new Map<string, Customer>(),
   members: new Map<string, StudioMember>(),
@@ -126,6 +127,53 @@ export async function saveStudio(studio: Studio): Promise<Studio> {
   }
   memoryStore.studios.set(studio.id.toLowerCase(), studio);
   return studio;
+}
+
+export async function registerStudioTransaction(
+  studio: Studio,
+  membership: StudioMembership
+): Promise<{ success: boolean; error?: string }> {
+  const { isLive, firestore } = getFirestoreServerInstance();
+  if (isLive && firestore) {
+    try {
+      await firestore.runTransaction(async (transaction) => {
+        const studioRef = firestore.collection('studios').doc(studio.id);
+        const studioDoc = await transaction.get(studioRef);
+        if (studioDoc.exists) {
+          throw new Error(`Studio identifier "${studio.id}" is already in use.`);
+        }
+        transaction.set(studioRef, studio);
+        const membershipRef = firestore.collection('memberships').doc(membership.id);
+        transaction.set(membershipRef, membership);
+      });
+      return { success: true };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : 'Transaction failed.' };
+    }
+  }
+
+  // In-memory dev fallback with concurrency check
+  if (memoryStore.studios.has(studio.id.toLowerCase())) {
+    return { success: false, error: `Studio identifier "${studio.id}" is already in use.` };
+  }
+  memoryStore.studios.set(studio.id.toLowerCase(), studio);
+  memoryStore.memberships.set(membership.id, membership);
+  return { success: true };
+}
+
+export async function getMembershipsByUid(uid: string): Promise<StudioMembership[]> {
+  const { isLive, firestore } = getFirestoreServerInstance();
+  if (isLive && firestore) {
+    const snap = await firestore
+      .collection('memberships')
+      .where('uid', '==', uid)
+      .where('status', '==', 'ACTIVE')
+      .get();
+    return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as StudioMembership);
+  }
+  return Array.from(memoryStore.memberships.values()).filter(
+    (m) => m.uid === uid && m.status === 'ACTIVE'
+  );
 }
 
 // 2. ORDERS

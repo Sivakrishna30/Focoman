@@ -118,4 +118,58 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 - **Specification Reference:** `Focoman Product Discovery Document`, `docs/technical/tech-stack.md`, `docs/technical/deployment-guide.md`.
 - **Verification:** Typecheck `tsc --noEmit` exited with code 0; dev server loaded `.env.local` and returned HTTP 200 OK across routes.
 
+---
+
+## CHG-008 — Authentication & Multi-Studio Identity Architecture Specification
+
+- **Task:** Authentication & Multi-Studio Identity Flow Architecture Documentation
+- **Date:** 2026-09-02
+- **Area:** Architecture & Specifications (`docs/technical/identity-and-auth-architecture.md`, `docs/Index.md`, `docs/technical/tech-stack.md`, `docs/technical/technical-design-mvp.md`, `docs/technical/recommended-architecture.md`, `docs/technical/deployment-guide.md`, `docs/product/srs-mvp.md`, `CHANGELOG.md`)
+- **Change:**
+  1. **New Specification Document**: Created `docs/technical/identity-and-auth-architecture.md` establishing the core identity model:
+     - Single personal identity per person via Firebase UID.
+     - Google Sign-In via Firebase Auth as the sole Phase 1 personal authentication provider.
+     - Decoupling of Person (UID) from Studio entity, Studio Membership, and Studio Role.
+     - Native multi-studio ownership and crew membership from Day 1.
+     - First-time onboarding states (`Register Your Studio` and `Join an Existing Studio`) without forced studio creation or username/password prompts.
+     - Dynamic workspace switcher (`/workspaces`) without separate logins.
+     - Server-side studio uniqueness enforcement via Firestore Transactions.
+     - Invitation-based member onboarding without permanent owner-generated credentials.
+     - Strict isolation of customer order tracking (guest passkeys only; no Firebase user accounts for customers).
+  2. **Index & Hierarchy**: Updated `docs/Index.md` mapping the new specification into the active Source-of-Truth hierarchy.
+  3. **Target Technical Specs**: Updated `tech-stack.md`, `technical-design-mvp.md`, `recommended-architecture.md`, and `deployment-guide.md` to reflect the Google-only identity model, normalized collection schemas (`users`, `studios`, `memberships`, `invitations`), and server execution boundaries.
+  4. **Superseded Concepts**: Explicitly marked legacy owner-created passwords, separate studio logins, SMS/phone auth, and anonymous auth as SUPERSEDED in `srs-mvp.md` and technical specifications.
+- **Reason:** Establish the approved architecture and product specifications for single personal identity, Google authentication, and multi-studio memberships before writing implementation code.
+- **Specification Reference:** Attached `Focoman Authentication & Multi-Studio Identity Flow` architecture prompt & `docs/technical/identity-and-auth-architecture.md`.
+- **Verification:** Verified cross-document consistency, confirmed zero broken links in `docs/Index.md`, verified no active specification requires username/password or separate studio logins.
+
+---
+
+## CHG-009 — Focoman UI Refinement & Legacy UI Migration (UI-01 through UI-20)
+
+- **Task:** UI-01..UI-20 — Full UI Refinement, Authentication & Legacy Concept Elimination
+- **Date:** 2026-09-02
+- **Area:** Shared Packages (`@focoman/types`, `@focoman/db`), Service Layer & Actions (`actions/studioActions.ts`, `lib/firebaseAuth.ts`), UI Pages & Components (`HomePage.tsx`, `Navbar.tsx`, `DashboardSidebar.tsx`, `features/page.tsx`, `pricing/page.tsx`, `studio-marketplace/page.tsx`, `workspaces/page.tsx`, `onboarding/register-studio/page.tsx`, `onboarding/join-studio/page.tsx`)
+- **Change:**
+  1. **Dead Mock Deletion (UI-19)**: Permanently deleted `apps/web/src/features/oms/mockUsers.ts` and `apps/web/src/types/oms.ts`.
+  2. **Landing Page Realignment (UI-02, UI-03, UI-15, UI-16)**: Realigned `HomePage.tsx` with OMS-first positioning: Confirmed Order → Event → Post-Event Production → Delivery → Payment Completed. Removed all 3 legacy username/password login & signup forms (Admin, Member, Customer). Replaced with two clean access panels: Google Sign-In for studio owners/crew members, and guest passkey lookup for customers. Positioned Value Added Services clearly as professional studio add-ons.
+  3. **Multi-Studio Workspaces UX (UI-04)**: Created `apps/web/src/app/workspaces/page.tsx` displaying user's accessible studios, role badges (`Owner` vs. `Crew Member`), certified skills, and workspace launcher. Supports 0-studio welcome onboarding.
+  4. **Studio Registration UX (UI-05)**: Created `apps/web/src/app/onboarding/register-studio/page.tsx` with live database slug availability check and atomic Firestore transaction via server action.
+  5. **Member Invitation & Activation UX (UI-06)**: Created `apps/web/src/app/onboarding/join-studio/page.tsx` with single-use invitation token verification.
+  6. **Public Navigation & Feature Pages (UI-01, UI-16)**:
+     - `Navbar.tsx`: Added direct `Studio Access` button to `/workspaces`.
+     - `features/page.tsx`: Realigned feature matrix to Confirmed Orders, dynamic service pipelines, and WhatsApp alerts (removed lead capture, sales pipelines, and Google Calendar sync).
+     - `pricing/page.tsx`: Removed `username@studioname` logins, lead capture, and Google Calendar sync; highlighted confirmed order limits, crew allocation, and operational notifications.
+     - `studio-marketplace/page.tsx`: Added clear `Phase 3 Preview / Upcoming Capability` advisory banner.
+  7. **Sidebar & Dashboard Refinement (UI-07, UI-08)**: Added workspace switcher quick link and role badge to `DashboardSidebar.tsx`.
+  8. **Data Layer & Types Extensions**:
+     - Added `StudioMembership` interface to `@focoman/types`.
+     - Added `getMembershipsByUid`, `registerStudioTransaction` to `@focoman/db`.
+     - Added `checkStudioSlugAvailabilityAction`, `registerStudioAction`, `getUserWorkspacesAction` to `apps/web/src/actions/studioActions.ts`.
+     - Added `signInWithGoogle` to `apps/web/src/lib/firebaseAuth.ts`.
+- **Reason:** Fully align the frontend user experience with the active Product Discovery and Authentication/Multi-Studio Identity specifications. Remove all legacy ungrounded concepts, dead mock files, and fake authentication forms.
+- **Specification Reference:** `Focoman Product Discovery Document`, `docs/technical/identity-and-auth-architecture.md`, and `Agents.md`.
+- **Verification:** TypeScript build (`tsc --noEmit`) passed with 0 errors. All 13 primary public, onboarding, and authenticated dashboard routes probed and verified returning HTTP 200.
+
+
 

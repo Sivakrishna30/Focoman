@@ -19,7 +19,7 @@ Before making project decisions, agents **MUST** consult `Index.md` to identify 
 When evaluating specifications and implementation guidelines:
 
 1. **Primary Product Source of Truth:** `Focoman Product Discovery Document` (OMS-First, Confirmed Order Model).
-2. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
+2. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/identity-and-auth-architecture.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
 3. **Agent Governance & Workflow Specification:** `../Agents.md`.
 4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`.
 5. **Superseded Specifications:** `product/srs-mvp.md` (Superseded legacy SRS).
@@ -38,13 +38,15 @@ When evaluating specifications and implementation guidelines:
 ## 4. Primary Active Product Specifications
 
 - **Focoman Product Discovery Document** — **Primary Product Source of Truth.** Defines OMS-first scope starting from Confirmed Order (*Awaiting Event* → *Post-Event In Progress* → *Completed*), Studio Owner/Member/Customer roles, resource availability confirmation, dynamic workflows, and WhatsApp operational layer.
+- **[Authentication & Multi-Studio Identity Architecture](technical/identity-and-auth-architecture.md)** — **Active Identity Specification.** Defines single personal Google identity, Firebase UID decoupling, multi-studio memberships, owner registration, invitation acceptance, and workspace switching.
 - **[SRS MVP (Legacy/Superseded)](product/srs-mvp.md)** — *SUPERSEDED.* Preserved for historical reference only.
 
 ---
 
 ## 5. Active Target Technical Architecture Specifications
 
-- **[Tech Stack Specification](technical/tech-stack.md)** — **Active Target Stack.** Defines Next.js 15, TypeScript Monorepo, Firebase Auth, Firestore, and Google Cloud Run.
+- **[Tech Stack Specification](technical/tech-stack.md)** — **Active Target Stack.** Defines Next.js 15, TypeScript Monorepo, Firebase Auth (Google Sign-In), Firestore, and Google Cloud Run.
+- **[Authentication & Multi-Studio Identity Architecture](technical/identity-and-auth-architecture.md)** — **Active Identity & Auth Blueprint.** Full technical and data architecture for Google Sign-in, Firebase UID, multi-studio memberships, and server-side studio uniqueness.
 - **[Recommended Architecture](technical/recommended-architecture.md)** — **Active Target Architecture.** Integrated Next.js App monorepo layout (`apps/web`, `packages/*`), Server Actions execution boundary, and Cloud Run deployment model.
 - **[Technical Design Specification](technical/technical-design-mvp.md)** — **Active Technical Design.** Server-side security boundaries, role permissions, and Firestore collection strategy.
 - **[Deployment Guide](technical/deployment-guide.md)** — **Active Deployment Guide.** Container build, Google Cloud Run, and Firebase App Hosting deployment configuration.

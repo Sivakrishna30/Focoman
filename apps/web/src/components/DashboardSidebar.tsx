@@ -82,7 +82,16 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
 
       {/* Studio Info */}
       <div className="border-b border-border-divider px-5 py-3">
-        <p className="text-xs font-bold text-text-primary truncate">{studioName}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-text-primary truncate">{studioName}</p>
+          <Link
+            href="/workspaces"
+            className="text-[10px] font-semibold text-brand-blue-primary hover:underline shrink-0"
+            title="Switch Workspace"
+          >
+            Switch
+          </Link>
+        </div>
         <p className="text-xs text-text-tertiary truncate">{ownerName}</p>
         <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
           plan === "complete"

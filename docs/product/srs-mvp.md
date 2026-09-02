@@ -7,6 +7,7 @@
 > - Phase 1 starts directly from a **Confirmed Order** (OMS-First).
 > - Leads, enquiries, quotations, negotiations, and Google Calendar integrations are **OUT OF SCOPE** for Phase 1 core order workflows.
 > - High-level order statuses are simplified to: **`Awaiting Event` → `Post-Event In Progress` → `Completed`**.
+> - **Authentication & Identity:** Single personal identity via Google Sign-In (Firebase UID). Studio entities and memberships are decoupled. Multi-studio memberships and fluid workspace switching supported. All legacy owner-created passwords, separate studio logins, and username/password accounts are **SUPERSEDED**.
 
 # ThreadSafe Project FOCOMAN — Legacy SRS (Superseded)
 

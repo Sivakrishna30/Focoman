@@ -21,24 +21,33 @@ export function Navbar() {
           <FocomanLogo className="h-12 sm:h-14 w-auto" showStudiosSuffix={true} />
         </Link>
 
-        <nav className="flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs font-medium sm:text-sm">
-          {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`rounded-full px-4 py-1.5 font-semibold transition ${
-                  isActive
-                    ? "bg-brand-blue-primary text-white shadow-xs"
-                    : "text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-3">
+          <nav className="flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs font-medium sm:text-sm">
+            {NAV_LINKS.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                    isActive
+                      ? "bg-brand-blue-primary text-white shadow-xs"
+                      : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <Link
+            href="/workspaces"
+            className="hidden sm:inline-flex rounded-full bg-brand-blue-primary px-4 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-sky-600"
+          >
+            Studio Access
+          </Link>
+        </div>
       </div>
     </header>
   );

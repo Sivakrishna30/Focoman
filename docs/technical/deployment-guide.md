@@ -30,7 +30,7 @@ Firebase Services (Firestore & Firebase Auth)
 1. **Google Cloud Platform (GCP) Project** with billing enabled.
 2. **Firebase Project** created and linked to the GCP Project.
 3. **Firestore Database** initialized in Native Mode.
-4. **Firebase Authentication** enabled (Email/Password & Anonymous Auth).
+4. **Firebase Authentication** enabled with Google Sign-in provider active.
 5. **Google Cloud Run API & Container Registry / Artifact Registry** enabled.
 6. **GitHub Repository Secrets** configured for automated deployment.
 
