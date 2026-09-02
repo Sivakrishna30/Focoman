@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FocomanLogo, FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { Navbar } from "@/components/Navbar";
+import { Order, Task } from "@focoman/types";
+import { getOrderByPasskeyAction } from "@/actions/orderActions";
 
 export function HomePage() {
   const router = useRouter();
@@ -53,7 +55,8 @@ export function HomePage() {
   // Customer States
   const [customerAuthMode, setCustomerAuthMode] = useState<"guest" | "login" | "signup">("guest");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [foundOrder, setFoundOrder] = useState<{ displayId: string; customerName: string; eventType: string; eventDate: string; status: string; workflowTimeline: Array<{ stage: string; date: string; completed: boolean }> } | null>(null);
+  const [foundOrder, setFoundOrder] = useState<Order | null>(null);
+  const [foundOrderTasks, setFoundOrderTasks] = useState<Task[]>([]);
   const [searchExecuted, setSearchExecuted] = useState(false);
   const [customerLoginForm, setCustomerLoginForm] = useState({ identifier: "", password: "" });
   const [customerSignupForm, setCustomerSignupForm] = useState({
@@ -123,11 +126,22 @@ export function HomePage() {
     setIsSubmitting(false);
   };
 
-  // 3. Customer Search / Login Handler
-  const handleCustomerSearch = (e: React.FormEvent) => {
+  // 3. Customer Guest Order Tracker Handler (uses real Firestore via server action)
+  const handleCustomerSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setSearchExecuted(true);
     setFoundOrder(null);
+    setFoundOrderTasks([]);
+    setIsSubmitting(true);
+
+    const res = await getOrderByPasskeyAction(customerSearchQuery);
+    if (res.success && res.order) {
+      setFoundOrder(res.order);
+      setFoundOrderTasks(res.tasks || []);
+    } else {
+      setFoundOrder(null);
+    }
+    setIsSubmitting(false);
   };
 
   const handleCustomerAuth = async (e: React.FormEvent) => {
@@ -901,65 +915,88 @@ export function HomePage() {
                           <input
                             type="text"
                             required
-                            placeholder="e.g. ord-8821 or FOC-2026-8821"
+                            placeholder="Enter your passkey e.g. FOC-AB12CD"
                             value={customerSearchQuery}
                             onChange={(e) => setCustomerSearchQuery(e.target.value)}
                             className="w-full rounded-lg border border-border-default px-3.5 py-2 text-sm outline-none focus:border-brand-orange-primary"
                           />
                           <button
                             type="submit"
-                            className="shrink-0 rounded-lg bg-brand-orange-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                            disabled={isSubmitting}
+                            className="shrink-0 rounded-lg bg-brand-orange-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60"
                           >
-                            Track Order
+                            {isSubmitting ? "..." : "Track"}
                           </button>
                         </div>
                       </div>
                       <p className="text-xs text-text-tertiary">
-                        Test Order IDs: <code className="bg-gray-100 px-1 py-0.5 rounded text-text-secondary">ord-8821</code> or <code className="bg-gray-100 px-1 py-0.5 rounded text-text-secondary">ord-9042</code>
+                        Your passkey is provided by your studio when your order is confirmed.
                       </p>
                     </form>
 
                     {/* Order Result Card */}
                     {searchExecuted && (
                       <div className="mt-6 border-t border-border-divider pt-6">
-                        {foundOrder ? (
-                          <div className="rounded-xl border border-brand-orange-soft bg-brand-orange-background/40 p-5">
+                        {isSubmitting ? (
+                          <div className="py-6 text-center text-xs text-text-tertiary">Searching order records...</div>
+                        ) : foundOrder ? (
+                          <div className="rounded-xl border border-brand-orange-soft bg-brand-orange-background/40 p-5 space-y-4">
                             <div className="flex flex-col justify-between gap-2 border-b border-brand-orange-soft pb-3 sm:flex-row sm:items-center">
                               <div>
-                                <span className="font-mono text-xs font-bold text-brand-orange-primary">{foundOrder.displayId}</span>
-                                <h4 className="text-base font-bold text-text-primary">{foundOrder.customerName}</h4>
+                                <span className="font-mono text-xs font-bold text-brand-orange-primary">{foundOrder.orderNumber}</span>
+                                <h4 className="text-base font-bold text-text-primary">{foundOrder.customer.name}</h4>
                                 <p className="text-xs text-text-secondary">{foundOrder.eventType} • Event Date: {foundOrder.eventDate}</p>
                               </div>
                               <span className="inline-block rounded-full bg-brand-orange-primary px-3 py-1 text-xs font-bold text-white">
-                                Status: {foundOrder.status.replace("_", " ")}
+                                {foundOrder.orderStatus.replace(/_/g, " ")}
                               </span>
                             </div>
 
-                            <div className="mt-4 space-y-2">
-                              <p className="text-xs font-semibold text-text-primary">Workflow Progress Timeline:</p>
-                              <div className="space-y-2">
-                                {foundOrder.workflowTimeline.map((step, idx) => (
-                                  <div key={idx} className="flex items-center justify-between text-xs">
-                                    <span className="flex items-center gap-2">
-                                      <span className={`h-2.5 w-2.5 rounded-full ${step.completed ? "bg-green-500" : "bg-gray-300"}`} />
-                                      <span className={step.completed ? "font-medium text-text-primary" : "text-text-tertiary"}>
-                                        {step.stage}
-                                      </span>
-                                      <span className="text-text-tertiary">{step.date}</span>
-                                    </span>
-                                  </div>
-                                ))}
+                            <div className="text-xs space-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-text-tertiary">Confirmed Price:</span>
+                                <span className="font-bold text-text-primary">₹{foundOrder.pricing.finalConfirmedPrice.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-tertiary">Advance Paid:</span>
+                                <span className="font-bold text-emerald-600">₹{foundOrder.pricing.advanceAmount.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-tertiary">Remaining Balance:</span>
+                                <span className="font-bold text-amber-600">₹{foundOrder.pricing.remainingAmount.toLocaleString()}</span>
                               </div>
                             </div>
+
+                            {foundOrderTasks.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold text-text-primary uppercase tracking-wider">Production Workflow Progress:</p>
+                                <div className="space-y-1.5">
+                                  {foundOrderTasks.map((task) => (
+                                    <div key={task.id} className="flex items-center justify-between text-xs">
+                                      <span className="flex items-center gap-2">
+                                        <span className={`h-2.5 w-2.5 rounded-full ${task.status === "COMPLETED" ? "bg-green-500" : "bg-gray-300"}`} />
+                                        <span className={task.status === "COMPLETED" ? "font-medium text-text-primary" : "text-text-tertiary"}>
+                                          {task.title}
+                                        </span>
+                                      </span>
+                                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${task.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                                        {task.status.replace(/_/g, " ")}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center text-xs font-medium text-red-600">
-                            No order found matching query "{customerSearchQuery}". Please double check your Order ID or registered mobile number.
+                            No order found matching &quot;{customerSearchQuery}&quot;. Please double check your passkey or Order ID.
                           </div>
                         )}
                       </div>
                     )}
                   </div>
+
                 )}
 
                 {(customerAuthMode === "login" || customerAuthMode === "signup") && (

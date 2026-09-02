@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "pnpm --filter @focoman/web dev",
     "build": "pnpm --recursive build",
-    "lint": "pnpm --recursive lint"
+    "lint": "pnpm --recursive lint",
+    "gitpush": "powershell -ExecutionPolicy Bypass -File scripts/gitpush.ps1",
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

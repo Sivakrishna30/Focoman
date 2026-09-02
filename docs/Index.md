@@ -20,7 +20,7 @@ When evaluating specifications and implementation guidelines:
 
 1. **Primary Product Source of Truth:** `Focoman Product Discovery Document` (OMS-First, Confirmed Order Model).
 2. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
-3. **Agent Governance & Workflow Specification:** `../Agents.md`, `../AGENTS.md`.
+3. **Agent Governance & Workflow Specification:** `../Agents.md`.
 4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`.
 5. **Superseded Specifications:** `product/srs-mvp.md` (Superseded legacy SRS).
 
@@ -31,7 +31,6 @@ When evaluating specifications and implementation guidelines:
 ## 3. Governance & Agent Instruction System
 
 - **[Agents.md](../Agents.md)** — Master Agent Operating Specification (Workflow, 4-Phase Protocol, AI Trust Contract, Engineering Rules, Definitions of Done).
-- **[AGENTS.md](../AGENTS.md)** — AGY/Gemini IDE agent workspace directives.
 - **[CHANGELOG.md](../CHANGELOG.md)** — Record of all meaningful engineering changes, traceable to tasks, specs, and test results.
 
 ---
@@ -48,8 +47,8 @@ When evaluating specifications and implementation guidelines:
 - **[Tech Stack Specification](technical/tech-stack.md)** — **Active Target Stack.** Defines Next.js 15, TypeScript Monorepo, Firebase Auth, Firestore, and Google Cloud Run.
 - **[Recommended Architecture](technical/recommended-architecture.md)** — **Active Target Architecture.** Integrated Next.js App monorepo layout (`apps/web`, `packages/*`), Server Actions execution boundary, and Cloud Run deployment model.
 - **[Technical Design Specification](technical/technical-design-mvp.md)** — **Active Technical Design.** Server-side security boundaries, role permissions, and Firestore collection strategy.
-- **[Deployment Guide](technical/deployment-guide.md)** — **Active Deployment Guide.** Container build and Google Cloud Run deployment configuration.
-- **[Vercel Hosting Strategy](technical/vercel-hosting-strategy.md)** — Secondary hosting strategy for web static assets.
+- **[Deployment Guide](technical/deployment-guide.md)** — **Active Deployment Guide.** Container build, Google Cloud Run, and Firebase App Hosting deployment configuration.
+- **[Vercel Hosting Strategy (Secondary)](technical/vercel-hosting-strategy.md)** — Legacy secondary hosting reference.
 
 ---
 
