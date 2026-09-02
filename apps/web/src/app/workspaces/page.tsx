@@ -16,6 +16,8 @@ export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<StudioMembership[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
 
+  const [authError, setAuthError] = useState<string | null>(null);
+
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(async (user) => {
       setCurrentUser(user);
@@ -36,9 +38,22 @@ export default function WorkspacesPage() {
 
   const handleGoogleSignIn = async () => {
     try {
+      setAuthError(null);
       await signInWithGoogle();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Sign-in failed:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (
+        errorMessage.includes("auth/unauthorized-domain") ||
+        (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "auth/unauthorized-domain")
+      ) {
+        const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
+        setAuthError(
+          `Domain "${domain}" is not authorized in Firebase. Please add "${domain}" to Authorized Domains in Firebase Console (Authentication -> Settings -> Authorized domains).`
+        );
+      } else {
+        setAuthError(errorMessage || "Sign-in failed. Please try again.");
+      }
     }
   };
 
@@ -68,6 +83,12 @@ export default function WorkspacesPage() {
             <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
               Focoman uses your Google account as your universal personal identity across all studio ownerships and crew memberships.
             </p>
+
+            {authError && (
+              <div className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
+                {authError}
+              </div>
+            )}
 
             <div className="mt-8 flex justify-center">
               <button

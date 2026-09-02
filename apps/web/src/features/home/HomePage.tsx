@@ -35,7 +35,18 @@ export function HomePage() {
       router.push("/workspaces");
     } catch (err: unknown) {
       console.error("Google sign-in failed:", err);
-      setAuthError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (
+        errorMessage.includes("auth/unauthorized-domain") ||
+        (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "auth/unauthorized-domain")
+      ) {
+        const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
+        setAuthError(
+          `Domain "${domain}" is not authorized in Firebase. Please add "${domain}" to Authorized Domains in Firebase Console (Authentication -> Settings -> Authorized domains).`
+        );
+      } else {
+        setAuthError(errorMessage || "Sign-in failed. Please try again.");
+      }
     } finally {
       setIsSigningIn(false);
     }

@@ -17,6 +17,15 @@ export interface AuthSession {
   memberId?: string;
 }
 
+function parsePrivateKey(rawKey: string | undefined): string | undefined {
+  if (!rawKey) return undefined;
+  let key = rawKey.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
+  }
+  return key.replace(/\\n/g, '\n').replace(/\\\\n/g, '\n');
+}
+
 function getFirebaseAuthInstance() {
   const existingApps = getApps();
   if (existingApps.length > 0) {
@@ -29,9 +38,7 @@ function getFirebaseAuthInstance() {
     process.env.GOOGLE_CLOUD_PROJECT;
 
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
   if (clientEmail && privateKey && projectId) {
     const app = initializeApp({

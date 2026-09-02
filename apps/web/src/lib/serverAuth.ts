@@ -14,6 +14,15 @@ import { StudioMembership } from '@focoman/types';
  *   const membership = await requireStudioMember(decoded.uid, studioId);
  */
 
+function parsePrivateKey(rawKey: string | undefined): string | undefined {
+  if (!rawKey) return undefined;
+  let key = rawKey.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
+  }
+  return key.replace(/\\n/g, '\n').replace(/\\\\n/g, '\n');
+}
+
 function getAdminAuthInstance() {
   const projectId =
     process.env.FIREBASE_PROJECT_ID ||
@@ -21,9 +30,7 @@ function getAdminAuthInstance() {
     process.env.GOOGLE_CLOUD_PROJECT;
 
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
   const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
 
