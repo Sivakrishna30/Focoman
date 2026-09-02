@@ -1,7 +1,7 @@
 > [!WARNING]
 > **DOCUMENT STATUS: SUPERSEDED / LEGACY**
 > This document (`srs-mvp.md`) represents the legacy Product Specification.
-> It has been **SUPERSEDED** by the authoritative **[Focoman Product Discovery Document](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)**.
+> It has been **SUPERSEDED** by the authoritative **[Focoman Product Discovery Document](../Index.md)**.
 > 
 > **Key Realignment Notice:**
 > - Phase 1 starts directly from a **Confirmed Order** (OMS-First).

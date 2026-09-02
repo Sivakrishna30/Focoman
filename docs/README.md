@@ -1,12 +1,12 @@
 # FOCOMAN Documentation
 
 > [!IMPORTANT]
-> The primary entry point and source-of-truth reference map for all project documentation is **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)**.
-> All developers and AI coding agents MUST consult **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)** before making project-level decisions.
+> The primary entry point and source-of-truth reference map for all project documentation is **[Index.md](Index.md)**.
+> All developers and AI coding agents MUST consult **[Index.md](Index.md)** before making project-level decisions.
 
 Project documentation is organized by purpose:
 
-- **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)** — Master Navigation Map & Source-of-Truth Index
+- **[Index.md](Index.md)** — Master Navigation Map & Source-of-Truth Index
 
 ## Quick Category Links
 

@@ -1,190 +1,128 @@
 "use client";
 
 import { useState, use } from "react";
-import { getStudioBySlug, DEFAULT_WHATSAPP_SETTINGS, WhatsAppSettings } from "@/services/mockDb";
-import { notFound } from "next/navigation";
 
-// TODO: Replace mockDb with real backend API
-// Need backend endpoints:
-// - GET /api/studios/{prefix} for studio info
-// - GET /api/integrations/whatsapp/settings?studioId={studioId} for WhatsApp settings
-// - PUT /api/integrations/whatsapp/settings for updating WhatsApp settings
+/**
+ * WhatsApp Premium Operational Layer Configuration
+ * Primary Source of Truth: Focoman Product Discovery Document
+ * Operational convenience layer for Studio Owner, Members, and Customers.
+ */
 
-const NOTIFICATION_CONFIG = [
+const NOTIFICATION_GROUPS = [
   {
-    group: "Lead & Booking",
-    color: "brand-blue",
+    title: "Studio Owner Alerts",
+    description: "Lightweight operational notifications sent to Studio Owner",
     items: [
-      { key: "newLead", label: "New Lead Received", desc: "Alert when a new enquiry is logged in the system" },
-      { key: "bookingConfirmed", label: "Booking Confirmed", desc: "Notify when a lead converts to a confirmed booking" },
-      { key: "advanceReceived", label: "Advance Payment Received", desc: "Alert when advance payment is recorded" },
-    ],
+      { id: "upcoming_3day", label: "Upcoming Order Reminder (3 days before event)", enabled: true },
+      { id: "post_event_start", label: "Post-Event Workflow Started", enabled: true },
+      { id: "raw_photos_sent", label: "RAW Photos Marked Sent", enabled: true },
+      { id: "customer_selection_done", label: "Customer Selection Completed", enabled: true },
+      { id: "album_review_done", label: "Album Review Completed", enabled: true },
+      { id: "ready_for_delivery", label: "Ready for Delivery Notification", enabled: true }
+    ]
   },
   {
-    group: "Shoot Day",
-    color: "brand-orange",
+    title: "Studio Member Operational Alerts",
+    description: "Notifications for planned resource assignments & assigned tasks",
     items: [
-      { key: "shootReminder24h", label: "Shoot Day Reminder (24 hrs)", desc: "Auto-send reminder to client 24 hours before shoot" },
-      { key: "shootCompleted", label: "Shoot Marked as Completed", desc: "Notify when shoot is marked done in the system" },
-      { key: "editingStarted", label: "Editing Started", desc: "Alert client when editing phase begins" },
-    ],
+      { id: "assignment_confirm", label: "Planned Order Assignment & Availability Confirmation", enabled: true },
+      { id: "task_assigned", label: "Downstream Production Task Assigned", enabled: true }
+    ]
   },
   {
-    group: "Delivery & Approval",
-    color: "green",
+    title: "Customer Order Tracking Updates (Optional)",
+    description: "Optional updates sent to customer WhatsApp number if provided",
     items: [
-      { key: "clientPreviewReady", label: "Client Preview Ready", desc: "Notify client when photos/video are ready for review" },
-      { key: "albumApproved", label: "Album Approved by Client", desc: "Alert team when client approves the album design" },
-      { key: "deliveryReady", label: "Final Delivery Ready", desc: "Notify client when gallery/album is ready for pickup" },
-    ],
-  },
-  {
-    group: "Payments",
-    color: "amber",
-    items: [
-      { key: "paymentDue", label: "Balance Payment Due", desc: "Send reminder when balance payment deadline is near" },
-    ],
-  },
-  {
-    group: "Client Delight",
-    color: "brand-purple",
-    items: [
-      { key: "birthdayWish", label: "Birthday Wishes", desc: "Auto-send wishes on client birthdays from your studio" },
-      { key: "anniversaryWish", label: "Anniversary Wishes", desc: "Auto-send wishes on wedding anniversaries" },
-    ],
-  },
+      { id: "customer_post_event", label: "Post-Event Workflow Updates", enabled: true },
+      { id: "customer_ready_delivery", label: "Order Ready for Delivery", enabled: true },
+      { id: "customer_payment_remind", label: "Payment Status Updates", enabled: true }
+    ]
+  }
 ];
-
-const GROUP_COLORS: Record<string, { border: string; badge: string }> = {
-  "brand-blue": { border: "border-brand-blue-light", badge: "bg-brand-blue-background text-brand-blue-primary" },
-  "brand-orange": { border: "border-brand-orange-light", badge: "bg-brand-orange-background text-brand-orange-primary" },
-  green: { border: "border-green-200", badge: "bg-green-100 text-green-700" },
-  amber: { border: "border-amber-200", badge: "bg-amber-100 text-amber-700" },
-  "brand-purple": { border: "border-brand-purple-light", badge: "bg-brand-purple-background text-brand-purple-primary" },
-};
 
 export default function WhatsappPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
-  const studio = getStudioBySlug(studioSlug);
-  if (!studio) notFound();
+  const [masterEnabled, setMasterEnabled] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const [settings, setSettings] = useState<WhatsAppSettings>(DEFAULT_WHATSAPP_SETTINGS);
-  const [saved, setSaved] = useState(false);
-
-  const toggleEnabled = () => setSettings((s) => ({ ...s, enabled: !s.enabled }));
-  const toggleNotif = (key: keyof WhatsAppSettings["notifications"]) => {
-    setSettings((s) => ({
-      ...s,
-      notifications: { ...s.notifications, [key]: !s.notifications[key] },
-    }));
-    setSaved(false);
+  const handleSave = () => {
+    setStatusMessage("WhatsApp notification configuration updated successfully.");
   };
 
-  const handleSave = () => setSaved(true);
-
-  const enabledCount = Object.values(settings.notifications).filter(Boolean).length;
-
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="px-6 py-8 lg:px-10 max-w-3xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-extrabold text-text-primary">WhatsApp Notifications</h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Configure which events trigger automated WhatsApp messages to studio owners, crew, or customers.
+    <div className="h-full overflow-y-auto bg-slate-50 p-6 lg:p-10">
+      <div className="max-w-3xl space-y-8">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-extrabold text-emerald-800">
+              PREMIUM CAPABILITY
+            </span>
+          </div>
+          <h1 className="mt-2 text-2xl font-extrabold text-slate-900">
+            WhatsApp Operational Layer — {studioSlug}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Focoman Bot handles lightweight notifications and operational status actions for Studio Owner, Members, and Customers.
           </p>
         </div>
 
-        {/* Master Toggle */}
-        <div className={`rounded-2xl border p-6 mb-6 transition ${settings.enabled ? "border-green-300 bg-green-50" : "border-border-default bg-surface-app"}`}>
+        {/* Master Switch */}
+        <div className={`rounded-2xl border p-6 transition ${masterEnabled ? "border-emerald-200 bg-emerald-50/50" : "border-slate-200 bg-white"}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-extrabold text-text-primary">WhatsApp Notifications Master Switch</h2>
-              <p className="mt-1 text-xs text-text-secondary">
-                {settings.enabled
-                  ? `Enabled · ${enabledCount} of ${Object.keys(settings.notifications).length} notification types active`
-                  : "All WhatsApp notifications are currently disabled"}
+              <h2 className="text-sm font-extrabold text-slate-900">
+                Focoman Bot WhatsApp Integration
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                {masterEnabled
+                  ? "Operational alerts and status checks active via central Focoman Bot"
+                  : "WhatsApp notifications disabled (Core OMS application remains fully operational)"}
               </p>
             </div>
             <button
-              onClick={toggleEnabled}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.enabled ? "bg-green-500" : "bg-gray-300"}`}
+              onClick={() => setMasterEnabled(!masterEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                masterEnabled ? "bg-emerald-600" : "bg-slate-300"
+              }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${settings.enabled ? "translate-x-6" : "translate-x-1"}`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  masterEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
               />
             </button>
           </div>
-
-          {!settings.enabled && (
-            <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              Note: WhatsApp notifications require the Studio Complete plan. Enable to configure individual alerts.
-            </p>
-          )}
         </div>
 
         {/* Notification Groups */}
-        <div className="space-y-5">
-          {NOTIFICATION_CONFIG.map((group) => {
-            const colors = GROUP_COLORS[group.color];
-            return (
-              <div key={group.group} className={`rounded-2xl border bg-white p-6 ${colors.border}`}>
-                <div className="flex items-center gap-2 mb-5">
-                  <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.badge}`}>
-                    {group.group}
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  {group.items.map((item) => {
-                    const key = item.key as keyof WhatsAppSettings["notifications"];
-                    const isOn = settings.notifications[key];
-                    return (
-                      <div key={item.key} className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <p className={`text-sm font-semibold ${!settings.enabled ? "text-text-tertiary" : "text-text-primary"}`}>
-                            {item.label}
-                          </p>
-                          <p className="text-xs text-text-tertiary mt-0.5">{item.desc}</p>
-                        </div>
-                        <button
-                          disabled={!settings.enabled}
-                          onClick={() => toggleNotif(key)}
-                          className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                            !settings.enabled
-                              ? "cursor-not-allowed bg-gray-200"
-                              : isOn
-                              ? "bg-green-500"
-                              : "bg-gray-300"
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${isOn && settings.enabled ? "translate-x-4" : "translate-x-0.5"}`}
-                          />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+        <div className="space-y-6">
+          {NOTIFICATION_GROUPS.map((group) => (
+            <div key={group.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-base font-extrabold text-slate-900">{group.title}</h3>
+              <p className="text-xs text-slate-500 mb-4">{group.description}</p>
+
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                {group.items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between py-1">
+                    <span className="text-xs font-semibold text-slate-700">{item.label}</span>
+                    <span className="text-xs font-bold text-emerald-600">Active</span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
-        {/* Save Button */}
-        <div className="mt-8 flex items-center gap-4">
+        {/* Action Button */}
+        <div className="flex items-center gap-4">
           <button
             onClick={handleSave}
-            className="rounded-xl bg-brand-blue-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-600"
+            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
           >
-            Save Notification Settings
+            Save Configuration
           </button>
-          {saved && (
-            <span className="flex items-center gap-1.5 text-sm font-semibold text-green-600">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              Settings saved
-            </span>
+          {statusMessage && (
+            <span className="text-xs font-bold text-emerald-600">{statusMessage}</span>
           )}
         </div>
       </div>

@@ -1,139 +1,68 @@
-# FOCOMAN - Vercel Hosting Strategy
+# FOCOMAN - Vercel & Cloud Deployment Strategy
 
-## Architecture Overview
+**Document Type:** Technical Deployment Specification  
+**Status:** Active Target Specification  
+**Project:** Focoman  
+**Supersedes:** Legacy Vercel + Spring Boot + Railway Deployment Strategy  
 
-Since Focoman has two separate services (Next.js frontend + Spring Boot backend), Vercel can only host the frontend. The backend needs a separate hosting solution.
+---
 
+## 1. Primary Target Architecture: Google Cloud Run
+
+For production multi-region deployments, Focoman is deployed as a single containerized **Next.js 15 App Router** instance on **Google Cloud Run**, integrated with **Firebase Authentication** and **Google Cloud Firestore**.
+
+```text
+User Request
+     ↓
+Google Cloud Run (Integrated Next.js Application Container)
+     ↓
+Firebase Auth & Google Cloud Firestore
 ```
+
+---
+
+## 2. Secondary Static Asset Hosting Strategy (Vercel)
+
+If static frontend caching or global edge asset distribution is enabled via Vercel, the Next.js application deploys directly to Vercel while connecting to server-side Firebase & Google Cloud infrastructure.
+
+```text
 ┌─────────────────────────────────────────────────────────┐
-│                    Vercel (Frontend)                     │
-│  https://focoman.vercel.app                              │
-│  Next.js 15 + TypeScript + Tailwind CSS                  │
-│                                                          │
-│  Environment Variables:                                  │
-│  - NEXT_PUBLIC_BACKEND_URL=https://api.focoman.com       │
-│  - NEXT_PUBLIC_APP_ENV=production|testing                │
+│                    Vercel Edge (Frontend)                │
+│  https://focoman.vercel.app                             │
+│  Next.js 15 App Router + TypeScript + Tailwind          │
 └──────────────────────┬──────────────────────────────────┘
-                       │ HTTPS
+                       │ Server Actions & API Handlers
                        ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Railway / Render / GCP Cloud Run            │
-│              (Spring Boot Backend)                       │
-│  https://focoman-api.up.railway.app                      │
-│                                                          │
-│  Environment Variables:                                  │
-│  - SERVER_PORT=8080                                      │
-│  - SPRING_DATASOURCE_URL=jdbc:postgresql://...           │
-│  - SPRING_DATASOURCE_USERNAME=...                        │
-│  - SPRING_DATASOURCE_PASSWORD=...                        │
-│  - JWT_SECRET=...                                        │
-└──────────────────────┬──────────────────────────────────┘
-                       │ JDBC
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│              Neon / Supabase / Cloud SQL                 │
-│              (PostgreSQL Database)                       │
-│  postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech   │
+│            Google Cloud & Firebase Platform             │
+│  - Firebase Authentication                               │
+│  - Google Cloud Firestore (Native Document Database)    │
+│  - Google Cloud Run (Server-Side Microservices/Tasks)    │
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Option 1: Recommended (Free/Cheap)
+---
 
-| Service | What | Cost |
-|---------|------|------|
-| **Vercel** | Frontend (Next.js) | Free |
-| **Railway.app** | Backend (Spring Boot) | $5-10/month |
-| **Neon.tech** | PostgreSQL Database | Free tier (0.5GB) |
+## 3. Environment Variables Summary
 
-### Steps:
+### Client-Side Variables (`apps/web`)
 
-1. **Frontend → Vercel**
-   ```bash
-   # In focoman-frontend/
-   vercel --prod
-   ```
-   - Set env: `NEXT_PUBLIC_BACKEND_URL=https://focoman-api.up.railway.app`
-   - Set env: `NEXT_PUBLIC_APP_ENV=testing` (for dev portal)
+| Variable | Description |
+| :--- | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Web API Key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | GCP / Firebase Project ID |
 
-2. **Backend → Railway**
-   ```bash
-   # In focoman-backend/
-   # Create a Dockerfile for Railway
-   ```
-   - Set env: `SPRING_DATASOURCE_URL=jdbc:postgresql://...`
-   - Set env: `SPRING_DATASOURCE_USERNAME=...`
-   - Set env: `SPRING_DATASOURCE_PASSWORD=...`
+### Server-Side Privileged Variables (Server-Only)
 
-3. **Database → Neon**
-   - Create free PostgreSQL database
-   - Copy connection string to Railway env vars
+| Variable | Description |
+| :--- | :--- |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin SDK Private Key |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin Service Account Email |
+| `WHATSAPP_BUSINESS_API_TOKEN` | WhatsApp Business API Credentials |
 
-## Option 2: All-in-One VPS (More Control)
+---
 
-| Service | What | Cost |
-|---------|------|------|
-| **Vercel** | Frontend (Next.js) | Free |
-| **Hetzner/AWS EC2** | Backend + DB | $5-10/month |
+## 4. Superseded Architecture Notes
 
-## Option 3: Google Cloud (As per original design docs)
-
-| Service | What | Cost |
-|---------|------|------|
-| **Vercel** | Frontend (Next.js) | Free |
-| **Google Cloud Run** | Backend (Docker) | Pay-per-use |
-| **Cloud SQL** | PostgreSQL | $10-20/month |
-
-## Database Configuration
-
-For production/testing, update `application.yml`:
-
-```yaml
-spring:
-  datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    driverClassName: org.postgresql.Driver
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: update
-```
-
-## Frontend Environment Variables (Vercel)
-
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `NEXT_PUBLIC_BACKEND_URL` | `https://api.focoman.com` | Backend API base URL |
-| `NEXT_PUBLIC_APP_ENV` | `testing` or `production` | Controls dev portal visibility |
-
-## Backend Environment Variables (Railway/Render)
-
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `SERVER_PORT` | `8080` | Server port |
-| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://...` | Database URL |
-| `SPRING_DATASOURCE_USERNAME` | `...` | Database user |
-| `SPRING_DATASOURCE_PASSWORD` | `...` | Database password |
-| `JWT_SECRET` | `...` | JWT signing secret |
-
-## Dockerfile for Backend (Railway/Render)
-
-```dockerfile
-FROM eclipse-temurin:17-jre
-WORKDIR /app
-COPY target/focoman-backend-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-
-## Deployment Checklist
-
-- [ ] Create Neon PostgreSQL database
-- [ ] Deploy backend to Railway with Dockerfile
-- [ ] Set backend environment variables
-- [ ] Deploy frontend to Vercel
-- [ ] Set frontend environment variables
-- [ ] Test API connectivity
-- [ ] Verify dev portal visibility (testing vs production)
-- [ ] Set up custom domain (optional)
+- Legacy deployment modes using separate Java Spring Boot containers, Railway, Neon PostgreSQL, or Cloud SQL are **SUPERSEDED** and archived.

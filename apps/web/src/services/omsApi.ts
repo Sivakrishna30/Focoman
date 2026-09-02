@@ -1,26 +1,42 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-export type OrderStatus = "LEAD" | "BOOKING_CONFIRMED" | "SHOOT_SCHEDULED" | "SHOOT_COMPLETED" | "EDITING" | "ALBUM_DESIGN" | "DELIVERY_READY" | "COMPLETED" | "OVER_SLA";
-export interface StudioProfile { studioId: string; prefix: string; studioName: string; brandName: string; ownerName: string; city: string; }
-export interface OmsOrder { orderId: string; displayId: string; studioId: string; customerName: string; customerMobile: string; eventType: string; eventDate: string; status: OrderStatus; assignedEmployee: string; assignedEmployeeId: string; amount: number; createdDate: string; lastUpdated: string; }
-async function request<T>(path: string, init?: RequestInit): Promise<T> { const response = await fetch(`${BACKEND_URL}${path}`, init); if (!response.ok) throw new Error(`Request failed: ${response.status}`); return response.json() as Promise<T>; }
+import { Order, OrderStatus, Task } from '@focoman/types';
+import { generateWorkflowTasks, canCompleteOrder, evaluateOrderStatus } from '@focoman/domain';
 
-// TODO: Backend should provide endpoints to fetch orders by userId/role
-// For now, this is a placeholder that accepts a user context
-export async function fetchOrdersForUser(user: { id: string; role: string; name: string }, studioId?: string): Promise<OmsOrder[]> {
-  if (!studioId) {
-    console.warn("fetchOrdersForUser called without studioId - returning empty array. Backend integration needed.");
-    return [];
-  }
-  try {
-    return await omsApi.getOrders(studioId);
-  } catch (error) {
-    console.error("Failed to fetch orders for user:", error);
-    return [];
-  }
+/**
+ * Focoman Order Management System (OMS) Data Service
+ * Primary Source of Truth: Focoman Product Discovery Document
+ */
+
+export type { OrderStatus, Order, Task };
+
+export interface StudioProfile {
+  studioId: string;
+  prefix: string;
+  studioName: string;
+  brandName: string;
+  ownerName: string;
+  city: string;
 }
 
 export const omsApi = {
-  getStudio: (prefix: string) => request<StudioProfile>(`/api/studios/${encodeURIComponent(prefix)}`),
-  getOrders: (studioId: string) => request<OmsOrder[]>(`/api/oms/orders?studioId=${encodeURIComponent(studioId)}`),
-  updateStatus: (orderId: string, status: OrderStatus) => request<OmsOrder>(`/api/oms/orders/${orderId}/status?status=${status}`, { method: "PUT" }),
+  /**
+   * Evaluates and updates order status according to product discovery business rules
+   */
+  evaluateOrderCompletion(order: Order, tasks: Task[]): OrderStatus {
+    const tasksCompleted = tasks.length > 0 && tasks.every(t => t.status === 'COMPLETED');
+    const paymentCompleted = order.paymentStatus === 'PAYMENT_COMPLETED';
+
+    return evaluateOrderStatus(
+      order.orderStatus,
+      order.eventDate,
+      tasksCompleted,
+      paymentCompleted
+    );
+  },
+
+  /**
+   * Helper to generate dynamic task pipelines for an order
+   */
+  createOrderTasks(orderId: string, studioId: string, services: string[]) {
+    return generateWorkflowTasks(orderId, studioId, services);
+  }
 };

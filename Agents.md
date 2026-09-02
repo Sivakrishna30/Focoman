@@ -1,8 +1,8 @@
 # Focoman Agent System Directives
 
-This repository operates under the strict governance of **[Agents.md](file:///c:/Users/DELL/Downloads/FocoMan/Agents.md)**.
+This repository operates under the strict governance of **[Agents.md](Agents.md)**.
 
-All AI coding agents interacting with the Focoman codebase MUST read and strictly adhere to **[Agents.md](file:///c:/Users/DELL/Downloads/FocoMan/Agents.md)** and **[Index.md](file:///c:/Users/DELL/Downloads/FocoMan/docs/Index.md)**.
+All AI coding agents interacting with the Focoman codebase MUST read and strictly adhere to **[Agents.md](Agents.md)** and **[Index.md](docs/Index.md)**.
 
 ## Mandatory Workflow
 
@@ -33,4 +33,4 @@ Testing (Truthful Verification & Real Data Integrity)
 7. **Security & Permissions**: Preserve authorization boundaries. Do not bypass security to simplify implementation.
 8. **Change Log**: Every meaningful change must be logged in `CHANGELOG.md`.
 
-Refer to **[Agents.md](file:///c:/Users/DELL/Downloads/FocoMan/Agents.md)** for detailed role prompts, protocols, and definitions of done.
+Refer to **[Agents.md](Agents.md)** for detailed role prompts, protocols, and definitions of done.

@@ -19,7 +19,13 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@focoman/types": ["../../packages/types/src/index.ts"],
+      "@focoman/validation": ["../../packages/validation/src/index.ts"],
+      "@focoman/domain": ["../../packages/domain/src/index.ts"],
+      "@focoman/db": ["../../packages/db/src/index.ts"],
+      "@focoman/auth": ["../../packages/auth/src/index.ts"],
+      "@focoman/config": ["../../packages/config/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

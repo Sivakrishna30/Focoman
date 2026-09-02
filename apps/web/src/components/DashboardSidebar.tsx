@@ -98,7 +98,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const isDevPortal = item.module === "dev";
+          const isDevPortal = (item.module as string | null) === "dev";
           const isTestingMode = appEnv === "testing";
           const accessible = isDevPortal ? isTestingMode : (item.module === null || item.module === "oms" || plan === "professional" || plan === "complete");
           const href = item.href(studioSlug);

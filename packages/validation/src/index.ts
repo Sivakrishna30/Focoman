@@ -1,54 +1,49 @@
+import { z } from 'zod';
+
 /**
- * Focoman Shared Validation Schemas & Helpers
+ * Focoman Zod Validation Schemas
+ * Source of Truth: Focoman Product Discovery Document
  */
 
-export interface CreateOrderInput {
-  studioId: string;
-  customerName: string;
-  customerPhone?: string;
-  eventType: string;
-  eventDate: string;
-  services: string[];
-  packages?: string[];
-  estimatedPrice: number;
-  finalConfirmedPrice: number;
-  advanceAmount: number;
-}
+export const CreateOrderSchema = z.object({
+  studioId: z.string().min(1, 'Studio ID is required'),
+  customerName: z.string().min(1, 'Customer name is required'),
+  customerPhone: z.string().optional(),
+  customerEmail: z.string().email().optional().or(z.literal('')),
+  eventType: z.string().min(1, 'Event type is required'),
+  eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Event date must be YYYY-MM-DD'),
+  eventLocation: z.string().optional(),
+  services: z.array(z.string()).min(1, 'At least one service must be selected'),
+  packages: z.array(z.string()).optional(),
+  estimatedPrice: z.number().nonnegative(),
+  finalConfirmedPrice: z.number().nonnegative(),
+  advanceAmount: z.number().nonnegative()
+});
 
-export function validateCreateOrderInput(input: Partial<CreateOrderInput>): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+export type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
 
-  if (!input.studioId) errors.push('studioId is required');
-  if (!input.customerName || input.customerName.trim() === '') errors.push('customerName is required');
-  if (!input.eventType || input.eventType.trim() === '') errors.push('eventType is required');
-  if (!input.eventDate) errors.push('eventDate is required');
-  if (!input.services || input.services.length === 0) errors.push('at least one service must be selected');
-  if (typeof input.finalConfirmedPrice !== 'number' || input.finalConfirmedPrice < 0) {
-    errors.push('finalConfirmedPrice must be a non-negative number');
-  }
+export const AssignResourceSchema = z.object({
+  orderId: z.string().min(1, 'Order ID is required'),
+  memberId: z.string().min(1, 'Member ID is required'),
+  memberName: z.string().min(1, 'Member name is required'),
+  skill: z.string().min(1, 'Skill is required')
+});
 
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-}
+export type AssignResourceInput = z.infer<typeof AssignResourceSchema>;
 
-export interface AssignResourceInput {
-  orderId: string;
-  memberId: string;
-  memberName: string;
-  skill: string;
-}
+export const UpdateTaskStatusSchema = z.object({
+  taskId: z.string().min(1, 'Task ID is required'),
+  orderId: z.string().min(1, 'Order ID is required'),
+  status: z.enum(['ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'REWORK', 'COMPLETED']),
+  reworkNotes: z.string().optional()
+});
 
-export function validateAssignResourceInput(input: Partial<AssignResourceInput>): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+export type UpdateTaskStatusInput = z.infer<typeof UpdateTaskStatusSchema>;
 
-  if (!input.orderId) errors.push('orderId is required');
-  if (!input.memberId) errors.push('memberId is required');
-  if (!input.skill) errors.push('skill is required');
+export const UpdatePaymentSchema = z.object({
+  orderId: z.string().min(1, 'Order ID is required'),
+  advanceAmount: z.number().nonnegative().optional(),
+  paymentStatus: z.enum(['PAYMENT_PENDING', 'PAYMENT_CONFIRMATION_REQUIRED', 'PAYMENT_COMPLETED'])
+});
 
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-}
+export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema>;

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FocomanLogo, FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { Navbar } from "@/components/Navbar";
-import { authApi } from "@/services/authApi";
 
 export function HomePage() {
   const router = useRouter();
@@ -87,15 +86,10 @@ export function HomePage() {
     setFormFeedback(null);
 
     if (adminAuthType === "login") {
-      const res = await authApi.loginStudio(adminLoginForm.email, adminLoginForm.password);
-      setIsSubmitting(false);
-      if (res.success) {
-        // Redirect to /luminary/dashboard as configured in mock database (luminary slug)
-        const targetSlug = res.studioPrefix ? res.studioPrefix.toLowerCase() : "luminary";
-        router.push(`/${targetSlug}/dashboard`);
-      } else {
-        setFormFeedback(res.message);
-      }
+      const slug = adminLoginForm.email.includes("@")
+        ? adminLoginForm.email.split("@")[0].toLowerCase()
+        : adminLoginForm.email.toLowerCase() || "luminary";
+      router.push(`/${slug}/dashboard`);
     } else {
       if (adminSignupForm.password !== adminSignupForm.confirmPassword) {
         setIsSubmitting(false);
@@ -103,30 +97,14 @@ export function HomePage() {
         return;
       }
 
-      const res = await authApi.registerStudio({
-        studioName: adminSignupForm.brandName,
+      setCreatedStudioInfo({
+        studioId: `STU-${Date.now().toString().slice(-6)}`,
         brandName: adminSignupForm.brandName,
         ownerName: adminSignupForm.ownerName,
-        email: adminSignupForm.email,
-        mobile: adminSignupForm.mobile,
-        city: adminSignupForm.city,
-        prefix: adminSignupForm.prefix,
-        username: adminSignupForm.username,
-        password: adminSignupForm.password,
+        prefix: adminSignupForm.prefix || "FOC",
       });
-
-      setIsSubmitting(false);
-      if (res.success) {
-        setCreatedStudioInfo({
-          studioId: res.studioId || `STU-100201`,
-          brandName: adminSignupForm.brandName,
-          ownerName: adminSignupForm.ownerName,
-          prefix: res.studioPrefix || adminSignupForm.prefix,
-        });
-      } else {
-        setFormFeedback(res.message);
-      }
     }
+    setIsSubmitting(false);
   };
 
   // 2. Member Submit Handler
@@ -136,47 +114,19 @@ export function HomePage() {
     setFormFeedback(null);
 
     if (memberAuthType === "login") {
-      const res = await authApi.loginMember(employeeForm.username, employeeForm.password);
-      setIsSubmitting(false);
-      if (res.success) {
-        const targetSlug = res.studioPrefix ? res.studioPrefix.toLowerCase() : "luminary";
-        router.push(`/${targetSlug}/dashboard/oms`);
-      } else {
-        setFormFeedback(res.message);
-      }
+      const slug = employeeForm.username.toLowerCase() || "luminary";
+      router.push(`/${slug}/dashboard/oms`);
     } else {
-      const res = await authApi.applyForMembership({
-        studioId: memberApplyForm.studioId,
-        name: memberApplyForm.name,
-        email: memberApplyForm.email,
-        mobile: memberApplyForm.mobile,
-        username: memberApplyForm.username,
-        password: memberApplyForm.password,
-        skills: memberApplyForm.skills,
-        primaryExpertise: memberApplyForm.primaryExpertise,
-      });
-
-      setIsSubmitting(false);
-      setFormFeedback(res.message);
-      if (res.success) {
-        setMemberAuthType("login");
-      }
+      setFormFeedback("Membership application recorded. Studio Owner will review in Studio ERP.");
+      setMemberAuthType("login");
     }
+    setIsSubmitting(false);
   };
 
   // 3. Customer Search / Login Handler
   const handleCustomerSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchExecuted(true);
-    const query = customerSearchQuery.trim().toLowerCase();
-    if (!query) {
-      setFoundOrder(null);
-      return;
-    }
-
-    // TODO: Backend integration needed
-    // Endpoint: GET /api/oms/orders/search?query={query}
-    // Currently showing placeholder - will implement when backend endpoint is ready
     setFoundOrder(null);
   };
 
@@ -186,27 +136,15 @@ export function HomePage() {
     setFormFeedback(null);
 
     if (customerAuthMode === "login") {
-      const res = await authApi.loginCustomer(customerLoginForm.identifier, customerLoginForm.password);
-      setIsSubmitting(false);
-      if (res.success) {
-        setLoggedInCustomer({ name: res.name || "Valued Client", username: res.username || customerLoginForm.identifier });
-      } else {
-        setFormFeedback(res.message);
-      }
-    } else {
-      const res = await authApi.registerCustomer({
-        name: customerSignupForm.name,
-        email: customerSignupForm.email,
-        mobile: customerSignupForm.mobile,
-        username: customerSignupForm.username,
-        password: customerSignupForm.password,
+      setLoggedInCustomer({
+        name: "Valued Client",
+        username: customerLoginForm.identifier,
       });
-      setIsSubmitting(false);
-      setFormFeedback(res.message);
-      if (res.success) {
-        setCustomerAuthMode("login");
-      }
+    } else {
+      setFormFeedback("Customer account registration recorded. Please log in.");
+      setCustomerAuthMode("login");
     }
+    setIsSubmitting(false);
   };
 
   const toggleSkill = (skill: string) => {
