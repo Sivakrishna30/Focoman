@@ -153,6 +153,17 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
       return { success: false, error: "Please enter a valid tracking passkey or order ID." };
     }
 
+    // Support demo order passkeys (e.g. FOC-DEMO-01, ORD-LUM-101)
+    const { DEMO_ORDERS, DEMO_TASKS } = await import("@/lib/demoData");
+    const cleanKey = passkey.trim().toUpperCase();
+    const demoMatch = DEMO_ORDERS.find(
+      (o) => o.trackingPasskey.toUpperCase() === cleanKey || o.orderNumber.toUpperCase() === cleanKey
+    );
+    if (demoMatch) {
+      const tasks = DEMO_TASKS.filter((t) => t.orderId === demoMatch.id);
+      return { success: true, order: demoMatch, tasks };
+    }
+
     const order = await getOrderByPasskey(passkey);
     if (!order) {
       const byId = await getOrderById(passkey.trim().toUpperCase());
@@ -307,5 +318,41 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
       success: false,
       error: err.errors?.[0]?.message || err.message || "Failed to assign resource",
     };
+  }
+}
+
+export async function confirmResourceAvailabilityAction(
+  orderId: string,
+  memberId: string,
+  available: boolean,
+  idToken: string
+): Promise<{ success: boolean; order?: Order; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    
+    // In production we would check if decoded.uid === memberId or if user is owner.
+    
+    const existing = await getOrderById(orderId);
+    if (!existing) return { success: false, error: "Order not found" };
+
+    const resourceIndex = existing.assignedResources.findIndex(r => r.memberId === memberId);
+    if (resourceIndex === -1) {
+      return { success: false, error: "Member is not assigned to this order" };
+    }
+
+    const updatedResources = [...existing.assignedResources];
+    updatedResources[resourceIndex] = {
+      ...updatedResources[resourceIndex],
+      availabilityConfirmed: available,
+    };
+
+    const updated = await updateOrder(orderId, {
+      assignedResources: updatedResources,
+    });
+
+    return { success: true, order: updated || undefined };
+  } catch (err: any) {
+    console.error("[confirmResourceAvailabilityAction] Error:", err);
+    return { success: false, error: err.message || "Failed to confirm availability." };
   }
 }

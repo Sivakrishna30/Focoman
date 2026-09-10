@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
+import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState, signInWithGoogle, signOutUser } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction } from "@/actions/studioActions";
 import { StudioMembership } from "@focoman/types";
@@ -36,6 +37,12 @@ export default function WorkspacesPage() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!loadingUser && !currentUser) {
+      router.replace("/sign-in");
+    }
+  }, [loadingUser, currentUser, router]);
+
   const handleGoogleSignIn = async () => {
     try {
       setAuthError(null);
@@ -66,56 +73,18 @@ export default function WorkspacesPage() {
     <div className="min-h-screen bg-surface-app text-text-primary">
       <Navbar />
 
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <BackButton fallbackHref="/dashboard" />
+        </div>
         {loadingUser ? (
           <div className="py-20 text-center text-sm text-text-tertiary">
             Checking authentication status...
           </div>
         ) : !currentUser ? (
-          /* Unauthenticated State */
-          <div className="rounded-3xl border border-border-default bg-white p-8 text-center shadow-sm sm:p-12">
-            <span className="inline-block rounded-full bg-brand-blue-background px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-              Single Personal Identity
-            </span>
-            <h1 className="mt-4 text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Sign In to Access Your Studio Workspaces
-            </h1>
-            <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-              Focoman uses your Google account as your universal personal identity across all studio ownerships and crew memberships.
-            </p>
-
-            {authError && (
-              <div className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
-                {authError}
-              </div>
-            )}
-
-            <div className="mt-8 flex justify-center">
-              <button
-                onClick={handleGoogleSignIn}
-                className="inline-flex items-center gap-3 rounded-xl border border-border-default bg-white px-6 py-3 text-sm font-bold text-text-primary shadow-xs transition hover:bg-gray-50 hover:shadow-sm"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                  />
-                </svg>
-                Continue with Google
-              </button>
-            </div>
+          /* Unauthenticated State - Now redirects to home */
+          <div className="py-20 text-center text-sm text-text-tertiary">
+            Redirecting...
           </div>
         ) : (
           /* Authenticated State */
@@ -131,15 +100,6 @@ export default function WorkspacesPage() {
                 <p className="text-xs text-text-secondary">
                   Logged in as <span className="font-semibold text-text-primary">{currentUser.displayName || currentUser.email}</span> ({currentUser.email})
                 </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSignOut}
-                  className="rounded-xl border border-border-default px-4 py-2 text-xs font-semibold text-text-secondary hover:bg-red-50 hover:text-red-600 transition"
-                >
-                  Sign Out
-                </button>
               </div>
             </div>
 
@@ -184,6 +144,25 @@ export default function WorkspacesPage() {
                       Accept an invitation from a studio owner
                     </span>
                   </Link>
+                </div>
+
+                {/* Sample Demo Workspace Launch for new users */}
+                <div className="mt-8 pt-6 border-t border-slate-100 max-w-lg mx-auto">
+                  <div className="rounded-2xl border border-dashed border-brand-orange-soft bg-orange-50/50 p-4 text-center">
+                    <span className="rounded-full bg-brand-orange-primary px-2 py-0.5 text-[10px] font-extrabold uppercase text-white tracking-wide">
+                      Instant Sample Tour
+                    </span>
+                    <h4 className="mt-1 text-sm font-bold text-slate-900">Want to test drive Focoman first?</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Explore Lumina Studios with preloaded mock orders, workflow tasks, and local browser memory.
+                    </p>
+                    <Link
+                      href="/demo-studio/dashboard"
+                      className="mt-3 inline-block rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs"
+                    >
+                      Explore Demo Workspace →
+                    </Link>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -237,6 +216,35 @@ export default function WorkspacesPage() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Sample Demo Workspace Card */}
+                  <div className="rounded-2xl border border-dashed border-brand-orange-soft bg-brand-orange-background/20 p-6 shadow-xs transition hover:shadow-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-brand-orange-primary">
+                          /demo-studio
+                        </span>
+                        <span className="rounded-full bg-brand-orange-primary px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
+                          Demo Sandbox
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-lg font-bold text-text-primary">
+                        Lumina Studios (Demo)
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Explore mock orders, team ERP, CRM clients, and guided tour with browser memory.
+                      </p>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-brand-orange-soft/50">
+                      <Link
+                        href="/demo-studio/dashboard"
+                        className="block text-center rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs"
+                      >
+                        Explore Demo Workspace →
+                      </Link>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Additional Actions */}

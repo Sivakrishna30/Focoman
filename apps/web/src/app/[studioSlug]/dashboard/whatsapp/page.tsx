@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
+import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import { updateStudioWhatsappConfigAction } from "@/actions/studioActions";
+import {
+  isDemoStudio,
+  getDemoWhatsappConfig,
+  saveDemoWhatsappConfig,
+  subscribeToDemoStore,
+} from "@/lib/demoStore";
 
 /**
  * WhatsApp Premium Operational Layer Configuration
@@ -42,12 +50,69 @@ const NOTIFICATION_GROUPS = [
 
 export default function WhatsappPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
+  const { studio, idToken, authLoading, getIdToken } = useStudioWorkspace();
+  
+  const isDemo = isDemoStudio(studioSlug);
   const [masterEnabled, setMasterEnabled] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [config, setConfig] = useState<Record<string, boolean>>({});
 
-  const handleSave = () => {
-    setStatusMessage("WhatsApp notification configuration updated successfully.");
+  useEffect(() => {
+    if (isDemo) {
+      const demoCfg = getDemoWhatsappConfig();
+      setConfig(demoCfg);
+      setMasterEnabled(demoCfg.masterEnabled !== false);
+      const unsub = subscribeToDemoStore(() => {
+        const updated = getDemoWhatsappConfig();
+        setConfig(updated);
+        setMasterEnabled(updated.masterEnabled !== false);
+      });
+      return () => unsub();
+    } else if (studio.whatsappConfig) {
+      setConfig(studio.whatsappConfig);
+      setMasterEnabled(studio.whatsappConfig.masterEnabled !== false);
+    }
+  }, [studio, isDemo]);
+
+  const toggleItem = (id: string) => {
+    setConfig(prev => ({
+      ...prev,
+      [id]: prev[id] === undefined ? false : !prev[id]
+    }));
   };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setStatusMessage(null);
+    try {
+      const finalConfig = { ...config, masterEnabled };
+      if (isDemo) {
+        saveDemoWhatsappConfig(finalConfig);
+        setStatusMessage("WhatsApp notification configuration updated successfully (saved to browser memory).");
+        return;
+      }
+
+      const token = idToken || await getIdToken(true);
+      if (!token) throw new Error("Authentication required");
+
+      const res = await updateStudioWhatsappConfigAction(studioSlug, finalConfig, token);
+      
+      if (res.success) {
+        setStatusMessage("WhatsApp notification configuration updated successfully.");
+      } else {
+        setStatusMessage("Failed to update: " + res.error);
+      }
+    } catch (err: any) {
+      setStatusMessage("Error: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (authLoading) {
+    return <div className="p-10 text-sm text-text-secondary">Loading workspace...</div>;
+  }
 
   return (
     <div className="h-full overflow-y-auto bg-slate-50 p-6 lg:p-10">
@@ -95,34 +160,53 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
         </div>
 
         {/* Notification Groups */}
-        <div className="space-y-6">
-          {NOTIFICATION_GROUPS.map((group) => (
-            <div key={group.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-base font-extrabold text-slate-900">{group.title}</h3>
-              <p className="text-xs text-slate-500 mb-4">{group.description}</p>
+        {masterEnabled && (
+          <div className="space-y-6">
+            {NOTIFICATION_GROUPS.map((group) => (
+              <div key={group.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="text-base font-extrabold text-slate-900">{group.title}</h3>
+                <p className="text-xs text-slate-500 mb-4">{group.description}</p>
 
-              <div className="space-y-3 pt-3 border-t border-slate-100">
-                {group.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-1">
-                    <span className="text-xs font-semibold text-slate-700">{item.label}</span>
-                    <span className="text-xs font-bold text-emerald-600">Active</span>
-                  </div>
-                ))}
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  {group.items.map((item) => {
+                    const isActive = config[item.id] !== false; // Default to true if undefined
+                    return (
+                      <div key={item.id} className="flex items-center justify-between py-1">
+                        <span className="text-xs font-semibold text-slate-700">{item.label}</span>
+                        <button
+                          onClick={() => toggleItem(item.id)}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                            isActive ? "bg-emerald-500" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${
+                              isActive ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Action Button */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button
             onClick={handleSave}
-            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+            disabled={isSaving}
+            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
-            Save Configuration
+            {isSaving ? "Saving..." : "Save Configuration"}
           </button>
           {statusMessage && (
-            <span className="text-xs font-bold text-emerald-600">{statusMessage}</span>
+            <span className={`text-xs font-bold ${statusMessage.includes("Error") || statusMessage.includes("Failed") ? "text-red-600" : "text-emerald-600"}`}>
+              {statusMessage}
+            </span>
           )}
         </div>
       </div>

@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { StudioMember } from "@focoman/types";
+import { useState, useEffect, useCallback, use, useMemo } from "react";
+import { StudioMember, Order, OrderStatus } from "@focoman/types";
 import { getStudioMembersAction, createMemberAction } from "@/actions/memberActions";
-import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
+import { getStudioOrdersAction, confirmResourceAvailabilityAction } from "@/actions/orderActions";
+import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import {
+  isDemoStudio,
+  getDemoMembers,
+  getDemoOrders,
+  createDemoMember,
+  confirmDemoResourceAvailability,
+  subscribeToDemoStore,
+} from "@/lib/demoStore";
 
 const SKILL_LABELS: Record<string, string> = {
   PHOTOGRAPHY: "Photographer",
@@ -23,12 +32,15 @@ const ALL_SKILLS = ["PHOTOGRAPHY", "VIDEOGRAPHY", "PHOTO_EDITING", "ALBUM_DESIGN
 
 export default function ErpPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
+  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [crewList, setCrewList] = useState<StudioMember[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<StudioMember | null>(null);
   const [skillFilter, setSkillFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [idToken, setIdToken] = useState<string | null>(null);
+
+  const isDemo = isDemoStudio(studioSlug);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -41,25 +53,44 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     skills: ["PHOTOGRAPHY"],
   });
 
-  const loadCrew = async () => {
+  const loadData = useCallback(async (tokenOverride?: string | null) => {
     try {
       setLoading(true);
-      const token = await getCurrentUserIdToken(false);
-      setIdToken(token);
+      if (isDemo) {
+        setCrewList(getDemoMembers());
+        setOrders(getDemoOrders());
+        setLoading(false);
+        return;
+      }
+      const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
       if (!token) {
         setLoading(false);
         return;
       }
-      const data = await getStudioMembersAction(studioSlug, token);
-      setCrewList(data);
+      const [membersData, ordersData] = await Promise.all([
+        getStudioMembersAction(studioSlug, token),
+        getStudioOrdersAction(studioSlug, token)
+      ]);
+      setCrewList(membersData);
+      setOrders(ordersData);
+    } catch (err) {
+      console.error("[ErpPage] Failed to load data:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
 
   useEffect(() => {
-    void loadCrew();
-  }, [studioSlug]);
+    if (isDemo) {
+      void loadData();
+      const unsub = subscribeToDemoStore(() => {
+        void loadData();
+      });
+      return () => unsub();
+    } else if (!authLoading) {
+      void loadData(workspaceToken);
+    }
+  }, [studioSlug, isDemo, authLoading, workspaceToken, loadData]);
 
   const toggleSkill = (skill: string) => {
     setForm((prev) => ({
@@ -75,7 +106,26 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     setIsSubmitting(true);
     setModalError(null);
 
-    const token = await getCurrentUserIdToken(true);
+    if (isDemo) {
+      const res = createDemoMember({
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+        skills: form.skills,
+      });
+      setIsSubmitting(false);
+      if (res.success && res.member) {
+        setShowModal(false);
+        setForm({ name: "", email: "", phone: "", skills: ["PHOTOGRAPHY"] });
+        setCrewList(getDemoMembers());
+        setSelected(res.member);
+      } else {
+        setModalError("Failed to add crew member in demo mode");
+      }
+      return;
+    }
+
+    const token = await getIdToken(true);
     if (!token) {
       setModalError("Authentication error. Please sign in again.");
       setIsSubmitting(false);
@@ -96,7 +146,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     if (res.success && res.member) {
       setShowModal(false);
       setForm({ name: "", email: "", phone: "", skills: ["PHOTOGRAPHY"] });
-      await loadCrew();
+      await loadData();
       setSelected(res.member);
     } else {
       setModalError(res.error || "Failed to add crew member");
@@ -257,6 +307,83 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 ))}
               </div>
             </div>
+
+            <div className="rounded-xl border border-border-default p-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">Upcoming Assignments</h3>
+              <div className="space-y-3">
+                {orders.filter(o => 
+                  o.assignedResources?.some(r => r.memberId === selected.id) && 
+                  o.orderStatus !== "COMPLETED"
+                ).length > 0 ? (
+                  orders
+                    .filter(o => o.assignedResources?.some(r => r.memberId === selected.id) && o.orderStatus !== "COMPLETED")
+                    .map(order => {
+                      const assignment = order.assignedResources.find(r => r.memberId === selected.id)!;
+                      return (
+                        <div key={order.id} className="flex flex-col gap-2 p-3 rounded-lg border border-slate-100 bg-slate-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-bold text-text-primary">{order.eventType}</p>
+                              <p className="text-[10px] text-text-secondary mt-0.5">{order.orderNumber} · {new Date(order.eventDate).toLocaleDateString()}</p>
+                            </div>
+                            <span className="rounded-full bg-surface-app border border-border-default px-2 py-0.5 text-[10px] font-bold text-text-secondary">
+                              {SKILL_LABELS[assignment.skill] || assignment.skill}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
+                            <span className="text-[10px] font-bold uppercase text-text-tertiary">Availability:</span>
+                            {assignment.availabilityConfirmed === true ? (
+                              <span className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Confirmed</span>
+                            ) : assignment.availabilityConfirmed === false ? (
+                              <span className="px-2 py-1 rounded text-[10px] font-bold bg-red-100 text-red-800">Rejected</span>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={async () => {
+                                    if (isDemo) {
+                                      confirmDemoResourceAvailability(order.id, selected.id, true);
+                                      setOrders(getDemoOrders());
+                                      return;
+                                    }
+                                    const token = await getIdToken(false);
+                                    if (token) {
+                                      await confirmResourceAvailabilityAction(order.id, selected.id, true, token);
+                                      await loadData();
+                                    }
+                                  }}
+                                  className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition"
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (isDemo) {
+                                      confirmDemoResourceAvailability(order.id, selected.id, false);
+                                      setOrders(getDemoOrders());
+                                      return;
+                                    }
+                                    const token = await getIdToken(false);
+                                    if (token) {
+                                      await confirmResourceAvailabilityAction(order.id, selected.id, false, token);
+                                      await loadData();
+                                    }
+                                  }}
+                                  className="px-2 py-1 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <p className="text-xs text-text-tertiary">No upcoming assignments found.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -278,7 +405,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Asif Photography"
+                  placeholder="e.g. Rahul Sharma"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-brand-purple-primary"

@@ -119,6 +119,14 @@ export async function registerStudioTransaction(
   }
 }
 
+export async function updateStudio(studioId: string, updates: Partial<Studio>): Promise<Studio | null> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('studios').doc(studioId);
+  await ref.update({ ...updates, updatedAt: new Date().toISOString() });
+  const snap = await ref.get();
+  return snap.exists ? (snap.data() as Studio) : null;
+}
+
 export async function getMembershipsByUid(uid: string): Promise<StudioMembership[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore

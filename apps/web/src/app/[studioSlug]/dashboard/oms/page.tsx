@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, use } from "react";
+import { useMemo, useState, useEffect, useCallback, use } from "react";
 import { OrderStatus, TaskStatus, Order, Task, PaymentStatus } from "@focoman/types";
 import {
   getStudioOrdersAction,
@@ -9,7 +9,16 @@ import {
   updateTaskStatusAction,
   updatePaymentStatusAction,
 } from "@/actions/orderActions";
-import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
+import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import {
+  isDemoStudio,
+  getDemoOrders,
+  getDemoTasksByOrder,
+  createDemoOrder,
+  updateDemoTaskStatus,
+  updateDemoPaymentStatus,
+  subscribeToDemoStore,
+} from "@/lib/demoStore";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
@@ -37,13 +46,13 @@ export default function OmsPage({
   params: Promise<{ studioSlug: string }>;
 }) {
   const { studioSlug } = use(params);
+  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Order | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [idToken, setIdToken] = useState<string | null>(null);
 
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -61,13 +70,23 @@ export default function OmsPage({
     advanceAmount: 25000,
   });
 
-  const loadOrders = async () => {
+  const isDemo = isDemoStudio(studioSlug);
+
+  const loadOrders = useCallback(async (tokenOverride?: string | null) => {
     try {
       setLoading(true);
-      const token = await getCurrentUserIdToken(false);
-      setIdToken(token);
+      if (isDemo) {
+        const data = getDemoOrders();
+        setOrders(data);
+        if (selected) {
+          const refreshed = data.find((o) => o.id === selected.id);
+          if (refreshed) setSelected(refreshed);
+        }
+        setLoading(false);
+        return;
+      }
+      const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
       if (!token) {
-        console.error("[OmsPage] No auth token — user must be signed in.");
         setLoading(false);
         return;
       }
@@ -77,31 +96,70 @@ export default function OmsPage({
         const refreshed = data.find((o) => o.id === selected.id);
         if (refreshed) setSelected(refreshed);
       }
+    } catch (err) {
+      console.error("[OmsPage] Failed to load orders:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [studioSlug, isDemo, workspaceToken, getIdToken, selected]);
 
   useEffect(() => {
-    void loadOrders();
-  }, [studioSlug]);
+    if (isDemo) {
+      void loadOrders();
+      const unsub = subscribeToDemoStore(() => {
+        void loadOrders();
+      });
+      return () => unsub();
+    } else if (!authLoading) {
+      void loadOrders(workspaceToken);
+    }
+  }, [studioSlug, isDemo, authLoading, workspaceToken, loadOrders]);
 
   // Load tasks when an order is selected
   useEffect(() => {
-    if (selected && idToken) {
-      void getOrderTasksAction(selected.id, idToken).then(setSelectedTasks);
+    if (selected) {
+      if (isDemo) {
+        setSelectedTasks(getDemoTasksByOrder(selected.id));
+      } else if (workspaceToken) {
+        void getOrderTasksAction(selected.id, workspaceToken).then(setSelectedTasks);
+      }
     } else {
       setSelectedTasks([]);
     }
-  }, [selected?.id, idToken]);
+  }, [selected, isDemo, workspaceToken]);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError(null);
 
+    if (isDemo) {
+      const res = createDemoOrder({
+        customerName: newOrderForm.customerName,
+        customerPhone: newOrderForm.customerPhone || undefined,
+        customerEmail: newOrderForm.customerEmail || undefined,
+        eventType: newOrderForm.eventType,
+        eventDate: newOrderForm.eventDate,
+        eventLocation: newOrderForm.eventLocation,
+        services: newOrderForm.services,
+        finalConfirmedPrice: newOrderForm.finalConfirmedPrice,
+        advanceAmount: newOrderForm.advanceAmount,
+      });
+
+      setIsSubmitting(false);
+      if (res.success && res.order) {
+        setShowCreateModal(false);
+        setOrders(getDemoOrders());
+        setSelected(res.order);
+        if (res.tasks) setSelectedTasks(res.tasks);
+      } else {
+        setFormError("Failed to create order in demo mode.");
+      }
+      return;
+    }
+
     // Refresh token before mutation
-    const token = await getCurrentUserIdToken(true);
+    const token = await getIdToken(true);
     if (!token) {
       setFormError("Authentication error. Please sign in again.");
       setIsSubmitting(false);
@@ -136,9 +194,22 @@ export default function OmsPage({
   };
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
-    if (!selected || !idToken) return;
+    if (isDemo && selected) {
+      const res = updateDemoTaskStatus(taskId, newStatus);
+      if (res.success && res.task) {
+        setSelectedTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
+        const refreshedOrders = getDemoOrders();
+        setOrders(refreshedOrders);
+        const refreshedSelected = refreshedOrders.find((o) => o.id === selected.id);
+        if (refreshedSelected) setSelected(refreshedSelected);
+      }
+      return;
+    }
+
+    const token = workspaceToken ?? (await getIdToken(false));
+    if (!selected || !token) return;
     const res = await updateTaskStatusAction({
-      idToken,
+      idToken: token,
       studioId: studioSlug,
       taskId,
       orderId: selected.id,
@@ -151,9 +222,19 @@ export default function OmsPage({
   };
 
   const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
-    if (!selected || !idToken) return;
+    if (isDemo && selected) {
+      const res = updateDemoPaymentStatus(selected.id, newPaymentStatus);
+      if (res.success && res.order) {
+        setSelected(res.order);
+        setOrders(getDemoOrders());
+      }
+      return;
+    }
+
+    const token = workspaceToken ?? (await getIdToken(false));
+    if (!selected || !token) return;
     const res = await updatePaymentStatusAction({
-      idToken,
+      idToken: token,
       studioId: studioSlug,
       orderId: selected.id,
       paymentStatus: newPaymentStatus,

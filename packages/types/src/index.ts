@@ -17,6 +17,7 @@ export interface Studio {
   ownerName: string;
   ownerEmail: string;
   ownerPhone?: string;
+  whatsappConfig?: Record<string, boolean>;
   createdAt: string;
   updatedAt: string;
 }

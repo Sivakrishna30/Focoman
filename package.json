@@ -2,9 +2,14 @@
   "name": "focoman-monorepo",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm --prefix apps/web run dev",
-    "build": "npm --prefix apps/web run build",
+    "build": "NODE_ENV=production npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
     "lint": "npm --prefix apps/web run lint",
     "gitpush": "powershell -ExecutionPolicy Bypass -File scripts/gitpush.ps1",
     "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1"

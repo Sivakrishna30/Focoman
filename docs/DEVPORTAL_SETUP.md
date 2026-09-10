@@ -1,7 +1,7 @@
 # DevPortal - Internal Task Management System
 
 ## Overview
-The DevPortal is a standalone internal tool for the Focoman development team (Siva, Asif, Rohith, Manohar) to track bugs, enhancements, tasks, and project management. It is **not** accessible from the main dashboard sidebar.
+The DevPortal is a standalone internal tool for tracking bugs, enhancements, tasks, and project management. It is **not** accessible from the main dashboard sidebar.
 
 ## Access
 - **URL**: `/devportal`
@@ -38,13 +38,6 @@ The DevPortal is a standalone internal tool for the Focoman development team (Si
 - **Table Statistics**: Real-time counts of tasks by status
 - **Recent Activity**: Last 5 updated tasks with timestamps
 - **Database Access Info**: Direct connection details for manual queries
-
-## Team Members
-The following team members are pre-configured in the system (all as team members - no roles):
-1. **Siva**
-2. **Asif**
-3. **Rohith**
-4. **Manohar**
 
 ## Database Verification
 

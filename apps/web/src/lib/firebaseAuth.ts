@@ -5,18 +5,27 @@ import {
   onAuthStateChanged,
   User,
   UserCredential,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from "firebase/auth";
 import { auth } from "./firebase";
 
 /**
  * Client-side Firebase Authentication helper functions
- * Primary Phase 1 Provider: Google Sign-in
  */
 
 const googleProvider = new GoogleAuthProvider();
 
 export async function signInWithGoogle(): Promise<UserCredential> {
   return await signInWithPopup(auth, googleProvider);
+}
+
+export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {
+  return await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function registerWithEmail(email: string, password: string): Promise<UserCredential> {
+  return await createUserWithEmailAndPassword(auth, email, password);
 }
 
 export async function signOutUser(): Promise<void> {

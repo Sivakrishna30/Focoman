@@ -1,17 +1,28 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { Customer } from "@focoman/types";
+import { useState, useEffect, useCallback, use, useMemo } from "react";
+import { Customer, Order } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
-import { getCurrentUserIdToken } from "@/lib/firebaseAuth";
+import { getStudioOrdersAction } from "@/actions/orderActions";
+import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import {
+  isDemoStudio,
+  getDemoCustomers,
+  getDemoOrders,
+  createDemoCustomer,
+  subscribeToDemoStore,
+} from "@/lib/demoStore";
 
 export default function CrmPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
+  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Customer | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [idToken, setIdToken] = useState<string | null>(null);
+
+  const isDemo = isDemoStudio(studioSlug);
 
   // New Customer Modal
   const [showModal, setShowModal] = useState(false);
@@ -24,32 +35,91 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
     address: "",
   });
 
-  const loadCustomers = async () => {
+  const loadData = useCallback(async (tokenOverride?: string | null) => {
     try {
       setLoading(true);
-      const token = await getCurrentUserIdToken(false);
-      setIdToken(token);
+      if (isDemo) {
+        setCustomers(getDemoCustomers());
+        setOrders(getDemoOrders());
+        setLoading(false);
+        return;
+      }
+      const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
       if (!token) {
         setLoading(false);
         return;
       }
-      const data = await getStudioCustomersAction(studioSlug, token);
-      setCustomers(data);
+      const [customersData, ordersData] = await Promise.all([
+        getStudioCustomersAction(studioSlug, token),
+        getStudioOrdersAction(studioSlug, token)
+      ]);
+      setCustomers(customersData);
+      setOrders(ordersData);
+    } catch (err) {
+      console.error("[CrmPage] Failed to load data:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
 
   useEffect(() => {
-    void loadCustomers();
-  }, [studioSlug]);
+    if (isDemo) {
+      void loadData();
+      const unsub = subscribeToDemoStore(() => {
+        void loadData();
+      });
+      return () => unsub();
+    } else if (!authLoading) {
+      void loadData(workspaceToken);
+    }
+  }, [studioSlug, isDemo, authLoading, workspaceToken, loadData]);
+
+  const customerMetrics = useMemo(() => {
+    const metrics: Record<string, { totalOrders: number; lifetimeValue: number; pendingReceivables: number; latestOrder: string | null }> = {};
+    customers.forEach(c => {
+      metrics[c.id] = { totalOrders: 0, lifetimeValue: 0, pendingReceivables: 0, latestOrder: null };
+    });
+    
+    orders.forEach(o => {
+      if (metrics[o.customer.id]) {
+        metrics[o.customer.id].totalOrders += 1;
+        metrics[o.customer.id].lifetimeValue += o.pricing.finalConfirmedPrice || 0;
+        metrics[o.customer.id].pendingReceivables += o.pricing.remainingAmount || 0;
+        
+        if (!metrics[o.customer.id].latestOrder || new Date(o.createdAt) > new Date(metrics[o.customer.id].latestOrder!)) {
+          metrics[o.customer.id].latestOrder = o.createdAt;
+        }
+      }
+    });
+    
+    return metrics;
+  }, [customers, orders]);
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setModalError(null);
 
-    const token = await getCurrentUserIdToken(true);
+    if (isDemo) {
+      const res = createDemoCustomer({
+        name: form.name,
+        phone: form.phone || undefined,
+        email: form.email || undefined,
+        address: form.address || undefined,
+      });
+      setIsSubmitting(false);
+      if (res.success && res.customer) {
+        setShowModal(false);
+        setForm({ name: "", phone: "", email: "", address: "" });
+        setCustomers(getDemoCustomers());
+        setSelected(res.customer);
+      } else {
+        setModalError("Failed to add customer in demo mode");
+      }
+      return;
+    }
+
+    const token = await getIdToken(true);
     if (!token) {
       setModalError("Authentication error. Please sign in again.");
       setIsSubmitting(false);
@@ -70,7 +140,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
     if (res.success && res.customer) {
       setShowModal(false);
       setForm({ name: "", phone: "", email: "", address: "" });
-      await loadCustomers();
+      await loadData();
       setSelected(res.customer);
     } else {
       setModalError(res.error || "Failed to add customer");
@@ -134,30 +204,36 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
               {search ? `No customer found matching "${search}".` : "No customers registered yet. Clients from confirmed orders appear here."}
             </div>
           ) : (
-            filtered.map((cus) => (
-              <div
-                key={cus.id}
-                onClick={() => setSelected(cus.id === selected?.id ? null : cus)}
-                className={`cursor-pointer rounded-2xl border p-4 transition hover:shadow-sm ${
-                  selected?.id === cus.id
-                    ? "border-brand-orange-primary bg-brand-orange-background/20"
-                    : "border-border-default bg-white hover:border-brand-orange-light"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm text-text-primary">{cus.name}</p>
-                    <p className="text-xs text-text-tertiary">{cus.phone || "No phone registered"} {cus.email ? `· ${cus.email}` : ""}</p>
-                    {cus.address && <p className="text-[10px] text-text-tertiary">{cus.address}</p>}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span className="inline-block rounded-full bg-surface-app border border-border-default px-2 py-0.5 text-[10px] font-bold text-text-secondary">
-                      Registered: {cus.createdAt ? new Date(cus.createdAt).toLocaleDateString() : "Active"}
-                    </span>
+            filtered.map((cus) => {
+              const metrics = customerMetrics[cus.id];
+              return (
+                <div
+                  key={cus.id}
+                  onClick={() => setSelected(cus.id === selected?.id ? null : cus)}
+                  className={`cursor-pointer rounded-2xl border p-4 transition hover:shadow-sm ${
+                    selected?.id === cus.id
+                      ? "border-brand-orange-primary bg-brand-orange-background/20"
+                      : "border-border-default bg-white hover:border-brand-orange-light"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm text-text-primary">{cus.name}</p>
+                      <p className="text-xs text-text-tertiary">{cus.phone || "No phone registered"} {cus.email ? `· ${cus.email}` : ""}</p>
+                      <div className="mt-2 flex gap-3 text-[10px] font-semibold text-text-tertiary">
+                        <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>{metrics?.totalOrders || 0} Orders</span>
+                        <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>₹{((metrics?.lifetimeValue || 0) / 1000).toFixed(1)}K LTV</span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="inline-block rounded-full bg-surface-app border border-border-default px-2 py-0.5 text-[10px] font-bold text-text-secondary">
+                        Registered: {cus.createdAt ? new Date(cus.createdAt).toLocaleDateString() : "Active"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -179,22 +255,52 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
           </div>
 
           <div className="px-6 py-5 space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-border-default p-4 bg-slate-50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">Total Lifetime Value</p>
+                <p className="text-2xl font-extrabold text-text-primary">₹{customerMetrics[selected.id]?.lifetimeValue?.toLocaleString() || 0}</p>
+                <p className="text-xs text-text-secondary mt-1">{customerMetrics[selected.id]?.totalOrders || 0} Confirmed Orders</p>
+              </div>
+              <div className="rounded-xl border border-border-default p-4 bg-slate-50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-1">Pending Dues</p>
+                <p className={`text-2xl font-extrabold ${(customerMetrics[selected.id]?.pendingReceivables || 0) > 0 ? "text-brand-orange-primary" : "text-emerald-600"}`}>
+                  ₹{customerMetrics[selected.id]?.pendingReceivables?.toLocaleString() || 0}
+                </p>
+                <p className="text-xs text-text-secondary mt-1">Remaining Balance</p>
+              </div>
+            </div>
+
             <div className="rounded-xl border border-border-default p-4 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Contact Details</h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div><p className="text-text-tertiary">Phone</p><p className="font-semibold text-text-primary">{selected.phone || "—"}</p></div>
                 <div><p className="text-text-tertiary">Email</p><p className="font-semibold text-text-primary">{selected.email || "—"}</p></div>
-                <div><p className="text-text-tertiary">Address</p><p className="font-semibold text-text-primary">{selected.address || "—"}</p></div>
+                <div className="col-span-2"><p className="text-text-tertiary">Address</p><p className="font-semibold text-text-primary">{selected.address || "—"}</p></div>
                 <div><p className="text-text-tertiary">Registered Date</p><p className="font-semibold text-text-primary">{selected.createdAt ? new Date(selected.createdAt).toLocaleDateString() : "—"}</p></div>
               </div>
             </div>
 
             <div className="rounded-xl border border-border-default p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">Customer Actions</h3>
-              <div className="flex flex-wrap gap-2">
-                <button className="rounded-lg border border-border-default px-3 py-2 text-xs font-semibold text-text-primary hover:bg-surface-app">
-                  Send WhatsApp Notification
-                </button>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">Order History</h3>
+              <div className="space-y-3">
+                {orders.filter(o => o.customer.id === selected.id).length > 0 ? (
+                  orders.filter(o => o.customer.id === selected.id).map(order => (
+                    <div key={order.id} className="flex justify-between items-center p-3 rounded-lg border border-slate-100 bg-slate-50">
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">{order.eventType}</p>
+                        <p className="text-[10px] text-text-secondary mt-0.5">{order.orderNumber} · {new Date(order.eventDate).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-text-primary">₹{order.pricing.finalConfirmedPrice}</p>
+                        <p className={`text-[10px] font-extrabold uppercase mt-0.5 ${order.orderStatus === 'COMPLETED' ? 'text-emerald-600' : 'text-sky-600'}`}>
+                          {order.orderStatus.replace(/_/g, ' ')}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-text-tertiary">No orders found.</p>
+                )}
               </div>
             </div>
           </div>

@@ -179,7 +179,7 @@ export default function PricingPage() {
               {/* CTA Button */}
               <div className="mt-8 pt-6 border-t border-border-divider">
                 <Link
-                  href="/onboarding/register-studio"
+                  href="/sign-in"
                   className={`block w-full rounded-xl py-3 text-center text-xs font-bold text-white shadow-xs transition ${plan.ctaColor}`}
                 >
                   {plan.ctaText}
@@ -192,8 +192,26 @@ export default function PricingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border-default bg-white py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center text-xs text-text-tertiary sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="text-xs text-text-tertiary">
+              © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
+            </div>
+            <div className="flex items-center gap-6">
+              <Link href="/features" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
+                Features
+              </Link>
+              <Link href="/pricing" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
+                Pricing
+              </Link>
+              <Link href="/about" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
+                About Us
+              </Link>
+              <Link href="/#faq" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
+                FAQs
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

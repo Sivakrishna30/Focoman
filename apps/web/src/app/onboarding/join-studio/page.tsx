@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
 
@@ -43,7 +44,10 @@ export default function JoinStudioPage() {
     <div className="min-h-screen bg-surface-app text-text-primary">
       <Navbar />
 
-      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <BackButton fallbackHref="/workspaces" />
+        </div>
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-10">
           <div className="border-b border-border-divider pb-6">
             <span className="inline-block rounded-full bg-brand-purple-background px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-purple-primary">

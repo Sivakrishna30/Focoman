@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
+import { signOutUser } from "@/lib/firebaseAuth";
+
 export type Plan = "basic" | "professional" | "complete";
 
 interface DashboardSidebarProps {
@@ -72,12 +75,34 @@ const NAV_ITEMS = [
 
 export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appEnv }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border-default bg-white">
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (err) {
+      console.error("[DashboardSidebar] Sign out error:", err);
+    }
+    router.push("/");
+  };
+
+  const navContent = (onLinkClick?: () => void) => (
+    <div className="flex h-full flex-col bg-white">
       {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-border-divider px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border-divider px-5 py-4">
         <FocomanLogo className="h-9 w-auto" showStudiosSuffix={false} />
+        {onLinkClick && (
+          <button
+            onClick={onLinkClick}
+            className="rounded-lg p-1.5 text-text-tertiary hover:bg-slate-100 md:hidden"
+            aria-label="Close sidebar"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Studio Info */}
@@ -85,7 +110,10 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-text-primary truncate">{studioName}</p>
           <Link
+            id="tour-sidebar-switch"
             href="/workspaces"
+            prefetch={true}
+            onClick={onLinkClick}
             className="text-[10px] font-semibold text-brand-blue-primary hover:underline shrink-0"
             title="Switch Workspace"
           >
@@ -93,13 +121,15 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
           </Link>
         </div>
         <p className="text-xs text-text-tertiary truncate">{ownerName}</p>
-        <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-          plan === "complete"
-            ? "bg-brand-purple-background text-brand-purple-primary"
-            : plan === "professional"
-            ? "bg-brand-orange-background text-brand-orange-primary"
-            : "bg-brand-blue-background text-brand-blue-primary"
-        }`}>
+        <span
+          className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+            plan === "complete"
+              ? "bg-brand-purple-background text-brand-purple-primary"
+              : plan === "professional"
+              ? "bg-brand-orange-background text-brand-orange-primary"
+              : "bg-brand-blue-background text-brand-blue-primary"
+          }`}
+        >
           {plan === "complete" ? "Studio Complete" : plan === "professional" ? "Studio Professional" : "Studio Starter"}
         </span>
       </div>
@@ -109,7 +139,9 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
         {NAV_ITEMS.map((item) => {
           const isDevPortal = (item.module as string | null) === "dev";
           const isTestingMode = appEnv === "testing";
-          const accessible = isDevPortal ? isTestingMode : (item.module === null || item.module === "oms" || plan === "professional" || plan === "complete");
+          const accessible = isDevPortal
+            ? isTestingMode
+            : item.module === null || item.module === "oms" || plan === "professional" || plan === "complete";
           const href = item.href(studioSlug);
           const isActive = pathname === href;
 
@@ -125,15 +157,9 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
                   <p className="text-xs font-semibold text-text-tertiary truncate">{item.label}</p>
                   {item.sublabel && <p className="text-[10px] text-text-tertiary">{item.sublabel}</p>}
                 </div>
-                {isDevPortal ? (
-                  <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                ) : (
-                  <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                )}
+                <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
               </div>
             );
           }
@@ -141,7 +167,10 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
           return (
             <Link
               key={item.label}
+              id={item.module ? `tour-nav-${item.module}` : "tour-nav-dashboard"}
               href={href}
+              prefetch={true}
+              onClick={onLinkClick}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
                 isActive
                   ? "bg-brand-blue-primary text-white shadow-xs"
@@ -164,16 +193,67 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, appE
 
       {/* Bottom: Sign Out */}
       <div className="border-t border-border-divider px-3 py-3">
-        <Link
-          href="/"
-          className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-text-secondary transition hover:bg-red-50 hover:text-red-600"
+        <button
+          onClick={() => {
+            if (onLinkClick) onLinkClick();
+            void handleSignOut();
+          }}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-text-secondary transition hover:bg-red-50 hover:text-red-600 text-left"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
           Sign Out
-        </Link>
+        </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Top Header */}
+      <div className="flex h-14 w-full items-center justify-between border-b border-border-default bg-white px-4 md:hidden shrink-0 z-30">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-1.5 text-text-secondary hover:bg-slate-100"
+            aria-label="Open navigation menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <FocomanLogo className="h-7 w-auto" showStudiosSuffix={false} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-text-primary max-w-[120px] truncate">{studioName}</span>
+          <Link
+            href="/workspaces"
+            prefetch={true}
+            className="text-[10px] font-semibold text-brand-blue-primary hover:underline"
+          >
+            Switch
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Slide-Out Drawer Overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="relative flex w-72 max-w-[80vw] flex-1 flex-col shadow-xl">
+            {navContent(() => setMobileOpen(false))}
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-border-default bg-white md:flex">
+        {navContent()}
+      </aside>
+    </>
   );
 }
