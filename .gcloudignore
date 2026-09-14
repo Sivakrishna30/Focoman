@@ -1,0 +1,14 @@
+.gcloudignore
+.git
+.gitignore
+node_modules/
+**/node_modules/
+apps/web/.next/
+**/.next/
+.cache/
+.agents/
+docs/
+assets/
+*.log
+bun.lock
+pnpm-workspace.yaml

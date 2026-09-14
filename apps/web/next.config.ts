@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
     "@focoman/validation",
     "@focoman/domain",
   ],
+  eslint: {
+    // Run eslint separately via npm run lint to avoid OOM crashes during build on Cloud Run
+    ignoreDuringBuilds: true,
+  },
+  poweredByHeader: false,
+  compress: true,
 };
 
 export default nextConfig;
