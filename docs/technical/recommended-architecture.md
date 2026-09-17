@@ -11,7 +11,7 @@
 
 Focoman uses an **Integrated Modular Monolith** built entirely in **TypeScript** using **Next.js 15 (App Router)** deployed to **Google Cloud Run**, with **Firebase Authentication** and **Google Cloud Firestore**.
 
-Rather than splitting the project into a separately deployed Spring Boot backend service and a separately deployed frontend app, Focoman combines client UI rendering and trusted server-side business logic within one integrated application monorepo.
+Rather than splitting the project into a complex multi-runtime deployment, Focoman combines client UI rendering and trusted server-side business logic within one integrated, unified full-stack TypeScript monorepo.
 
 ```text
                                FOCOMAN INTEGRATED APPLICATION
@@ -90,10 +90,9 @@ Cloud Run handles zero-downtime deployment, traffic management, and auto-scaling
 
 ---
 
-## 5. Legacy Architecture Replacement Notes
+## 5. Architectural Modernization Notes
 
-- **Spring Boot 3 / Java 17 Backend**: Replaced by Next.js Server Actions and `packages/domain`.
-- **PostgreSQL / Cloud SQL / Flyway**: Replaced by Google Cloud Firestore.
-- **Owner-Created Passwords & Separate Studio Login Portals**: Replaced by Google Authentication, single-use invitation tokens, and unified workspace switcher.
-- **Railway Artifacts (`railway.json`, `nixpacks.toml`)**: Removed in favor of Cloud Run.
-- **Separate API Service Deployment**: Replaced by single integrated Cloud Run container.
+- **Unified Full-Stack TypeScript**: All application logic, APIs, and workflows execute in pure TypeScript via Next.js Server Actions and `packages/domain`.
+- **Cloud Persistence**: Managed Google Cloud Firestore document database provides native auto-scaling, real-time capabilities, and zero-maintenance persistence.
+- **Modern Identity**: Google Authentication with single-use invitation tokens and unified workspace switching replaces legacy custom passwords and siloed studio portals.
+- **Single-Container Deployment**: Containerized Next.js standalone application running on Google Cloud Run with zero-downtime scaling.

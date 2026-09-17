@@ -3,7 +3,7 @@
 **Document Type:** Technical Architecture Specification  
 **Status:** Active Target Specification  
 **Project:** Focoman  
-**Supersedes:** Legacy Java 21 / Spring Boot 3 / PostgreSQL Technical Design  
+**Architecture:** 100% Full-Stack JavaScript / TypeScript Monorepo  
 
 ---
 
@@ -11,7 +11,7 @@
 
 Focoman is implemented as an **Integrated TypeScript Monorepo** using **Next.js 15 (App Router)**, **Firebase Authentication**, **Google Cloud Firestore**, and **Google Cloud Run**.
 
-The platform combines client UI rendering and server-side application logic into a single codebase, eliminating the operational complexity of managing separate frontend and Java backend deployments.
+The platform combines client UI rendering and server-side application logic into a single cohesive codebase, eliminating the operational complexity of managing disparate frontend and backend runtimes.
 
 ```text
                                FOCOMAN INTEGRATED APPLICATION
@@ -37,7 +37,7 @@ The platform combines client UI rendering and server-side application logic into
 
 ## 2. Target Technology Stack
 
-- **Application Monorepo:** `pnpm` workspace (`apps/web`, `packages/types`, `packages/validation`, `packages/domain`, `packages/db`, `packages/auth`, `packages/config`).
+- **Application Monorepo:** `pnpm` / `npm` workspace (`apps/web`, `packages/types`, `packages/validation`, `packages/domain`, `packages/db`, `packages/auth`, `packages/config`).
 - **Frontend & App Framework:** Next.js 15 App Router, React 18, TypeScript 5, Tailwind CSS 3.
 - **Server Execution Layer:** Next.js Server Actions and Route Handlers.
 - **Authentication:** Firebase Authentication with Google Sign-in as sole personal identity provider. Studio ownership and memberships decoupled from Firebase UID. Order tracking via guest passkeys.
@@ -76,11 +76,25 @@ Firebase Services (Firestore & Firebase Authentication)
 
 ---
 
-## 5. Superseded Legacy Architecture Items
+## 5. Architectural Modernization Notes
 
-- **Spring Boot 3 / Java 21 Backend**: Archived/superseded.
-- **PostgreSQL / Cloud SQL / Flyway**: Superseded by Firestore.
-- **Owner-Created Member Credentials & Custom Passwords**: Superseded by Google Authentication + Invitation Token linking.
-- **Separate Studio Login Portals**: Superseded by unified Google identity and multi-studio workspace switching.
-- **Railway Configuration (`railway.json`, `nixpacks.toml`)**: Replaced by Cloud Run containerization.
-- **Google Calendar API**: Removed from Phase 1 MVP scope.
+- **Full-Stack JavaScript / TypeScript**: Unified codebase running on Next.js 15 App Router with zero secondary runtimes.
+- **Server-Side Security**: All privileged operations use Server Actions with Firebase Admin SDK verification.
+- **Document Model**: Firestore provides dynamic schema flexibility for confirmed orders and workflow tasks.
+- **Modern Authentication**: Single Google identity and decoupled studio memberships replace custom user credentials.
+
+---
+
+## 6. Amendment: Modular Evolution & Studio Marketplace (Planned)
+
+In accordance with the Product Discovery Document Amendment (2026-09-14), the core technical design is being evolved to support a **Modular Architecture** and a public **Studio Marketplace**.
+
+### 6.1 Modular Feature Flags (CRM, ERP, WhatsApp)
+* **Configuration Gating**: The core OMS is mandatory. Advanced CRM, ERP (crew allocation), and WhatsApp capabilities will be gated via server-side feature enablement flags attached to the Studio document or a dedicated configuration collection.
+* **UI Adaptation**: The frontend Next.js application will dynamically render or hide sidebar navigation and workflow sections based on the studio's enabled modules, preventing overwhelming UX for basic users.
+
+### 6.2 Studio Marketplace Architecture (Planned)
+* **Data Privacy Boundary**: A strict server-side boundary will isolate public Marketplace Data from private Studio Operational Data. A new `marketplace_profiles` (or similar) collection must be introduced. Internal CRM data, revenue, unassigned tasks, and customer information will **never** be copied to or queryable from the public marketplace collection.
+* **Opt-In Model**: Studios will have explicit "Visibility" toggles that provision their public profile.
+* **Location-Based Search**: Future iterations will define a search/indexing strategy (e.g., Geo-queries in Firestore or external indexing) to support scalable geographic queries by customers without querying private studio collections.
+* **Separation of Guest Access**: The public Studio Marketplace is architecturally distinct from the passkey-protected Guest Order Tracker (`/track/[passkey]`), which relies on separate authorization logic.

@@ -3,7 +3,7 @@
 **Document Type:** Technical Deployment Guide  
 **Status:** Active Target Specification  
 **Project:** Focoman  
-**Supersedes:** Legacy Railway / PostgreSQL Deployment Guide  
+**Architecture:** Google Cloud Run & Firebase (Next.js 15 Monorepo)  
 
 ---
 
@@ -45,9 +45,10 @@ Firebase Services (Firestore & Firebase Auth)
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Client API Key | Yes |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | Yes |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | GCP / Firebase Project ID | Yes |
-| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin SDK Private Key | **NO (Server-Only)** |
-| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin Service Account Email | **NO (Server-Only)** |
-| `WHATSAPP_BUSINESS_API_TOKEN` | WhatsApp API Credentials | **NO (Server-Only)** |
+| `FIREBASE_PRIVATE_KEY` | Firebase Admin SDK Private Key (alias: `FIREBASE_ADMIN_PRIVATE_KEY`) | **NO (Server-Only)** |
+| `FIREBASE_CLIENT_EMAIL` | Firebase Admin Service Account Email (alias: `FIREBASE_ADMIN_CLIENT_EMAIL`) | **NO (Server-Only)** |
+| `FIREBASE_PROJECT_ID` | GCP / Firebase Project ID for Server Admin SDK | **NO (Server-Only)** |
+| `WHATSAPP_BUSINESS_API_TOKEN` | WhatsApp API Credentials (Phase 2) | **NO (Server-Only)** |
 
 ---
 
@@ -74,7 +75,7 @@ gcloud run deploy focoman-web \
 
 ---
 
-## 5. Superseded Railway & Relational Deployment Notes
+## 5. Deployment Architecture Notes
 
-- Legacy deployment instructions using `railway.json`, `nixpacks.toml`, Railway, Neon PostgreSQL, or Cloud SQL are **SUPERSEDED** and archived.
 - Google Cloud Run + Firebase represents the active production deployment target.
+- The single Next.js 15 App Router container serves both UI and server API logic natively.

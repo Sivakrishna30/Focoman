@@ -274,4 +274,4 @@ The following historical concepts are formally classified as **SUPERSEDED / ARCH
 1. **Owner-Created Member Credentials**: Any mechanism where a studio owner specifies a username and password for crew members is superseded by Google Authentication + Invitation Token linking.
 2. **Separate Studio Login Portals**: Any pattern requiring distinct login URLs or distinct accounts per studio is superseded by the unified Google identity with multi-studio membership switching.
 3. **Customer Firebase Accounts**: Any requirement to register customers into Firebase Auth for order status tracking is superseded by the lightweight passkey tracking model.
-4. **Spring Security / JWT Tokens**: Superseded by Firebase Auth ID tokens verified server-side via Firebase Admin SDK.
+4. **Custom Platform Passwords / Legacy Tokens**: Completely eliminated in favor of Firebase Auth ID tokens verified server-side via Firebase Admin SDK.

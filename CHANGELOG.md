@@ -4,6 +4,207 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-020 — Studio Operations & Accounting Copy Refinement: Clean, Minimal Payroll & Auditing Focus
+
+- **Task:** CHG-020 — Remove "Deployment Teams" and Streamline ERP Copy to Minimal, Professional Task Assignment, Payroll, and Auditing
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **Eliminated Clumsy/Over-Engineered Jargon**:
+     - Removed all references to "deployment teams" and military-sounding team units across the marketing site, feature cards, and SRS specifications.
+  2. **Minimal, Professional Studio Operations Copy**:
+     - Streamlined the module summary to: *"Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing."*
+     - Replaced team unit cards with **Crew Task Assignment & Ownership** and clean **Crew Payroll & Compensation** (tracking shoot wages, per-event day rates, travel claims, and standard tax withholdings).
+- **Reason:** Direct user guidance: Eliminate clumsy phrasing, remove "deployment teams", and speak cleanly about assigning tasks, managing basic crew payroll, and accounting summaries that help studio owners with auditing and tax returns.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-019 — Google Workspace Native Integration Architecture: Google Drive In-App Previews & Google Calendar Synchronization
+
+- **Task:** CHG-019 — Architect and Integrate Google Drive & Google Calendar Across Modules with In-App Previews
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `apps/web/src/app/[studioSlug]/dashboard/oms/page.tsx`, `apps/web/src/app/track/[passkey]/page.tsx`, `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **Architectural Placement Clarified**:
+     - Defined Google Drive and Google Calendar not as disconnected standalone modules, but as **Native Embedded Integrations** residing directly within the relevant operational modules:
+       - **Google Drive in OMS (Order Management)**: Direct linking to shoot folders, RAW selection galleries, and album deliverables with embedded in-app preview capability without tab switching.
+       - **Google Calendar in ERP (Crew Operations & Scheduling)**: Live two-way synchronization of shoot dates, call times, crew assignments, and visual availability.
+  2. **In-App Preview & UI Enhancements**:
+     - Added Google Drive order folder preview card inside the Studio OMS order drawer.
+     - Added Google Drive Shoot Gallery & Deliverables preview to the passkey-protected guest tracking page.
+     - Added dedicated Native Integrations section and FAQ on the marketing home and features pages.
+  3. **Product Specification & Documentation Sync**:
+     - Updated `srs-mvp.md` (Sections 5.1, 5.3, 5.4) and `modular-evolution-and-marketplace.md` (Section E).
+- **Reason:** User request: Integrate Google Drive and Google Calendar throughout the tool, establishing native embedded in-app previews so studio teams and clients never have to open separate tools or juggle browser tabs.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-018 — CRM Specification Refinement: Streamlined Contact Directories and Removal of Redundant Family Hierarchy Features
+
+- **Task:** CHG-018 — Remove Primary/Secondary Contacts and VIP Family Members Features in CRM
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **Removed**:
+     - Removed "Primary & Secondary Contacts" feature cards and descriptions across UI and product docs.
+     - Removed "VIP Family Members List" feature cards and descriptions across UI and product docs.
+  2. **Refined CRM Focus**:
+     - Positioned CRM on core studio essentials: Centralized Customer Directory & Profiles, Complete Event & Order History, Client Styling Preferences & Shoot Notes, Anniversary & Milestone Reminders for repeat business, Lifetime Value Tracking, and Direct Re-Booking.
+     - Formally documented multi-contact hierarchies and family list complexity as excluded over-engineering.
+- **Reason:** Direct user guidance: Eliminate unnecessary multi-contact and VIP family list overhead to keep CRM simple, direct, and focused on essential client data and repeat booking reminders.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-017 — Navigation CTA Refinement: Module-Centric Feature Exploration
+
+- **Task:** CHG-017 — Replace "Explore More Features" with Precise Module Breakdown CTAs
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/about/page.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Replaced the vague `Explore More Features →` button on the home page with `Explore Detailed Module Breakdown →`.
+  - Replaced `Explore Features` on the About page with `Explore Module Breakdown`.
+  - Clarifies that all capabilities and tools are organized directly inside the core modules (Order Management, CRM, Operations/Crew ERP, and Marketplace), rather than standing as disconnected features.
+- **Reason:** Direct user guidance: Ensure navigation buttons accurately reflect that features live structured inside the explained modules.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-016 — Landing Page Copy Refinement: Elimination of Bracketed Terms & Outcome-Driven Accounting & Auditing
+
+- **Task:** CHG-016 — Remove Bracketed Terms on Landing Page and Refine Auditing/Accounts/Tax Purpose
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **Elimination of Bracketed Terms**:
+     - Removed bracketed jargon on the landing page (`(OMS)`, `(CRM)`, `(ERP)`, `(Team A/B)`, `(10 Members)`, and inline examples).
+     - Headings now use natural business names: `Order Management`, `Customer Relationship Management`, `Studio Operations and Crew Management`.
+  2. **Professional Auditing, Accounts & Tax Readiness**:
+     - Replaced mechanical feature labels ("tax ledger summary") with outcome- and purpose-driven descriptions:
+     - Articulated why the system is used: keeps studio income, crew payouts, and verified travel claims continuously organized to give studio owners an accurate audit trail of actual net profit, eliminating end-of-year accounting panic and making annual tax filing effortless.
+- **Reason:** Direct user guidance: Remove awkward bracketed terms on the landing page and describe the tangible business purpose and utility of studio financial accounts and tax auditing.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-015 — Copy & Typography Refinement: Elimination of AI-Style Em Dashes and Robotic Hyphens
+
+- **Task:** CHG-015 — Replace Em Dashes and AI Hyphens with Natural Human Punctuation
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/components/WorkspaceTour.tsx`, `apps/web/src/app/features/page.tsx`, `apps/web/src/app/about/page.tsx`, `apps/web/src/app/pricing/page.tsx`, `apps/web/src/app/[studioSlug]/dashboard/oms/page.tsx`, `apps/web/src/app/[studioSlug]/dashboard/crm/page.tsx`, `apps/web/src/app/[studioSlug]/dashboard/erp/page.tsx`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **User Request Target**: Replaced the em dash in *"Track and manage confirmed orders and their status across every milestone—from RAW photo selection..."* with a natural comma across `HomePage.tsx`, `features/page.tsx`, `WorkspaceTour.tsx`, and `srs-mvp.md`.
+  2. **Feature Titles & Modules**: Replaced robotic hyphens and em dashes in module titles with clean parentheses:
+     - `Order Management — OMS` -> `Order Management (OMS)`
+     - `Customer Relationship Management — CRM` -> `Customer Relationship Management (CRM)`
+     - `Enterprise Resource Planning — ERP` -> `Enterprise Resource Planning (ERP)`
+     - In pricing page: `Order Management System (OMS)`, `Customer Relationship Management (CRM)`, `Studio Resource Operations (ERP)`.
+  3. **Section Headings & Descriptions**: Replaced `Module 01 — Core OMS` with `Module 01: Core OMS` (and similarly for CRM/ERP), and eliminated em dashes in `about/page.tsx`, `features/page.tsx`, and `srs-mvp.md`.
+  4. **Table Fallbacks**: Replaced em dash fallback placeholders (`"—"`) in CRM and ERP details panels with standard `"-"`.
+- **Reason:** Direct user guidance: Eliminate telltale AI punctuation patterns (em dashes and robotic hyphens) in favor of polished human punctuation and standard business typography.
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-014 — Specification Refinement: Pragmatic Studio CRM, Team ERP & Modular Plan FAQ
+
+- **Task:** CHG-014 — Studio CRM, ERP Architecture Specification & FAQ Simplification
+- **Date:** 2026-09-16
+- **Area:** `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`, `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. **FAQ Simplification**:
+     - Updated *"Do I have to use every feature?"* to be clear, direct, and plan-oriented: studios only pay for what they need, starting with the Starter plan for OMS, and upgrading to Professional or Complete when ready for CRM, Crew ERP with simple payroll, or WhatsApp alerts.
+  2. **Pragmatic Studio CRM Specification**:
+     - Focused on high-utility studio data: primary & secondary contacts (Bride/Groom, event coordinator), full past event and package history, key family members and VIP lists for shoots, and automated anniversary & upcoming milestone reminders for repeat bookings.
+     - Formally excluded low-utility engineering bloat (complex family tree visualizers, aesthetic moodboard scrapers, and generic B2B pipeline bloat).
+  3. **Pragmatic Studio ERP Specification**:
+     - Visual calendar availability & scheduling (Outlook / Google Calendar model) displaying crew blocked times to prevent double booking.
+     - Team grouping (Team A, Team B, Team C) for handling simultaneous multi-event dates.
+     - Asset & equipment tracking (cameras, lenses, gimbals, mics, memory cards checkout/return).
+     - Simple payroll and payout engine with travel & incidental claims (fuel, meals, out-of-town expenses) approved by studio owners.
+     - Studio accounting & tax filing ledger summarizing gross income, payouts, and expenses for tax returns.
+     - Formally excluded statutory corporate enterprise HR compliance (PF, gratuity, labor union frameworks).
+- **Reason:** Direct user guidance: Eliminate academic/engineering bloat, focus on practical features that real studio owners use daily to run operations, prevent double-bookings, pay crew, and file taxes.
+- **Specification Reference:** `docs/product/modular-evolution-and-marketplace.md`, `docs/product/srs-mvp.md`.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-013 — Copy & Messaging Realignment: Professional OMS Value Proposition & Customer-Facing Marketplace Positioning
+
+- **Task:** CHG-013 — Professional OMS & Marketplace Messaging Alignment
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `apps/web/src/components/WorkspaceTour.tsx`, `docs/product/srs-mvp.md`, `CHANGELOG.md`
+- **Change:**
+  1. **Order Management System (OMS) Description Realignment**:
+     - Replaced mechanical state machine strings and generic copy with direct, functionality-first explanation:
+       - *HomePage.tsx*: "Track and manage confirmed orders and their status across every milestone—from RAW photo selection and editing through to final album delivery and client payments."
+       - *features/page.tsx*: "The core order management system to track and manage your studio's confirmed orders and their status across every milestone—from RAW photo selection and editing through to final album delivery and client payments."
+       - *WorkspaceTour.tsx*: "Track and manage confirmed orders and their status across every milestone—from RAW photo selection and editing through to final album delivery and payments."
+     - Synchronized the polished OMS definition in `docs/product/srs-mvp.md`.
+  2. **Studio Marketplace Realignment**:
+     - Removed "Planned" badges and shifted to customer-centric discovery positioning (locating studios near the client, authentic operational performance metrics, on-time delivery track records, and verified reviews & ratings).
+     - Emphasized studio owner privacy and visibility controls over their public listings.
+- **Reason:** User feedback: Eliminate internal state-machine developer jargon from public and studio-facing descriptions, replace with high-craft professional studio copy, and record changes in documentation and change logs.
+- **Specification Reference:** `docs/product/product-discovery-document.md`, `docs/product/srs-mvp.md`, `Agents.md`.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-012 — Audit Remediation: Member Invitation Lifecycle, Authorization Hardening, Firestore Indexes & Documentation Consistency
+
+- **Task:** CHG-012 — Comprehensive Audit Resolution
+- **Date:** 2026-09-14
+- **Area:** `packages/types`, `packages/db`, `apps/web/src/actions/*`, `apps/web/src/app/onboarding/join-studio`, `apps/web/src/app/[studioSlug]/dashboard/erp`, `firestore.indexes.json`, `docs/technical/*`, `apps/web/src/app/features`, `apps/web/src/app/pricing`
+- **Change:**
+  1. **Member Invitation & Activation Lifecycle**:
+     - Added `StudioInvitation` type to `packages/types`.
+     - Implemented `saveInvitation`, `getInvitationByCode`, `getInvitationsByStudio`, and atomic `acceptInvitationTransaction` in `@focoman/db`.
+     - Added `acceptInvitationAction` and `getStudioInvitationsAction` to `memberActions.ts`. Enhanced `createMemberAction` to automatically issue single-use cryptographic invitation tokens.
+     - Implemented real Google Auth account linking and token validation in `apps/web/src/app/onboarding/join-studio/page.tsx`.
+     - Enhanced ERP crew management modal in `apps/web/src/app/[studioSlug]/dashboard/erp/page.tsx` with instant invitation code and shareable onboarding link display.
+  2. **Server Action Authorization Hardening**:
+     - Enforced `requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER")` in `updateStudioWhatsappConfigAction` (`studioActions.ts`) to close the identified authorization gap.
+  3. **Firestore Composite Indexes**:
+     - Updated `firestore.indexes.json` with composite indexes for `orders` (`studioId` + `createdAt`, `studioId` + `orderStatus` + `createdAt`), `tasks` (`orderId` + `sequenceOrder`), `memberships` (`uid` + `status`, `studioId` + `status`), and `invitations` to prevent runtime `FAILED_PRECONDITION` errors.
+  4. **Deployment & Environment Variable Consistency**:
+     - Updated `@focoman/db` and `serverAuth.ts` to transparently accept both `FIREBASE_CLIENT_EMAIL` / `FIREBASE_ADMIN_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` / `FIREBASE_ADMIN_PRIVATE_KEY`.
+     - Updated `docs/technical/deployment-guide.md` and technical design docs to align with environment variables and `pnpm / npm workspace` conventions.
+  5. **Features & Pricing Alignment with Product Discovery Scope**:
+     - Realigned `/features` to clarify external gallery link handover rather than native cloud media hosting in Phase 1.
+     - Added pilot program disclosure banner to `/pricing` noting provisional status per the Product Discovery Document and keeping multi-studio personal Google identity access unlocked across tiers.
+- **Reason:** Comprehensive resolution of all architectural findings and gaps identified during the GitHub repository audit against the Product Discovery Document.
+- **Specification Reference:** `docs/product/product-discovery-document.md`, `docs/technical/identity-and-auth-architecture.md`, `Agents.md`.
+- **Verification:** ESLint and production Next.js build compilation passed with 0 warnings or errors.
+
+---
+
+## CHG-011 — Product Documentation Realignment: Confirmed Order as Starting Point & Total Spring Boot Elimination
+
+- **Task:** CHG-011 — Authoritative Product Documentation Synchronization & Legacy Architecture Elimination
+- **Date:** 2026-09-14
+- **Area:** `docs/product/*`, `docs/technical/*`, `docs/QUICK_SETUP_GUIDE.md`, `docs/DEVPORTAL_SETUP.md`, `docs/ISSUE_ANALYSIS.md`, `docs/Index.md`, `docs/README.md`, `apps/web/src/app/devportal/page.tsx`
+- **Change:**
+  1. **New Authoritative Product Discovery Document Created**: Added `docs/product/product-discovery-document.md` as the primary product source of truth. Confirmed Order is established as the absolute starting point for Phase 1. The three macro order stages (`Awaiting Event` → `Post-Event In Progress` → `Completed`) and dynamic post-event task generation pipeline are fully codified.
+  2. **Product Requirements (`srs-mvp.md`) Realigned**: Updated requirements specification to mark pre-event sales leads, quotation generation, and negotiations as out-of-scope for Phase 1. Realigned order lifecycle and role definitions.
+  3. **Completely Rewrote Quick Setup Guide (`QUICK_SETUP_GUIDE.md`)**: Removed all obsolete Railway, Spring Boot, Java, H2, and PostgreSQL content. Replaced with accurate setup instructions for the Next.js 15 TypeScript monorepo, Node.js 20+, Firebase Auth, Firestore Admin credentials, and npm scripts (`npm run dev`, `npm run build`, `npm run lint`).
+  4. **Completely Rewrote DevPortal Guide (`DEVPORTAL_SETUP.md`)**: Removed Spring Boot Actuator, Railway SQL Editor, and JDBC references. Documented the Next.js 15 DevPortal at `/devportal` and `/[studioSlug]/dashboard/dev-portal`.
+  5. **Completely Rewrote Issue Analysis (`ISSUE_ANALYSIS.md`)**: Replaced obsolete Railway ephemeral filesystem notes with root cause analyses for the 8 real architectural issues resolved during the platform modernization.
+  6. **Purged Legacy References Across Technical Documentation**: Cleaned up `Index.md`, `README.md`, `tech-stack.md`, `recommended-architecture.md`, `technical-design-mvp.md`, `identity-and-auth-architecture.md`, `vercel-hosting-strategy.md`, and `deployment-guide.md` to confirm the application is 100% full-stack TypeScript / JavaScript.
+- **Reason:** User directive: "Confirmed order is the starting point. Please update the documentation as well. I think documentation has correct data only. Please make sure to follow the documentations like product discovery document and all documents, but few may be outdated. Remove all spring boot reference we have completely moved to javascript."
+- **Specification Reference:** `docs/product/product-discovery-document.md`, `docs/Index.md`.
+- **Verification:** Full compilation build and linting verified with zero errors.
+
+---
+
 ## CHG-010 — Security Hardening: memoryStore Removal, Authorization Layer, ID Hardening & Error Transparency
 
 - **Task:** CHG-010 — Backend Security & Integrity Hardening (Audit Conditions from CHG-009 Independent Review)

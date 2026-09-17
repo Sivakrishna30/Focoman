@@ -3,7 +3,7 @@
 **Document Type:** Technical Deployment Specification  
 **Status:** Active Target Specification  
 **Project:** Focoman  
-**Supersedes:** Legacy Vercel + Spring Boot + Railway Deployment Strategy  
+**Architecture:** 100% Full-Stack JavaScript / TypeScript Monorepo  
 
 ---
 
@@ -63,6 +63,6 @@ If static frontend caching or global edge asset distribution is enabled via Verc
 
 ---
 
-## 4. Superseded Architecture Notes
+## 4. Deployment Model Notes
 
-- Legacy deployment modes using separate Java Spring Boot containers, Railway, Neon PostgreSQL, or Cloud SQL are **SUPERSEDED** and archived.
+- The single Next.js 15 App Router container serves both UI and server API logic natively, eliminating the need for separate backend infrastructure.

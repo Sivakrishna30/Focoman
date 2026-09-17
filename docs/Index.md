@@ -18,11 +18,11 @@ Before making project decisions, agents **MUST** consult `Index.md` to identify 
 
 When evaluating specifications and implementation guidelines:
 
-1. **Primary Product Source of Truth:** `Focoman Product Discovery Document` (OMS-First, Confirmed Order Model).
+1. **Primary Product Source of Truth:** **[Focoman Product Discovery Document](product/product-discovery-document.md)** (OMS-First, Confirmed Order Model).
 2. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/identity-and-auth-architecture.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
 3. **Agent Governance & Workflow Specification:** `../Agents.md`.
-4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`.
-5. **Superseded Specifications:** `product/srs-mvp.md` (Superseded legacy SRS).
+4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`, `ISSUE_ANALYSIS.md`.
+5. **Realigned Specifications:** `product/srs-mvp.md` (Realigned product requirements).
 
 *Rule:* If a newer authoritative document conflicts with an older document, the newer active document takes precedence. Old documents must not override current specifications.
 
@@ -37,9 +37,9 @@ When evaluating specifications and implementation guidelines:
 
 ## 4. Primary Active Product Specifications
 
-- **Focoman Product Discovery Document** — **Primary Product Source of Truth.** Defines OMS-first scope starting from Confirmed Order (*Awaiting Event* → *Post-Event In Progress* → *Completed*), Studio Owner/Member/Customer roles, resource availability confirmation, dynamic workflows, and WhatsApp operational layer.
+- **[Focoman Product Discovery Document](product/product-discovery-document.md)** — **Primary Product Source of Truth.** Defines OMS-first scope starting from Confirmed Order (*Awaiting Event* → *Post-Event In Progress* → *Completed*), Studio Owner/Member/Customer roles, resource availability confirmation, dynamic workflows, and WhatsApp operational layer.
 - **[Authentication & Multi-Studio Identity Architecture](technical/identity-and-auth-architecture.md)** — **Active Identity Specification.** Defines single personal Google identity, Firebase UID decoupling, multi-studio memberships, owner registration, invitation acceptance, and workspace switching.
-- **[SRS MVP (Legacy/Superseded)](product/srs-mvp.md)** — *SUPERSEDED.* Preserved for historical reference only.
+- **[Product Requirements Specification (Realigned SRS)](product/srs-mvp.md)** — Realigned product requirements focusing on OMS-First and confirmed order starting point.
 
 ---
 

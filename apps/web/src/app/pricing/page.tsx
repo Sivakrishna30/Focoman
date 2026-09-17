@@ -5,36 +5,35 @@ const PLANS = [
   {
     name: "Studio Starter",
     price: "499",
-    tagline: "For solo photographers just getting started.",
+    tagline: "For solo photographers and boutique studios.",
     badge: "STARTER",
     badgeColor: "bg-brand-blue-background text-brand-blue-primary",
     borderHover: "hover:border-brand-blue-light",
     accentColor: "bg-brand-blue-primary",
     ctaColor: "bg-brand-blue-primary hover:bg-sky-600",
     ctaText: "Start with Starter",
-    modules: ["Order Management System - OMS"],
+    modules: ["Order Management System (OMS)"],
     features: [
       "Confirmed order lifecycle management",
       "Shoot date schedule tracking",
       "Dynamic post-event workflow pipelines",
       "Payment advance & balance tracking",
-      "Guest order tracking code (zero client login)",
-      "Drive & cloud delivery link sharing",
+      "Guest order passkey tracking (zero client login)",
+      "Client delivery link handover attachment",
+      "Multi-studio workspace access via Google Auth",
       "Up to 2 crew members",
-      "Single studio workspace",
       "Standard email support",
     ],
     notIncluded: [
-      "Customer Relationship Context - CRM",
-      "Studio Resource Coordination - ERP",
-      "WhatsApp automated operational alerts",
-      "Multi-studio workspace switching",
+      "Customer Relationship Management (CRM)",
+      "Studio Resource Operations (ERP)",
+      "WhatsApp automated operational alerts (Add-on)",
     ],
   },
   {
     name: "Studio Professional",
     price: "999",
-    tagline: "For growing studios managing a team.",
+    tagline: "For growing studios managing an active crew.",
     badge: "MOST POPULAR",
     badgeColor: "bg-brand-orange-background text-brand-orange-primary",
     borderHover: "hover:border-brand-orange-light",
@@ -42,29 +41,28 @@ const PLANS = [
     ctaColor: "bg-brand-orange-primary hover:bg-orange-600",
     ctaText: "Go Professional",
     modules: [
-      "Order Management System - OMS",
-      "Customer Relationship Context - CRM",
-      "Studio Resource Coordination - ERP",
+      "Order Management System (OMS)",
+      "Customer Relationship Management (CRM)",
+      "Studio Resource Operations (ERP)",
     ],
     features: [
       "Everything in Studio Starter",
       "Customer directory & confirmed order history",
       "Crew member profiles & certified skill tagging",
-      "Personal Google authentication & role assignment",
-      "Production task assignment & workload tracking",
+      "Single-use invitation codes & Google account linking",
+      "Production task assignment & pipeline tracking",
       "Planned resource availability confirmation",
       "Up to 10 crew members",
       "Priority email support",
     ],
     notIncluded: [
-      "WhatsApp automated operational alerts",
-      "Multi-studio workspace switching",
+      "WhatsApp automated operational alerts (Add-on)",
     ],
   },
   {
     name: "Studio Complete",
     price: "1999",
-    tagline: "Full-stack operations for established studios.",
+    tagline: "Full-stack operations for high-volume studios.",
     badge: "COMPLETE",
     badgeColor: "bg-brand-purple-background text-brand-purple-primary",
     borderHover: "hover:border-brand-purple-light",
@@ -72,20 +70,19 @@ const PLANS = [
     ctaColor: "bg-brand-purple-primary hover:bg-purple-700",
     ctaText: "Get Complete Access",
     modules: [
-      "Order Management System - OMS",
-      "Customer Relationship Context - CRM",
-      "Studio Resource Coordination - ERP",
-      "WhatsApp Operational Notifications",
+      "Order Management System (OMS)",
+      "Customer Relationship Management (CRM)",
+      "Studio Resource Operations (ERP)",
+      "WhatsApp Operational Notifications (Pilot)",
     ],
     features: [
       "Everything in Studio Professional",
-      "WhatsApp booking confirmation alerts",
-      "WhatsApp shoot day reminders (24 hrs prior)",
-      "WhatsApp delivery ready notifications",
-      "Multi-studio workspace switching",
+      "WhatsApp booking confirmation alerts (Pilot)",
+      "WhatsApp shoot day reminders (Pilot)",
+      "WhatsApp delivery ready notifications (Pilot)",
       "Unlimited crew members",
       "Dedicated onboarding assistance",
-      "Priority phone & WhatsApp support",
+      "Priority phone & operational support",
     ],
     notIncluded: [],
   },
@@ -100,14 +97,18 @@ export default function PricingPage() {
       <section className="border-b border-border-divider bg-gradient-to-b from-white to-surface-app px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-            Simple, Transparent Pricing
+            Transparent Studio Plans
           </span>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
             Choose the Right Plan for Your Studio
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-text-secondary">
-            Every plan includes our core Order Management System. Upgrade as your team grows and your operations expand.
+            Every plan includes our core Order Management System. Upgrade as your team grows and your operational pipeline expands.
           </p>
+          {/* Product Discovery Phase Note */}
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-border-default bg-white p-4 text-xs text-text-secondary shadow-xs">
+            <strong className="text-text-primary">Pilot Program Note:</strong> Pricing tiers and commercial packaging are currently provisional per the Product Discovery Document. All pilot studios during Phase 1 receive full operational access to validate confirmed order workflows and team coordination.
+          </div>
         </div>
       </section>
 

@@ -50,7 +50,7 @@ const TOUR_STEPS: TourStep[] = [
     actionPrompt: "👉 Open here: Order Pipeline",
     title: "Order Management (OMS)",
     description:
-      "Click here to see shoots moving through Awaiting Event → Post-Event In Progress → Completed, with task assignments and passkeys.",
+      "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and payments.",
     preferredPosition: "right",
   },
   {

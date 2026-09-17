@@ -129,9 +129,9 @@ export default function DevPortalPage() {
         {activeTab === "architecture" && (
           <div className="space-y-4">
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <h2 className="text-sm font-bold text-slate-200">Architectural Status: Monorepo Migration Active</h2>
+              <h2 className="text-sm font-bold text-slate-200">Architectural Status: 100% Full-Stack TypeScript Active</h2>
               <p className="text-xs text-slate-400 mt-1">
-                All legacy Spring Boot, PostgreSQL relational SQL, and mock database dependencies have been eliminated.
+                The platform is 100% full-stack TypeScript (Next.js 15, Firebase Auth, Google Cloud Firestore).
                 Shared domain types, pure logic engines, and server-only database boundaries are active.
               </p>
             </div>

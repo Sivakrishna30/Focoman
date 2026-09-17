@@ -4,20 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
-
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Features", href: "/features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "About Us", href: "/about" },
-];
 
 function UserDropdownMenu({ user }: { user: User }) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -56,20 +53,20 @@ function UserDropdownMenu({ user }: { user: User }) {
             onClick={() => setIsOpen(false)}
             className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
           >
-            My Workspaces
+            {t("nav.workspaces", "My Workspaces")}
           </Link>
           <Link
             href="/account-settings"
             onClick={() => setIsOpen(false)}
             className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
           >
-            Account Settings
+            {t("nav.settings", "Account Settings")}
           </Link>
           <button
             onClick={handleSignOut}
             className="w-full text-left block px-4 py-2 text-xs font-medium text-status-error hover:bg-red-50 transition"
           >
-            Sign Out
+            {t("nav.signout", "Sign Out")}
           </button>
         </div>
       )}
@@ -81,6 +78,15 @@ export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const { t } = useLanguage();
+
+  const navLinks = [
+    { label: t("nav.home", "Home"), href: "/" },
+    { label: t("nav.features", "Features"), href: "/features" },
+    { label: t("nav.pricing", "Pricing"), href: "/pricing" },
+    { label: t("nav.marketplace", "Marketplace"), href: "/marketplace" },
+    { label: t("nav.about", "About Us"), href: "/about" },
+  ];
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((currentUser) => {
@@ -91,16 +97,16 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-default bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-6 lg:px-8">
         {/* Left Side: Hamburger (Mobile) + Logo */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {/* Mobile Nav Toggle - Left Corner */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden rounded-md p-2 text-text-secondary hover:bg-gray-100 focus:outline-none"
+            className="md:hidden rounded-lg p-1.5 text-text-secondary hover:bg-gray-100 focus:outline-none"
             aria-label="Toggle Menu"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMobileMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -109,15 +115,15 @@ export function Navbar() {
             </svg>
           </button>
 
-          <Link href="/" className="flex items-center gap-3">
-            <FocomanLogo className="h-8 sm:h-12 md:h-14 w-auto" showStudiosSuffix={true} />
+          <Link href="/" className="flex items-center shrink-0">
+            <FocomanLogo className="h-7 sm:h-9 md:h-11 w-auto" showStudiosSuffix={true} />
           </Link>
         </div>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-3">
           <nav className="flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs font-medium sm:text-sm">
-            {NAV_LINKS.map((link) => {
+            {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
@@ -135,6 +141,10 @@ export function Navbar() {
             })}
           </nav>
 
+          {/* Compact Single-line Language Switcher & Theme Switcher */}
+          <LanguageSwitcher />
+          <ThemeSwitcher />
+
           {user ? (
             <UserDropdownMenu user={user} />
           ) : (
@@ -142,21 +152,23 @@ export function Navbar() {
               href="/sign-in"
               className="inline-flex rounded-full bg-brand-blue-primary px-4 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-sky-600"
             >
-              Sign In
+              {t("nav.signin", "Sign In")}
             </Link>
           )}
         </div>
 
-        {/* Mobile Right: Sign In Button */}
-        <div className="flex items-center md:hidden">
+        {/* Mobile Right: Compact Language Switcher + Theme Switcher + Sign In Button */}
+        <div className="flex items-center gap-1.5 md:hidden shrink-0">
+          <LanguageSwitcher />
+          <ThemeSwitcher />
           {user ? (
             <UserDropdownMenu user={user} />
           ) : (
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center rounded-full bg-brand-blue-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-sky-600"
+              className="inline-flex items-center justify-center rounded-full bg-brand-blue-primary px-2.5 py-1 text-[11px] sm:text-xs font-bold text-white shadow-xs transition hover:bg-sky-600 shrink-0"
             >
-              Sign In
+              {t("nav.signin", "Sign In")}
             </Link>
           )}
         </div>
@@ -166,7 +178,7 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border-default bg-white px-4 py-4 shadow-lg absolute w-full left-0">
           <nav className="flex flex-col gap-2">
-            {NAV_LINKS.map((link) => {
+            {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link

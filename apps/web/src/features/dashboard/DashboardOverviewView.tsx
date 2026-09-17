@@ -4,17 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { OrderStatus, Order } from "@focoman/types";
 import { isDemoStudio, getDemoOrders, subscribeToDemoStore } from "@/lib/demoStore";
+import { useLanguage } from "@/context/LanguageContext";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  AWAITING_EVENT: "bg-sky-100 text-sky-800 border-sky-300",
-  POST_EVENT_IN_PROGRESS: "bg-amber-100 text-amber-800 border-amber-300",
-  COMPLETED: "bg-emerald-100 text-emerald-800 border-emerald-300",
-};
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  AWAITING_EVENT: "Awaiting Event",
-  POST_EVENT_IN_PROGRESS: "Post-Event In Progress",
-  COMPLETED: "Completed",
+  AWAITING_EVENT: "badge-brand-blue",
+  POST_EVENT_IN_PROGRESS: "badge-brand-orange",
+  COMPLETED: "badge-status-success",
 };
 
 interface DashboardOverviewViewProps {
@@ -26,8 +21,15 @@ export function DashboardOverviewView({
   studioSlug,
   initialOrders,
 }: DashboardOverviewViewProps) {
+  const { t } = useLanguage();
   const isDemo = isDemoStudio(studioSlug);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+
+  const statusLabels: Record<OrderStatus, string> = {
+    AWAITING_EVENT: t("stage.AWAITING_EVENT", "Awaiting Event"),
+    POST_EVENT_IN_PROGRESS: t("stage.POST_EVENT_IN_PROGRESS", "Post-Event In Progress"),
+    COMPLETED: t("stage.COMPLETED", "Completed"),
+  };
 
   useEffect(() => {
     if (isDemo) {
@@ -56,134 +58,151 @@ export function DashboardOverviewView({
 
   const statCards = [
     {
-      label: "Total Confirmed Orders",
+      label: t("stats.total_orders", "Total Confirmed Orders"),
       value: orders.length,
       sub: "All time registered",
-      color: "border-slate-200 bg-white",
-      textColor: "text-slate-900",
+      cardClass: "border-border-default bg-white",
+      textColor: "text-text-primary",
+      badgeClass: "badge-status-neutral",
     },
     {
-      label: "Awaiting Event",
+      label: t("stats.awaiting_event", "Awaiting Event"),
       value: awaitingEvent,
       sub: "Upcoming shoot dates",
-      color: "border-sky-200 bg-sky-50/60",
-      textColor: "text-sky-700",
+      cardClass: "card-brand-blue",
+      textColor: "text-brand-blue-primary",
+      badgeClass: "badge-brand-blue",
     },
     {
-      label: "Post-Event In Progress",
+      label: t("stats.in_progress", "Post-Event In Progress"),
       value: postEventInProgress,
       sub: "Active production pipeline",
-      color: "border-amber-200 bg-amber-50/60",
-      textColor: "text-amber-700",
+      cardClass: "card-brand-orange",
+      textColor: "text-brand-orange-primary",
+      badgeClass: "badge-brand-orange",
     },
     {
-      label: "Completed Orders",
+      label: t("stats.completed", "Completed Orders"),
       value: completed,
       sub: "Delivered & paid",
-      color: "border-emerald-200 bg-emerald-50/60",
+      cardClass: "border-emerald-200 bg-emerald-50/40",
       textColor: "text-emerald-700",
+      badgeClass: "badge-status-success",
     },
     {
-      label: "Total Confirmed Value",
+      label: t("stats.total_value", "Total Confirmed Value"),
       value: `₹${(totalRevenue / 1000).toFixed(0)}K`,
       sub: "Confirmed orders sum",
-      color: "border-purple-200 bg-purple-50/60",
-      textColor: "text-purple-700",
+      cardClass: "card-brand-purple",
+      textColor: "text-brand-purple-primary",
+      badgeClass: "badge-brand-purple",
     },
     {
-      label: "Pending Collections",
+      label: t("stats.pending_collections", "Pending Collections"),
       value: `₹${(pendingRevenue / 1000).toFixed(0)}K`,
       sub: "Remaining balance",
-      color: "border-orange-200 bg-orange-50/60",
-      textColor: "text-amber-800",
+      cardClass: "card-brand-orange",
+      textColor: "text-brand-orange-primary",
+      badgeClass: "badge-brand-orange",
     },
   ];
 
   return (
-    <div className="px-6 py-8 lg:px-10 bg-slate-50 min-h-full">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Studio Dashboard — {isDemo ? "Lumina Creative Studio" : studioSlug}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Order Management System (OMS) Operational & Resource Status
-          </p>
-        </div>
-        {isDemo && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Live Browser Memory Active
-            </span>
+    <div className="px-6 py-8 lg:px-10 bg-surface-app min-h-full">
+      <header className="header-brand-blue mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span className="badge-brand-blue">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
+                Executive Dashboard
+              </span>
+              <span className="badge-status-neutral">
+                Studio: <strong className="font-semibold text-text-primary">{isDemo ? "Lumina Creative Studio" : studioSlug}</strong>
+              </span>
+            </div>
+            <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
+              Studio Operational Overview
+            </h1>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Order pipeline, client metrics, crew operations, and financial summary.
+            </p>
           </div>
-        )}
-      </div>
+          {isDemo && (
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="badge-status-success">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Demo Session Active
+              </span>
+            </div>
+          )}
+        </div>
+      </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statCards.map((card) => (
-          <div key={card.label} className={`rounded-2xl border p-5 shadow-xs transition hover:shadow-sm ${card.color}`}>
-            <p className="text-xs font-semibold text-slate-500">{card.label}</p>
+          <div key={card.label} className={`rounded-2xl border p-5 shadow-xs transition hover:shadow-sm ${card.cardClass}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-text-secondary">{card.label}</p>
+            </div>
             <p className={`mt-2 text-3xl font-extrabold ${card.textColor}`}>{card.value}</p>
-            <p className="mt-1 text-xs text-slate-400">{card.sub}</p>
+            <p className="mt-1 text-xs text-text-tertiary">{card.sub}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="lg:col-span-2 rounded-2xl border border-border-default bg-white p-6 shadow-xs">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Recent Confirmed Orders</h2>
-              <p className="text-xs text-slate-500">Active photography orders & production stage</p>
+              <h2 className="text-sm font-bold text-text-primary">Recent Confirmed Orders</h2>
+              <p className="text-xs text-text-secondary">Active photography orders & production stages</p>
             </div>
             <Link
               href={`/${studioSlug}/dashboard/oms`}
-              className="text-xs font-semibold text-brand-blue-primary hover:underline"
+              className="btn-brand-outline py-1.5 px-3 text-xs"
             >
               View All Orders →
             </Link>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {orders.slice(0, 6).map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-100/80 px-4 py-3 transition"
+                className="flex items-center justify-between rounded-xl border border-border-default bg-surface-app/60 hover:bg-white hover:border-brand-blue-light px-4 py-3 transition shadow-2xs"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-slate-900">{order.customer.name}</p>
-                    <span className="font-mono text-[10px] text-slate-400 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                    <p className="truncate text-sm font-semibold text-text-primary">{order.customer.name}</p>
+                    <span className="font-mono text-[10px] text-brand-blue-primary bg-white border border-border-default rounded px-1.5 py-0.5 font-bold">
                       {order.orderNumber}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-text-secondary mt-0.5">
                     {order.eventType} · {order.eventDate}
                     {order.eventLocation ? ` · ${order.eventLocation}` : ""}
                   </p>
                 </div>
                 <div className="ml-4 flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-xs font-bold text-slate-900">
+                    <p className="text-xs font-bold text-text-primary">
                       ₹{order.pricing.finalConfirmedPrice.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-text-tertiary">
                       {order.pricing.remainingAmount > 0
                         ? `₹${order.pricing.remainingAmount.toLocaleString()} due`
                         : "Paid in full"}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold border shadow-2xs ${STATUS_COLORS[order.orderStatus]}`}
-                  >
-                    {STATUS_LABELS[order.orderStatus]}
+                  <span className={STATUS_COLORS[order.orderStatus] || "badge-status-neutral"}>
+                    {statusLabels[order.orderStatus] || order.orderStatus}
                   </span>
                 </div>
               </div>
             ))}
             {orders.length === 0 && (
-              <p className="py-12 text-center text-xs text-slate-400">
+              <p className="py-12 text-center text-xs text-text-tertiary">
                 No orders registered yet. Use Register Order to add your first confirmed business.
               </p>
             )}
@@ -191,62 +210,62 @@ export function DashboardOverviewView({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-slate-900 mb-4">Quick Operational Actions</h2>
+          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-text-primary mb-4">Quick Operational Modules</h2>
             <div className="space-y-2.5">
               <Link
                 href={`/${studioSlug}/dashboard/oms`}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 shadow-2xs"
+                className="flex items-center justify-between rounded-xl border border-border-default bg-surface-app/70 px-3.5 py-2.5 text-xs font-semibold text-text-primary transition hover:border-brand-blue-primary hover:bg-white shadow-2xs group"
               >
-                <div className="flex items-center gap-2">
-                  <span>📋</span>
-                  <span>Register Confirmed Order</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-brand-blue-primary group-hover:scale-125 transition" />
+                  <span>{t("dash.orders", "Order Management (OMS)")}</span>
                 </div>
-                <span className="text-slate-400">→</span>
+                <span className="text-brand-blue-primary font-bold">→</span>
               </Link>
               <Link
                 href={`/${studioSlug}/dashboard/crm`}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 shadow-2xs"
+                className="flex items-center justify-between rounded-xl border border-border-default bg-surface-app/70 px-3.5 py-2.5 text-xs font-semibold text-text-primary transition hover:border-brand-orange-primary hover:bg-white shadow-2xs group"
               >
-                <div className="flex items-center gap-2">
-                  <span>👥</span>
-                  <span>Client Directory & Records</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-brand-orange-primary group-hover:scale-125 transition" />
+                  <span>{t("dash.crm", "Customer Relations (CRM)")}</span>
                 </div>
-                <span className="text-slate-400">→</span>
+                <span className="text-brand-orange-primary font-bold">→</span>
               </Link>
               <Link
                 href={`/${studioSlug}/dashboard/erp`}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 shadow-2xs"
+                className="flex items-center justify-between rounded-xl border border-border-default bg-surface-app/70 px-3.5 py-2.5 text-xs font-semibold text-text-primary transition hover:border-brand-purple-primary hover:bg-white shadow-2xs group"
               >
-                <div className="flex items-center gap-2">
-                  <span>👔</span>
-                  <span>Studio Crew & Availability</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-brand-purple-primary group-hover:scale-125 transition" />
+                  <span>{t("dash.erp", "Crew Operations (ERP)")}</span>
                 </div>
-                <span className="text-slate-400">→</span>
+                <span className="text-brand-purple-primary font-bold">→</span>
               </Link>
               <Link
                 href={`/${studioSlug}/dashboard/whatsapp`}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 shadow-2xs"
+                className="flex items-center justify-between rounded-xl border border-border-default bg-surface-app/70 px-3.5 py-2.5 text-xs font-semibold text-text-primary transition hover:border-brand-blue-primary hover:bg-white shadow-2xs group"
               >
-                <div className="flex items-center gap-2">
-                  <span>💬</span>
-                  <span>WhatsApp Notifications</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2 w-2 rounded-full bg-brand-blue-primary group-hover:scale-125 transition" />
+                  <span>{t("dash.whatsapp", "WhatsApp Notifications")}</span>
                 </div>
-                <span className="text-slate-400">→</span>
+                <span className="text-brand-blue-primary font-bold">→</span>
               </Link>
             </div>
           </div>
 
           {isDemo && (
             <div className="rounded-2xl border border-brand-blue-soft bg-gradient-to-br from-brand-blue-background/40 to-white p-5 shadow-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-blue-primary">
-                Demo Workspace Tips
+              <span className="badge-brand-blue mb-2">
+                Demo Workspace
               </span>
               <h3 className="mt-1 text-xs font-bold text-text-primary">
-                Try the Live OMS Workflow
+                Integrated Operational Flow
               </h3>
               <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">
-                Go to <strong>Order Management (OMS)</strong> to click into orders, mark photo editing tasks completed, and watch how the order status and revenue tracking update in real-time!
+                Experience consistent design language across <strong>OMS (Blue)</strong>, <strong>CRM (Orange)</strong>, <strong>ERP (Purple)</strong>, and <strong>WhatsApp</strong> notifications with shared live state.
               </p>
               <div className="mt-3">
                 <Link

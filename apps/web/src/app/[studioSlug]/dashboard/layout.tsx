@@ -44,6 +44,7 @@ export default async function DashboardLayout({
     ownerName: studio.ownerName,
     ownerEmail: studio.ownerEmail,
     ownerPhone: studio.ownerPhone || undefined,
+    features: studio.features,
     createdAt: studio.createdAt || new Date().toISOString(),
     updatedAt: studio.updatedAt || new Date().toISOString(),
   };
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
           plan="complete"
           studioName={serializedStudio.name}
           ownerName={serializedStudio.ownerName}
+          features={serializedStudio.features}
           appEnv={APP_ENV}
         />
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">

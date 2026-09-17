@@ -18,8 +18,13 @@ import {
 
 const NOTIFICATION_GROUPS = [
   {
-    title: "Studio Owner Alerts",
-    description: "Lightweight operational notifications sent to Studio Owner",
+    title: "Studio Owner Alerts (OMS)",
+    description: "Lightweight operational notifications sent to Studio Owner for upcoming events and production milestones.",
+    badgeClass: "badge-brand-blue",
+    badgeLabel: "OMS · Owner Alerts",
+    dotClass: "bg-brand-blue-primary",
+    switchClass: "bg-brand-blue-primary",
+    cardBorder: "border-border-default hover:border-brand-blue-light",
     items: [
       { id: "upcoming_3day", label: "Upcoming Order Reminder (3 days before event)", enabled: true },
       { id: "post_event_start", label: "Post-Event Workflow Started", enabled: true },
@@ -30,16 +35,26 @@ const NOTIFICATION_GROUPS = [
     ]
   },
   {
-    title: "Studio Member Operational Alerts",
-    description: "Notifications for planned resource assignments & assigned tasks",
+    title: "Studio Member Operational Alerts (ERP)",
+    description: "Notifications for planned crew assignments and downstream production task assignments.",
+    badgeClass: "badge-brand-purple",
+    badgeLabel: "ERP · Crew Operations",
+    dotClass: "bg-brand-purple-primary",
+    switchClass: "bg-brand-purple-primary",
+    cardBorder: "border-border-default hover:border-brand-purple-light",
     items: [
       { id: "assignment_confirm", label: "Planned Order Assignment & Availability Confirmation", enabled: true },
       { id: "task_assigned", label: "Downstream Production Task Assigned", enabled: true }
     ]
   },
   {
-    title: "Customer Order Tracking Updates (Optional)",
-    description: "Optional updates sent to customer WhatsApp number if provided",
+    title: "Customer Order Tracking Updates (CRM)",
+    description: "Optional updates sent to customer WhatsApp number for milestone transparency and tracking.",
+    badgeClass: "badge-brand-orange",
+    badgeLabel: "CRM · Customer Relations",
+    dotClass: "bg-brand-orange-primary",
+    switchClass: "bg-brand-orange-primary",
+    cardBorder: "border-border-default hover:border-brand-orange-light",
     items: [
       { id: "customer_post_event", label: "Post-Event Workflow Updates", enabled: true },
       { id: "customer_ready_delivery", label: "Order Ready for Delivery", enabled: true },
@@ -115,43 +130,64 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50 p-6 lg:p-10">
+    <div className="h-full overflow-y-auto bg-surface-app p-6 lg:p-10">
       <div className="max-w-3xl space-y-8">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-extrabold text-emerald-800">
-              PREMIUM CAPABILITY
-            </span>
+        <header className="header-brand-blue">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                <span className="badge-brand-blue">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
+                  Operational Notifications
+                </span>
+                <span className="badge-status-success">
+                  Central Focoman Bot
+                </span>
+                <span className="badge-status-neutral">
+                  Studio: <strong className="font-semibold text-text-primary">{studioSlug}</strong>
+                </span>
+              </div>
+              <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
+                WhatsApp Operational Layer
+              </h1>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Automated messaging and interactive operational status actions for Studio Owner, Members, and Customers.
+              </p>
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="btn-brand-blue"
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
           </div>
-          <h1 className="mt-2 text-2xl font-extrabold text-slate-900">
-            WhatsApp Operational Layer — {studioSlug}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Focoman Bot handles lightweight notifications and operational status actions for Studio Owner, Members, and Customers.
-          </p>
-        </div>
+        </header>
 
         {/* Master Switch */}
-        <div className={`rounded-2xl border p-6 transition ${masterEnabled ? "border-emerald-200 bg-emerald-50/50" : "border-slate-200 bg-white"}`}>
-          <div className="flex items-center justify-between">
+        <div className={`rounded-2xl border p-6 transition ${masterEnabled ? "border-brand-blue-soft bg-brand-blue-background/40 shadow-xs" : "border-border-default bg-white"}`}>
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900">
-                Focoman Bot WhatsApp Integration
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${masterEnabled ? "bg-brand-blue-primary animate-pulse" : "bg-text-tertiary"}`} />
+                <h2 className="text-sm font-extrabold text-text-primary">
+                  Focoman Bot WhatsApp Automation
+                </h2>
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
                 {masterEnabled
-                  ? "Operational alerts and status checks active via central Focoman Bot"
-                  : "WhatsApp notifications disabled (Core OMS application remains fully operational)"}
+                  ? "Operational alerts and status updates actively routed via central Focoman Bot."
+                  : "WhatsApp notifications paused (Core OMS application remains fully operational)."}
               </p>
             </div>
             <button
               onClick={() => setMasterEnabled(!masterEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                masterEnabled ? "bg-emerald-600" : "bg-slate-300"
+                masterEnabled ? "bg-brand-blue-primary" : "bg-border-default"
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
                   masterEnabled ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -163,24 +199,30 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
         {masterEnabled && (
           <div className="space-y-6">
             {NOTIFICATION_GROUPS.map((group) => (
-              <div key={group.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-base font-extrabold text-slate-900">{group.title}</h3>
-                <p className="text-xs text-slate-500 mb-4">{group.description}</p>
+              <div key={group.title} className={`rounded-2xl border bg-white p-6 shadow-xs transition ${group.cardBorder}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <h3 className="text-base font-extrabold text-text-primary">{group.title}</h3>
+                  <span className={group.badgeClass}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${group.dotClass}`} />
+                    {group.badgeLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary mb-4">{group.description}</p>
 
-                <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="space-y-3 pt-3 border-t border-border-default">
                   {group.items.map((item) => {
                     const isActive = config[item.id] !== false; // Default to true if undefined
                     return (
-                      <div key={item.id} className="flex items-center justify-between py-1">
-                        <span className="text-xs font-semibold text-slate-700">{item.label}</span>
+                      <div key={item.id} className="flex items-center justify-between py-1.5">
+                        <span className="text-xs font-semibold text-text-primary">{item.label}</span>
                         <button
                           onClick={() => toggleItem(item.id)}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                            isActive ? "bg-emerald-500" : "bg-slate-300"
+                            isActive ? group.switchClass : "bg-border-default"
                           }`}
                         >
                           <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${
+                            className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform ${
                               isActive ? "translate-x-5" : "translate-x-1"
                             }`}
                           />
@@ -194,17 +236,17 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Action Button & Status */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+            className="btn-brand-blue"
           >
             {isSaving ? "Saving..." : "Save Configuration"}
           </button>
           {statusMessage && (
-            <span className={`text-xs font-bold ${statusMessage.includes("Error") || statusMessage.includes("Failed") ? "text-red-600" : "text-emerald-600"}`}>
+            <span className={statusMessage.includes("Error") || statusMessage.includes("Failed") ? "badge-status-error" : "badge-status-success"}>
               {statusMessage}
             </span>
           )}

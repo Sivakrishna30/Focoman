@@ -135,6 +135,46 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ pas
               )}
             </div>
 
+            {/* Google Drive In-App Gallery & Deliverables Preview */}
+            <div className="mt-10 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-emerald-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
+                      ▲
+                    </span>
+                    <h3 className="text-sm font-bold text-text-primary">Google Drive Shoot Gallery & Deliverables</h3>
+                  </div>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Review thumbnails and download confirmed edits directly inside your portal without logging into Google.
+                  </p>
+                </div>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 self-start sm:self-auto">
+                  ✓ In-App Preview Active
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { name: "Preview_01.jpg", type: "RAW Select", status: "Approved" },
+                  { name: "Preview_02.jpg", type: "RAW Select", status: "Approved" },
+                  { name: "Teaser_Reel.mp4", type: "Video Edit", status: "Ready" },
+                  { name: "Master_Album.pdf", type: "Album Proof", status: isCompleted ? "Delivered" : "In Progress" },
+                ].map((item) => (
+                  <div key={item.name} className="flex flex-col items-center justify-center rounded-xl border border-border-default bg-white p-3 text-center shadow-2xs">
+                    <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center text-lg mb-2 text-slate-500">
+                      📷
+                    </div>
+                    <span className="text-xs font-semibold text-text-primary truncate w-full">{item.name}</span>
+                    <span className="text-[10px] text-text-tertiary">{item.type}</span>
+                    <span className="mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       </main>

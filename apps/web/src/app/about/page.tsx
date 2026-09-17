@@ -40,7 +40,7 @@ export default function AboutPage() {
               </p>
               <p className="mt-4 text-sm leading-relaxed text-text-secondary sm:text-base">
                 We believe the best software is built by people who understand the daily reality
-                of the business they&apos;re solving for — not from a spreadsheet, but from
+                of the business they&apos;re solving for, not from a spreadsheet, but from
                 conversations with the people doing the actual work.
               </p>
               <div className="mt-6 flex flex-wrap gap-4">
@@ -66,7 +66,7 @@ export default function AboutPage() {
               <div className="mt-6 h-px bg-border-divider" />
               <p className="mt-6 text-xs italic text-text-tertiary">
                 &quot;We name ourselves after the principle of writing code that works correctly
-                when multiple things happen at once — because business never slows down.&quot;
+                when multiple things happen at once, because business never slows down.&quot;
               </p>
             </div>
           </div>
@@ -80,10 +80,10 @@ export default function AboutPage() {
             The Product
           </span>
           <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-            Focoman — Focus beyond the frames
+            Focoman: Focus beyond the frames
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-text-secondary sm:text-base">
-            Focoman is ThreadSafe&apos;s first product — a complete Business Operating System built
+            Focoman is ThreadSafe&apos;s first product: a complete Business Operating System built
             exclusively for photography studios. It replaces the chaos of scattered WhatsApp messages,
             hand-written notebooks, and Excel sheets that most studio owners rely on today.
           </p>
@@ -124,10 +124,10 @@ export default function AboutPage() {
               Our Goal
             </span>
             <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Give every studio owner the power to run a professional operation — at any scale.
+              Give every studio owner the power to run a professional operation at any scale.
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-text-secondary sm:text-base">
-              We want every photographer in India who runs a studio — whether in a metro city or a tier-2 town —
+              We want every photographer in India who runs a studio, whether in a metro city or a tier-2 town,
               to have access to the same quality of business tooling that large enterprises use.
               Focoman is the first step towards that goal.
             </p>
@@ -152,7 +152,7 @@ export default function AboutPage() {
               href="/features"
               className="rounded-xl bg-brand-blue-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-600"
             >
-              Explore Features
+              Explore Module Breakdown
             </Link>
             <Link
               href="/pricing"

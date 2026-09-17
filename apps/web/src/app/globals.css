@@ -3,10 +3,228 @@
 @tailwind utilities;
 
 :root {
-  color: #111827;
-  background: #FAFAFA;
+  color-scheme: light;
+  --bg-app: #FAFAFA;
+  --bg-card: #FFFFFF;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-tertiary: #9CA3AF;
+  --border-default: #E5E7EB;
+  color: var(--text-primary);
+  background: var(--bg-app);
+}
+
+/* Dark Mode Theme */
+.dark, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg-app: #0B0F19;
+  --bg-card: #111827;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border-default: #1E293B;
+  color: var(--text-primary);
+  background: var(--bg-app);
+}
+
+/* Monochrome Theme */
+.monochrome, [data-theme="monochrome"] {
+  color-scheme: light dark;
+  --bg-app: #F4F4F5;
+  --bg-card: #FFFFFF;
+  --text-primary: #09090B;
+  --text-secondary: #52525B;
+  --text-tertiary: #71717A;
+  --border-default: #D4D4D8;
+  color: var(--text-primary);
+  background: var(--bg-app);
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark Mode Global Component Adaptations */
+.dark body {
+  background-color: #0B0F19;
+  color: #F8FAFC;
+}
+
+.dark header,
+.dark nav,
+.dark aside,
+.dark .bg-white {
+  background-color: #111827 !important;
+  color: #F8FAFC;
+}
+
+.dark .bg-surface-app,
+.dark .bg-slate-50,
+.dark .bg-gray-50 {
+  background-color: #0B0F19 !important;
+}
+
+.dark .bg-slate-100,
+.dark .bg-gray-100 {
+  background-color: #1E293B !important;
+}
+
+.dark .border-border-default,
+.dark .border-slate-200,
+.dark .border-gray-200,
+.dark .border-slate-100 {
+  border-color: #1E293B !important;
+}
+
+.dark .text-text-primary,
+.dark .text-slate-900,
+.dark .text-gray-900 {
+  color: #F8FAFC !important;
+}
+
+.dark .text-text-secondary,
+.dark .text-slate-600,
+.dark .text-gray-600,
+.dark .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+.dark .text-text-tertiary,
+.dark .text-slate-400 {
+  color: #64748B !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* Monochrome Global Component Adaptations */
+.monochrome body {
+  background-color: #F4F4F5;
+  color: #09090B;
+}
+
+.monochrome .bg-brand-blue-primary,
+.monochrome .bg-brand-orange-primary,
+.monochrome .bg-brand-purple-primary,
+.monochrome .bg-sky-600,
+.monochrome .bg-orange-600,
+.monochrome .bg-purple-600 {
+  background-color: #18181B !important;
+  color: #FFFFFF !important;
+  border-color: #27272A !important;
+}
+
+.monochrome .text-brand-blue-primary,
+.monochrome .text-brand-orange-primary,
+.monochrome .text-brand-purple-primary {
+  color: #18181B !important;
+}
+
+.monochrome .badge-brand-blue,
+.monochrome .badge-brand-orange,
+.monochrome .badge-brand-purple,
+.monochrome .badge-status-success,
+.monochrome .badge-status-warning,
+.monochrome .badge-status-error {
+  background-color: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #D4D4D8 !important;
+}
+
+.monochrome .border-brand-blue-primary,
+.monochrome .border-brand-orange-primary,
+.monochrome .border-brand-purple-primary {
+  border-color: #18181B !important;
+}
+
+@layer components {
+  /* Direct Brand Utility Classes */
+  .brand-blue {
+    color: #0EA5E9;
+  }
+  .brand-orange {
+    color: #F97316;
+  }
+  .brand-purple {
+    color: #8B5CF6;
+  }
+
+  /* Dashboard Headers */
+  .dashboard-header {
+    @apply border-b border-border-default bg-white px-6 py-5;
+  }
+  .header-brand-blue {
+    @apply border-b border-brand-blue-soft/80 bg-gradient-to-r from-brand-blue-background/70 via-white to-white px-6 py-5;
+  }
+  .header-brand-orange {
+    @apply border-b border-brand-orange-soft/80 bg-gradient-to-r from-brand-orange-background/70 via-white to-white px-6 py-5;
+  }
+  .header-brand-purple {
+    @apply border-b border-brand-purple-soft/80 bg-gradient-to-r from-brand-purple-background/70 via-white to-white px-6 py-5;
+  }
+
+  /* Consistent Buttons */
+  .btn-brand-blue {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-blue-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm transition duration-150 hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-brand-blue-light focus:ring-offset-2 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-brand-orange {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-orange-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm transition duration-150 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-brand-orange-light focus:ring-offset-2 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-brand-purple {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm transition duration-150 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-brand-purple-light focus:ring-offset-2 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-brand-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border-default bg-white px-4 py-2.5 text-xs font-bold text-text-secondary shadow-sm transition duration-150 hover:bg-surface-app hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-brand-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-text-secondary transition hover:bg-surface-app hover:text-text-primary;
+  }
+
+  /* Status Badges */
+  .badge-brand-blue {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-brand-blue-soft bg-brand-blue-background px-2.5 py-1 text-[11px] font-bold text-brand-blue-primary;
+  }
+  .badge-brand-orange {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-brand-orange-soft bg-brand-orange-background px-2.5 py-1 text-[11px] font-bold text-brand-orange-primary;
+  }
+  .badge-brand-purple {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-brand-purple-soft bg-brand-purple-background px-2.5 py-1 text-[11px] font-bold text-brand-purple-primary;
+  }
+  .badge-status-success {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700;
+  }
+  .badge-status-warning {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700;
+  }
+  .badge-status-error {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700;
+  }
+  .badge-status-neutral {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border-default bg-surface-app px-2.5 py-1 text-[11px] font-bold text-text-secondary;
+  }
+
+  /* Active & Selected Cards */
+  .card-brand-blue {
+    @apply rounded-2xl border border-brand-blue-primary bg-brand-blue-background/40 shadow-sm;
+  }
+  .card-brand-orange {
+    @apply rounded-2xl border border-brand-orange-primary bg-brand-orange-background/40 shadow-sm;
+  }
+  .card-brand-purple {
+    @apply rounded-2xl border border-brand-purple-primary bg-brand-purple-background/40 shadow-sm;
+  }
 }

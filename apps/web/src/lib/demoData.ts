@@ -24,6 +24,13 @@ export const DEMO_STUDIO: Studio = {
     customer_ready_delivery: true,
     customer_payment_remind: true,
   },
+  features: {
+    oms: true,
+    crm: true,
+    erp: true,
+    whatsapp: true,
+    marketplace: false,
+  },
   createdAt: "2026-01-10T10:00:00.000Z",
   updatedAt: "2026-09-01T12:00:00.000Z",
 };

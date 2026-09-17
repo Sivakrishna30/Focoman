@@ -3,7 +3,7 @@
 **Document Type:** Technical Architecture Specification  
 **Status:** Active Target Specification  
 **Project:** Focoman  
-**Supersedes:** Legacy Java 21 / Spring Boot 3 / PostgreSQL Tech Stack  
+**Architecture:** 100% Full-Stack JavaScript / TypeScript Monorepo  
 
 ---
 
@@ -27,12 +27,9 @@
 
 ---
 
-## Superseded Legacy Stack Items (Removed/Archived)
+## Architecture Boundaries & Scope Exclusions
 
-- **Java 21 / Spring Boot 3**: Superseded by integrated Next.js + TypeScript server logic.
-- **PostgreSQL / Cloud SQL / Hibernate JPA**: Superseded by Google Cloud Firestore.
-- **Spring Security / JWT**: Superseded by Firebase Authentication.
-- **Owner-Created Member Credentials & Custom Passwords**: Superseded by Google Authentication + Invitation Token linking.
-- **Separate Studio Login Portals**: Superseded by unified Google identity and multi-studio workspace switching.
-- **Railway Configuration (`railway.json`, `nixpacks.toml`)**: Superseded by Google Cloud Run deployment.
-- **Google Calendar API**: Removed from Phase 1 MVP scope per Product Discovery.
+- **100% Full-Stack JavaScript / TypeScript**: The entire application runs exclusively on Node.js, Next.js 15, and TypeScript. All legacy Java and Spring Boot codebases have been completely decommissioned.
+- **Serverless Cloud Persistence**: All persistence is managed natively via Google Cloud Firestore; no relational SQL or local file databases are used.
+- **Google Authentication**: Firebase Authentication provides personal identity; custom platform passwords and separate studio login portals are completely eliminated.
+- **OMS-First MVP Scope**: Pre-event sales lead negotiations and Google Calendar integrations are excluded from Phase 1 scope per the Product Discovery Document.

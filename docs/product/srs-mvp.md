@@ -1,195 +1,154 @@
-> [!WARNING]
-> **DOCUMENT STATUS: SUPERSEDED / LEGACY**
+> [!IMPORTANT]
+> **DOCUMENT STATUS: SUPERSEDED / REALIGNED**
 > This document (`srs-mvp.md`) represents the legacy Product Specification.
-> It has been **SUPERSEDED** by the authoritative **[Focoman Product Discovery Document](../Index.md)**.
+> It has been realigned and superseded by the authoritative **[Focoman Product Discovery Document](product-discovery-document.md)**.
 > 
-> **Key Realignment Notice:**
-> - Phase 1 starts directly from a **Confirmed Order** (OMS-First).
-> - Leads, enquiries, quotations, negotiations, and Google Calendar integrations are **OUT OF SCOPE** for Phase 1 core order workflows.
-> - High-level order statuses are simplified to: **`Awaiting Event` → `Post-Event In Progress` → `Completed`**.
-> - **Authentication & Identity:** Single personal identity via Google Sign-In (Firebase UID). Studio entities and memberships are decoupled. Multi-studio memberships and fluid workspace switching supported. All legacy owner-created passwords, separate studio logins, and username/password accounts are **SUPERSEDED**.
+> **Key Architecture & Workflow Alignments:**
+> - **Modular Evolution:** The core is OMS-First. CRM, ERP, and WhatsApp are optional modules that scale with studio maturity (See Product Discovery Amendment vNext).
+> - **Studio Marketplace (Planned):** A new public discovery layer separated strictly from private studio operational data.
+> - **Confirmed Order as Starting Point (OMS-First):** Phase 1 begins strictly upon a Confirmed Order with deposit received.
+> - **Pre-Event Leads & Quotations Excluded:** CRM lead prospecting, quotation drafting, and sales negotiations are out of scope for Phase 1 unless explicitly introduced as a future separate module.
+> - **Three Macro Stages:** `Awaiting Event` → `Post-Event In Progress` → `Completed`.
+> - **Authentication & Identity:** Single personal Google Identity (Firebase UID). Decoupled studio memberships (`StudioOwner` vs. `CrewMember`). Zero passwords, zero customer accounts (guest tracking via cryptographic passkeys).
+> - **Pure JavaScript / TypeScript Stack:** 100% full-stack TypeScript with Next.js 15 App Router, React 19, Tailwind CSS, Firebase Auth & Firestore. All legacy Java, Spring Boot, and relational SQL artifacts are completely decommissioned.
 
-# ThreadSafe Project FOCOMAN — Legacy SRS (Superseded)
+# ThreadSafe Project FOCOMAN: Product Requirements Specification
 
 ## 1. Introduction
-
 
 ### 1.1 Purpose
 
 This document defines the functional and non-functional requirements for the Focoman platform.
-Focoman is a web-based Business Operating System designed specifically for photography studios. It enables studio owners to manage customer enquiries, orders, workflows, employees, payments, customer communication, and delivery from a single platform.
-This document serves as the primary reference for designers, developers, testers, and stakeholders during the development lifecycle.
+Focoman is an **OMS-First Business Operating System** designed specifically for photography and cinematography studios. It enables studio owners to manage confirmed orders, post-event production workflows, crew allocations, payments, customer order tracking, and delivery from a single centralized web application.
 
 ## 2. Product Overview
 
-Focoman simplifies the complete photography business workflow by replacing manual processes involving WhatsApp, notebooks, spreadsheets, and phone calls with one centralized platform.
+Focoman simplifies the complete photography business workflow by replacing manual processes involving WhatsApp groups, physical notebooks, disconnected spreadsheets, and phone calls with one centralized platform.
 The system focuses on:
 
-- Order Management
-- Customer Management
-- Workflow Tracking
-- Team Management
-- Customer Order Tracking
-- WhatsApp Notifications
-- Business Operations
+- **Confirmed Order Management**: Structured order recording starting upon confirmed booking and advance payment.
+- **Resource Allocation & Availability**: Assigning lead photographers, candid shooters, cinematographers, and editors to events.
+- **Dynamic Post-Event Workflow Tracking**: Automated milestone checklists for RAW ingest, photo selection, editing, album proofing, and lab printing.
+- **Crew Management**: Lightweight crew member assignments with workspace switching and zero access to studio financials.
+- **Customer Guest Order Tracking**: Frictionless passkey-based order status tracking for brides and event hosts without account creation.
+- **WhatsApp Operational Notifications**: Real-time milestone alerts and passkey links delivered directly via WhatsApp.
+- **Business Operations**: High-level tracking of advance deposits, event-day installments, and final delivery settlements.
 
 ## 3. Objectives
 
 The primary objectives are:
 
-- Simplify photography business operations.
-- Reduce manual order tracking.
-- Improve customer communication.
-- Increase operational visibility.
-- Reduce missed deadlines.
-- Improve team coordination.
-- Deliver a simple and modern business management experience.
+- Eliminate post-event production delays and missed delivery deadlines.
+- Replace unstructured notes with a transparent milestone checklist.
+- Automate customer communication and reduce repetitive "where are my photos?" inquiries.
+- Provide clear operational visibility across upcoming shoots and in-progress edits.
+- Ensure crew members know their call times, venue locations, and deliverables.
+- Deliver a fast, modern, mobile-responsive studio management experience.
 
-## 4. Target Users
+## 4. Target Users & Personas
 
-- Studio Owner
-- Responsible for managing the business.
-- Employees
-- Photographers, videographers, editors, album designers, receptionists, and support staff.
-- Customers
-- Customers who have booked photography services and need to track their orders.
+- **Studio Owner**: Full operational control over studio profile, pricing, confirmed orders, team memberships, and business metrics.
+- **Crew Member / Freelancer**: Photographers, videographers, editors, and album designers who view assigned shoots and update post-event tasks.
+- **Guest Customer**: Event hosts who track their project via a secure passkey link without needing an account or password.
 
 ## 5. Core Modules
 
-### 5.1 Order Management System (OMS)
+### 5.1 Order Management System (OMS): Core Module
 
-The Order Management System is the central module of Focoman.
+The Order Management System (OMS) is the core operational system of Focoman used to track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments. Phase 1 starts strictly with a **Confirmed Order**:
 Functions include:
 
-- Create Lead
-- Convert Lead to Order
-- Assign Team
-- Track Workflow
-- Update Status
-- Add Notes
-- Upload Attachments
-- Track Payments
-- Track Delivery
-- View Timeline
-- Search Orders
+- Create Confirmed Order (Customer details, event schedule, package deliverables, advance payment)
+- Allocate Crew Resources (Assign photographers, videographers, drone operators, editors)
+- Track Post-Event Production Pipeline (RAW ingest, client selection, editing, album design, print lab)
+- Google Drive Folder Linking & In-App Preview (View RAW photos, proofing galleries, and deliverables directly inside Focoman without tab switching)
+- Update Milestone Status & Checklist Items
+- Add Internal Production Notes & Proof URLs
+- Track Payment Milestones (Advance, Event Day, Final Delivery)
+- Trigger WhatsApp Milestone Alerts
+- Guest Passkey Order Tracking Portal (with embedded media previews)
+- Filter & Search Orders by Event Date, Stage, and Status
 
-### 5.2 Customer Relationship Management (CRM)
+### 5.2 Customer Management (Studio CRM)
 
-Stores customer information and previous interactions.
+Stores structured customer relationship details and long-term client history:
 
-- Customer Information
-- Name
-- Mobile Number
-- WhatsApp Number
-- Email
-- Address
-- Customer History
-- Previous Orders
-- Event History
-- Total Business Value
-- Pending Payments
-- Referral Source
-- Internal Notes
+- **Customer Profiles & Directory**: Centralized client details (name, phone number, email, address).
+- **Communication Channels**: Mobile phone, WhatsApp for notifications, and email address.
+- **Complete Order & Event History**: Past photoshoot bookings, packages selected, deliverables provided, and historical order values.
+- **Client Preferences & Shoot Notes**: Record specific client styling preferences, favorite deliverables, and custom shoot notes for returning clients.
+- **Anniversary & Milestone Reminders**: Automated date tracking for 1st wedding anniversaries, birthdays, and upcoming family milestones to facilitate repeat studio bookings.
+- *Excluded (Over-Engineering)*: Complex genealogy trees, multi-contact hierarchies, moodboard scrapers, and generic B2B pipeline bloat.
 
-### 5.3 Business Management (Minimal ERP)
+### 5.3 Studio Operations & Crew Coordination (Studio ERP)
 
-Supports basic business operations.
-Includes:
+Supports comprehensive studio operational execution, crew logistics, and basic studio accounting:
 
-- Employee Management
-- Team Assignment
-- Basic Reports
-- Dashboard
-- Payment Tracking
+- **Visual Calendar Availability & Scheduling**: Calendar scheduling assistant with two-way Google Calendar synchronization, displaying crew blocked time and availability before assignments to eliminate double booking.
+- **Crew Task Assignment & Milestone Ownership**: Assigning photographers, videographers, and editors to specific event dates and post-production deliverables with clear task ownership.
+- **Asset & Equipment Tracking**: Check-out and return tracking of studio gear (cameras, lenses, gimbals, microphones, memory cards) linked to specific shoots.
+- **Crew Payroll & Compensation Engine**:
+  - Per-event, daily, or task-based crew wages and standard tax withholdings/allowances.
+  - **Travel & Incidental Claims**: Submission and approval of crew travel, fuel, meals, and out-of-station expenses.
+  - Payout lifecycle tracking (Draft → Approved → Paid).
+- **Auditing, Financial Accounts & Tax Readiness**:
+  - Structured records of studio revenue, completed crew payouts, and verified travel expenses.
+  - Transparent audit trail of studio profitability and exportable financial summaries for annual tax returns.
+- *Excluded*: Complex enterprise HR statutory compliance (statutory provident funds, corporate union frameworks). Keep focused on studio contractor payouts, basic tax tracking, and expense management.
 
-The MVP intentionally excludes advanced ERP features such as payroll, inventory, manufacturing, and accounting.
+### 5.4 Native Integrations (Google Workspace & WhatsApp)
 
-## 6. Lead Management
+Embedded native connectivity layers that operate within core modules without forcing users to juggle external tools:
 
-Lead Sources
+- **Google Drive Integration (OMS)**: Link photoshoot folders, RAW selection galleries, and client deliverables with embedded in-app preview inside order details and client tracking views.
+- **Google Calendar Synchronization (ERP)**: Push shoot schedules, call times, and crew assignments directly to crew Google Calendars with in-app calendar preview.
+- **WhatsApp Messaging Layer**: Automated milestone alerts, client passkey delivery, and crew task assignments.
 
-Automatic
+## 6. Pre-Event Lead Scope Notice
 
-- Website Booking Form
-- WhatsApp
-
-Manual
-
-- Phone Call
-- Walk-in Customer
-- Referral
-- Existing Customer
-
-Each lead stores:
-
-- Source
-- Date
-- Customer Details
-- Event Type
-- Event Date
-- Status
-
-Lead Status
-
-- New
-- Contacted
-- Negotiation
-- Quotation Sent
-- Confirmed
-- Rejected
+In accordance with the **Focoman Product Discovery Document**, **pre-event lead management (inquiries, price negotiations, quotation drafts) is OUT OF SCOPE for Phase 1**.
+Focoman begins exclusively when a customer has agreed to terms, paid their advance deposit, and the order is officially booked.
 
 ## 7. Order Workflow
 
-Pre-Event
+### Macro Stages
 
 ```text
-Lead
-↓
-Discussion
-↓
-Quotation
-↓
-Negotiation
-↓
-Advance Payment
-↓
-Booking Confirmed
-↓
-Order Created
-↓
-Google Calendar Entry
-↓
-Team Assignment
-↓
-Shoot Scheduled
+┌───────────────────────┐
+│    AWAITING EVENT     │  Booking confirmed with deposit. Date locked.
+└───────────┬───────────┘  Crew allocated and shoot schedule prepared.
+            │
+            ▼  Event Date occurs & shoot wraps
+┌───────────────────────┐
+│ POST-EVENT IN PROGRESS│  Dynamic post-event tasks generated and executed:
+└───────────┬───────────┘  RAW Backup → Selection → Editing → Album → Print.
+            │
+            ▼  Final balance cleared & physical deliverables handed over
+┌───────────────────────┐
+│       COMPLETED       │  Order archived and marked fulfilled.
+└───────────────────────┘
 ```
 
-Post-Event
+### Dynamic Post-Event Production Pipeline
 
 ```text
 Shoot Completed
 ↓
-RAW Backup
+1. RAW Backup & Ingest (Dual storage verification)
 ↓
-Photo Selection
+2. Selection Gallery Dispatched (Passkey link sent via WhatsApp)
 ↓
-Editing
+3. Client Selection Completed (Favorites locked for album & retouching)
 ↓
-Preview
+4. Photo & Video Editing (Color grading, skin retouch, audio master)
 ↓
-Album Design
+5. Album Design & Client Proofing (Digital spread review & signoff)
 ↓
-Customer Approval
+6. Print Lab & Packaging (Physical printing, binding, custom box packaging)
 ↓
-Printing
+7. Delivery Handover & Final Settlement (Balance payment cleared)
 ↓
-Packaging
-↓
-Delivery Ready
-↓
-Final Payment
-↓
-Completed
+Order Completed
 ```
 
 ## 8. Customer Portal
@@ -282,10 +241,9 @@ Displays:
 - Total Orders
 - Active Orders
 - Completed Orders
-- Today's Shoots
+- Upcoming Shoots
 - Pending Payments
-- Delayed Orders
-- Recent Leads
+- Milestone Delays
 - Recent Activities
 - Team Workload
 
@@ -295,13 +253,13 @@ Studio Owner
 
 - Full system access.
 
-Employee
+Crew Member
 
-- Limited access based on assigned permissions.
+- Scoped access to assigned shoots and workflow tasks.
 
 Customer
 
-- Access only to their own order tracking portal.
+- Isolated access to their own order tracking portal via guest passkey.
 
 ## 15. Non-Functional Requirements
 
@@ -338,9 +296,9 @@ Reliability
 
 Phase 1
 
-- Responsive Web Application
-- Admin Dashboard
-- Customer Portal
+- Responsive Web Application (Next.js 15, React 19, TypeScript)
+- Studio Dashboard
+- Customer Passkey Tracking Portal
 
 Phase 2
 
@@ -352,6 +310,7 @@ Future phases may include iOS and additional platform integrations.
 
 The following features are intentionally excluded from the MVP:
 
+- Pre-event sales leads, enquiries, quotations, and negotiations
 - Public Studio Marketplace
 - Review & Rating System
 - Native Gallery Platform
@@ -366,12 +325,11 @@ The following features are intentionally excluded from the MVP:
 
 The MVP will be considered successful if it enables a photography studio to:
 
-- Manage leads efficiently.
-- Convert leads into orders.
-- Track every order from enquiry to delivery.
-- Keep customers informed through the tracking portal.
-- Reduce manual follow-ups using WhatsApp notifications.
-- Manage employees and assignments effectively.
+- Register confirmed orders with clear deliverable milestones.
+- Track every confirmed order from booking deposit to final handover.
+- Keep customers informed through the passkey tracking portal.
+- Reduce manual follow-ups using WhatsApp milestone alerts.
+- Manage crew members and task assignments effectively.
 - Operate daily business activities from a single platform.
 
 ## 19. Document Status

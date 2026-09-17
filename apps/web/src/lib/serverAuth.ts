@@ -29,8 +29,8 @@ function getAdminAuthInstance() {
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
     process.env.GOOGLE_CLOUD_PROJECT;
 
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_ADMIN_PRIVATE_KEY);
 
   const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
 

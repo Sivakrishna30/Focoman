@@ -11,7 +11,8 @@ Project documentation is organized by purpose:
 ## Quick Category Links
 
 ### Product
-- `product/srs-mvp.md` (Superseded legacy reference)
+- `product/product-discovery-document.md` (Primary Product Source of Truth - OMS First)
+- `product/srs-mvp.md` (Realigned product requirements specification)
 
 ### Technical Architecture & Design
 - `technical/technical-design-mvp.md` (Active technical design)

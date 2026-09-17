@@ -18,6 +18,32 @@ export interface Studio {
   ownerEmail: string;
   ownerPhone?: string;
   whatsappConfig?: Record<string, boolean>;
+  features?: {
+    oms: boolean;
+    crm: boolean;
+    erp: boolean;
+    whatsapp: boolean;
+    marketplace: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceProfile {
+  id: string; // Typically matches studioId
+  studioId: string;
+  name: string;
+  slug: string;
+  city: string;
+  description?: string;
+  tags: string[]; // e.g. ['WEDDING', 'PORTRAIT', 'CORPORATE']
+  coverImageUrl?: string;
+  isVisible: boolean;
+  verifiedMetrics: {
+    onTimeDeliveryPercentage: number;
+    completedOrdersCount: number;
+    lastCalculatedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +69,21 @@ export interface StudioMembership {
   status: 'ACTIVE' | 'INACTIVE';
   joinedAt: string;
   updatedAt: string;
+}
+
+export interface StudioInvitation {
+  id: string; // unique single-use invite code / token, e.g. INV-A92B-4F8C
+  studioId: string;
+  studioName: string;
+  email: string;
+  name?: string;
+  skills: string[];
+  role: 'STUDIO_MEMBER';
+  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
+  invitedByUid: string;
+  createdAt: string;
+  acceptedAt?: string;
+  acceptedByUid?: string;
 }
 
 export interface Customer {

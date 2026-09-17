@@ -124,7 +124,7 @@ export default function RegisterStudioPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5" suppressHydrationWarning>
             <div>
               <label htmlFor="studio-name" className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Studio Name *

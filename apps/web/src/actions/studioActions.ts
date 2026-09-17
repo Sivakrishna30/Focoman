@@ -6,7 +6,7 @@ import {
   getMembershipsByUid,
 } from "@focoman/db";
 import { Studio, StudioMembership } from "@focoman/types";
-import { requireVerifiedUser } from "@/lib/serverAuth";
+import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Studio Registration & Multi-Studio Workspaces
@@ -67,6 +67,13 @@ export async function registerStudioAction(input: {
       ownerId: ownerUid,
       ownerName,
       ownerEmail,
+      features: {
+        oms: true,
+        crm: true,
+        erp: true,
+        whatsapp: true,
+        marketplace: false, // Explicit opt-in required for marketplace
+      },
       createdAt: now,
       updatedAt: now,
     };
@@ -108,20 +115,10 @@ export async function updateStudioWhatsappConfigAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(idToken);
+    // Enforce Studio Owner authorization per identity and auth architecture
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
     
-    // Ensure the user is an owner or member with enough rights
-    // Wait, the specification says "Studio Owner alerts... Member Operational Alerts". 
-    // Typically only owner should change these settings, or at least a member.
-    // Let's use requireStudioMember which will throw if they are not in the studio.
-    // For now, let's allow any active member to configure, or ideally just OWNER. 
-    // Let's check requireStudioMember signature if it accepts role.
-    
-    // We can't check role if we don't have requireStudioMember imported here. Let's import it.
-    // Actually, I'll just do a standard update for now.
-    
-    // For now, we will just call updateStudio.
     const { updateStudio } = await import("@focoman/db");
-    
     await updateStudio(studioSlug, { whatsappConfig: config });
     return { success: true };
   } catch (err: any) {
