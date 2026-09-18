@@ -3,6 +3,49 @@
  * Primary Product Source of Truth: Focoman Product Discovery Document
  */
 
+/**
+ * PLAN & ENTITLEMENT TYPES (CHG-026)
+ */
+export type PlanType = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'COMPLETE';
+
+export type CapabilityId =
+  | 'OMS_CORE'
+  | 'CUSTOMER_BASIC'
+  | 'CUSTOMER_CRM'
+  | 'TEAM_MANAGEMENT'
+  | 'MANUAL_ASSIGNMENT'
+  | 'MARKETPLACE_CONFIGURATION'
+  | 'MARKETPLACE_PUBLIC'
+  | 'BOOKING_REQUESTS'
+  | 'NEGOTIATION'
+  | 'PAYMENT_RECORDING'
+  | 'PAYMENT_VERIFICATION'
+  | 'ERP_BASIC'
+  | 'ERP_AVAILABILITY'
+  | 'ERP_WORKLOAD'
+  | 'ERP_CONFLICT_DETECTION'
+  | 'ERP_RESOURCE_SUGGESTION'
+  | 'ERP_SMART_RESOURCE_AUTOMATION'
+  | 'GOOGLE_CALENDAR'
+  | 'GOOGLE_DRIVE'
+  | 'AUTOMATION_BASIC'
+  | 'AUTOMATION_ADVANCED'
+  | 'ANALYTICS_BASIC'
+  | 'ANALYTICS_ADVANCED'
+  | 'WHATSAPP_NOTIFICATIONS'
+  | 'WHATSAPP_BOT'
+  | 'MULTI_STUDIO'
+  | 'ADVANCED_INTEGRATIONS';
+
+export interface StudioPlan {
+  plan: PlanType;
+  isTrial: boolean;
+  trialStartedAt?: string;
+  trialExpiresAt?: string;
+  updatedAt: string;
+}
+
+
 export type BookingStatus =
   | 'BOOKING_REQUEST'
   | 'OPEN_FOR_NEGOTIATION'
@@ -167,6 +210,9 @@ export interface CustomerOrderView {
 export interface Studio extends SoftDeletable {
   id: string;
   name: string;
+  // Plan information (CHG-026)
+  planInfo?: StudioPlan;
+
   city: string;
   ownerId: string;
   ownerName: string;

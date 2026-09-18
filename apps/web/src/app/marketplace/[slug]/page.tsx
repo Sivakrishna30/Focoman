@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicMarketplaceProfile } from "@/actions/marketplaceActions";
+import { getPublishedStudioPackages } from "@focoman/db";
 import { Navbar } from "@/components/Navbar";
+import { PublicStudioPackagesClient } from "@/features/marketplace/PublicStudioPackagesClient";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,7 @@ export default async function PublicProfilePage(props: { params: Promise<{ slug:
   }
   
   const p = res.profile;
+  const packages = await getPublishedStudioPackages(p.studioId);
 
   return (
     <div className="min-h-screen bg-surface-app flex flex-col">
@@ -81,6 +84,11 @@ export default async function PublicProfilePage(props: { params: Promise<{ slug:
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Studio Packages & Booking Flow */}
+          <div className="border-t border-border-divider bg-white p-8 sm:p-12">
+            <PublicStudioPackagesClient studioId={p.studioId} packages={packages} />
           </div>
         </div>
       </main>

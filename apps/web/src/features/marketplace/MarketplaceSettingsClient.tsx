@@ -1,54 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fetchMarketplaceProfile, saveMarketplaceProfile } from "@/actions/marketplaceActions";
-import { MarketplaceProfile } from "@focoman/types";
+import { useState, useEffect, useCallback } from "react";
+import {
+  fetchMarketplaceProfile,
+  saveMarketplaceProfile,
+  getStudioPackagesAction,
+  createStudioPackageAction,
+  deleteStudioPackageAction,
+  getStudioBookingRequestsAction,
+  negotiateBookingRequestAction,
+  getStudioPaymentsAction,
+  verifyPaymentAction,
+} from "@/actions/marketplaceActions";
+import { MarketplaceProfile, StudioPackage, BookingRequest, PaymentRecord } from "@focoman/types";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 
 export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
+  const [activeTab, setActiveTab] = useState<"profile" | "packages" | "bookings">("profile");
+
+  // Profile State
   const [profile, setProfile] = useState<Partial<MarketplaceProfile>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  
+
+  // Packages State
+  const [packages, setPackages] = useState<StudioPackage[]>([]);
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [newPkgName, setNewPkgName] = useState("");
+  const [newPkgPrice, setNewPkgPrice] = useState<number>(15000);
+  const [newPkgDesc, setNewPkgDesc] = useState("");
+  const [newPkgServices, setNewPkgServices] = useState("Photography, Album");
+  const [newPkgNegotiable, setNewPkgNegotiable] = useState(true);
+  const [newPkgPublished, setNewPkgPublished] = useState(true);
+  const [pkgSaving, setPkgSaving] = useState(false);
+
+  // Bookings & Payments State
+  const [bookings, setBookings] = useState<BookingRequest[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [negotiatingId, setNegotiatingId] = useState<string | null>(null);
+  const [negotiatedPrice, setNegotiatedPrice] = useState<number>(0);
+  const [advanceRequested, setAdvanceRequested] = useState<number>(0);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const { getIdToken } = useStudioWorkspace();
 
-  useEffect(() => {
-    async function load() {
-      const token = await getIdToken();
-      if (!token) {
-        setMessage({ type: "error", text: "Authentication required." });
-        setLoading(false);
-        return;
-      }
-      const res = await fetchMarketplaceProfile(studioId, token);
-      if (res.success && res.profile) {
-        setProfile(res.profile);
-      }
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const token = await getIdToken();
+    if (!token) {
+      setMessage({ type: "error", text: "Authentication required." });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const [pRes, pkgRes, bRes, payRes] = await Promise.all([
+        fetchMarketplaceProfile(studioId, token),
+        getStudioPackagesAction(studioId, token),
+        getStudioBookingRequestsAction(studioId, token),
+        getStudioPaymentsAction(studioId, token),
+      ]);
+
+      if (pRes.success && pRes.profile) setProfile(pRes.profile);
+      if (pkgRes.success && pkgRes.packages) setPackages(pkgRes.packages);
+      if (bRes.success && bRes.bookingRequests) setBookings(bRes.bookingRequests);
+      if (payRes.success && payRes.payments) setPayments(payRes.payments);
+    } catch {
+      setMessage({ type: "error", text: "Failed to load studio marketplace data." });
+    } finally {
       setLoading(false);
     }
-    load();
   }, [studioId, getIdToken]);
 
-  const handleSave = async (e: React.FormEvent) => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
-    
+
     const token = await getIdToken();
     if (!token) {
       setMessage({ type: "error", text: "Authentication required." });
       setSaving(false);
       return;
     }
-    
-    const res = await saveMarketplaceProfile(studioId, {
-      name: profile.name,
-      city: profile.city,
-      description: profile.description,
-      tags: profile.tags || [],
-      isVisible: profile.isVisible || false,
-    }, token);
+
+    const res = await saveMarketplaceProfile(
+      studioId,
+      {
+        name: profile.name,
+        city: profile.city,
+        description: profile.description,
+        tags: profile.tags || [],
+        isVisible: profile.isVisible || false,
+      },
+      token
+    );
 
     if (res.success) {
       setMessage({ type: "success", text: "Marketplace profile updated successfully." });
@@ -59,91 +110,609 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
     setSaving(false);
   };
 
+  const handleCreatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPkgName || newPkgPrice <= 0) return;
+
+    setPkgSaving(true);
+    const token = await getIdToken();
+    if (!token) {
+      setPkgSaving(false);
+      return;
+    }
+
+    const services = newPkgServices.split(",").map((s) => s.trim()).filter(Boolean);
+
+    const res = await createStudioPackageAction(
+      {
+        studioId,
+        name: newPkgName,
+        price: newPkgPrice,
+        description: newPkgDesc,
+        services,
+        isNegotiable: newPkgNegotiable,
+        isPublished: newPkgPublished,
+      },
+      token
+    );
+
+    if (res.success && res.package) {
+      setPackages([res.package, ...packages]);
+      setShowPackageModal(false);
+      setNewPkgName("");
+      setNewPkgDesc("");
+    } else {
+      alert(res.error || "Failed to create package");
+    }
+    setPkgSaving(false);
+  };
+
+  const handleDeletePackage = async (pkgId: string) => {
+    if (!confirm("Are you sure you want to remove this package?")) return;
+    const token = await getIdToken();
+    if (!token) return;
+
+    const res = await deleteStudioPackageAction(pkgId, studioId, token);
+    if (res.success) {
+      setPackages(packages.filter((p) => p.id !== pkgId));
+    } else {
+      alert(res.error || "Failed to delete package");
+    }
+  };
+
+  const handleStartNegotiate = (req: BookingRequest) => {
+    setNegotiatingId(req.id);
+    setNegotiatedPrice(req.agreedPrice || req.originalPrice);
+    setAdvanceRequested(req.advanceRequested || Math.round((req.agreedPrice || req.originalPrice) * 0.3));
+  };
+
+  const handleConfirmNegotiation = async (bookingRequestId: string) => {
+    setActionLoading(true);
+    const token = await getIdToken();
+    if (!token) {
+      setActionLoading(false);
+      return;
+    }
+
+    const res = await negotiateBookingRequestAction(
+      {
+        bookingRequestId,
+        studioId,
+        agreedPrice: negotiatedPrice,
+        advanceRequested,
+      },
+      token
+    );
+
+    if (res.success && res.bookingRequest) {
+      setBookings(bookings.map((b) => (b.id === bookingRequestId ? res.bookingRequest! : b)));
+      setNegotiatingId(null);
+    } else {
+      alert(res.error || "Failed to confirm negotiation");
+    }
+    setActionLoading(false);
+  };
+
+  const handleVerifyPayment = async (paymentId: string) => {
+    if (!confirm("Verify this payment? This will confirm the booking and create the Confirmed Order in OMS.")) {
+      return;
+    }
+    setActionLoading(true);
+    const token = await getIdToken();
+    if (!token) {
+      setActionLoading(false);
+      return;
+    }
+
+    const res = await verifyPaymentAction(
+      {
+        paymentId,
+        studioId,
+        verified: true,
+      },
+      token
+    );
+
+    if (res.success) {
+      alert("Payment verified successfully! The booking is now confirmed and OMS tasks are initialized.");
+      await loadData();
+    } else {
+      alert(res.error || "Failed to verify payment");
+    }
+    setActionLoading(false);
+  };
+
   if (loading) {
-    return <div className="text-sm text-text-secondary">Loading profile settings...</div>;
+    return <div className="text-sm text-text-secondary py-8">Loading studio marketplace settings...</div>;
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 rounded-2xl border border-border-default bg-white p-6 shadow-sm">
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex border-b border-border-divider gap-4">
+        <button
+          onClick={() => setActiveTab("profile")}
+          className={`pb-3 text-sm font-bold border-b-2 transition ${
+            activeTab === "profile"
+              ? "border-text-primary text-text-primary"
+              : "border-transparent text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          Studio Profile
+        </button>
+        <button
+          onClick={() => setActiveTab("packages")}
+          className={`pb-3 text-sm font-bold border-b-2 transition ${
+            activeTab === "packages"
+              ? "border-text-primary text-text-primary"
+              : "border-transparent text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          Studio Packages ({packages.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("bookings")}
+          className={`pb-3 text-sm font-bold border-b-2 transition ${
+            activeTab === "bookings"
+              ? "border-text-primary text-text-primary"
+              : "border-transparent text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          Booking Requests ({bookings.length})
+        </button>
+      </div>
+
       {message && (
-        <div className={`rounded-xl p-4 text-sm font-semibold ${message.type === "success" ? "bg-green-50 text-status-success" : "bg-red-50 text-status-error"}`}>
+        <div
+          className={`rounded-xl p-4 text-sm font-semibold ${
+            message.type === "success" ? "bg-green-50 text-status-success" : "bg-red-50 text-status-error"
+          }`}
+        >
           {message.text}
         </div>
       )}
 
-      <div>
-        <h3 className="text-base font-bold text-text-primary">Public Visibility</h3>
-        <p className="text-xs text-text-secondary mt-1">If enabled, your studio will be discoverable by potential clients in the public marketplace.</p>
-        <div className="mt-4 flex items-center gap-3">
-          <label className="relative inline-flex cursor-pointer items-center">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={profile.isVisible || false}
-              onChange={(e) => setProfile({ ...profile, isVisible: e.target.checked })}
+      {/* Tab 1: Studio Profile */}
+      {activeTab === "profile" && (
+        <form onSubmit={handleSaveProfile} className="space-y-6 rounded-2xl border border-border-default bg-white p-6 shadow-sm">
+          <div>
+            <h3 className="text-base font-bold text-text-primary">Public Visibility</h3>
+            <p className="text-xs text-text-secondary mt-1">
+              When enabled, your studio will be discoverable on the public marketplace.
+            </p>
+            <div className="mt-4 flex items-center gap-3">
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={profile.isVisible || false}
+                  onChange={(e) => setProfile({ ...profile, isVisible: e.target.checked })}
+                />
+                <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand-blue-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+              </label>
+              <span className="text-sm font-semibold text-text-primary">
+                {profile.isVisible ? "Visible to Public" : "Hidden (Private)"}
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t border-border-divider pt-6">
+            <label className="block text-sm font-semibold text-text-primary">Public Studio Name</label>
+            <input
+              type="text"
+              value={profile.name || ""}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+              placeholder="e.g. Luminary Studios"
             />
-            <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-pink-500 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
-          </label>
-          <span className="text-sm font-semibold text-text-primary">
-            {profile.isVisible ? "Visible to Public" : "Hidden (Private)"}
-          </span>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-text-primary">Service City</label>
+            <input
+              type="text"
+              value={profile.city || ""}
+              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+              placeholder="e.g. Bangalore"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-text-primary">Studio Description</label>
+            <textarea
+              value={profile.description || ""}
+              onChange={(e) => setProfile({ ...profile, description: e.target.value })}
+              rows={4}
+              className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+              placeholder="Tell clients about your style, experience, and services..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-text-primary">Service Tags</label>
+            <p className="text-xs text-text-secondary mb-2">Comma separated values (e.g. Wedding, Portrait, Corporate)</p>
+            <input
+              type="text"
+              value={(profile.tags || []).join(", ")}
+              onChange={(e) =>
+                setProfile({ ...profile, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })
+              }
+              className="block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+              placeholder="Wedding, Portrait, Corporate"
+            />
+          </div>
+
+          <div className="pt-4 border-t border-border-divider flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-xl bg-brand-blue-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-sky-600 disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Profile"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Tab 2: Studio Packages */}
+      {activeTab === "packages" && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-base font-bold text-text-primary">Configured Studio Packages</h3>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Packages belong exclusively to your studio. Customers can book directly or request negotiation.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPackageModal(true)}
+              className="rounded-xl bg-text-primary px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
+            >
+              + Create Package
+            </button>
+          </div>
+
+          {packages.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border-default p-8 text-center bg-white">
+              <p className="text-sm font-semibold text-text-secondary">No packages created yet.</p>
+              <p className="text-xs text-text-tertiary mt-1">Create packages to allow marketplace clients to book quickly.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {packages.map((pkg) => (
+                <div key={pkg.id} className="rounded-2xl border border-border-default bg-white p-5 shadow-sm space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-base font-bold text-text-primary">{pkg.name}</h4>
+                      <p className="text-xl font-extrabold text-text-primary mt-1">
+                        ₹{pkg.price.toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {pkg.isNegotiable ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+                          Negotiable
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700">
+                          Fixed
+                        </span>
+                      )}
+                      {pkg.isPublished ? (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-status-success border border-green-200">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-text-tertiary">
+                          Draft
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {pkg.description && <p className="text-xs text-text-secondary">{pkg.description}</p>}
+
+                  {pkg.services && pkg.services.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {pkg.services.map((s) => (
+                        <span key={s} className="rounded bg-surface-app px-2 py-0.5 text-[10px] text-text-secondary border border-border-default">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-border-divider flex justify-end">
+                    <button
+                      onClick={() => handleDeletePackage(pkg.id)}
+                      className="text-xs font-semibold text-status-error hover:underline"
+                    >
+                      Delete Package
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New Package Modal */}
+          {showPackageModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-border-default space-y-4">
+                <div className="flex justify-between items-center border-b border-border-divider pb-3">
+                  <h4 className="text-base font-bold text-text-primary">Create Studio Package</h4>
+                  <button onClick={() => setShowPackageModal(false)} className="text-text-tertiary hover:text-text-primary">
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreatePackage} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">Package Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPkgName}
+                      onChange={(e) => setNewPkgName(e.target.value)}
+                      placeholder="e.g. Premium Wedding Photography"
+                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">Base Price (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      value={newPkgPrice}
+                      onChange={(e) => setNewPkgPrice(Number(e.target.value))}
+                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">Description</label>
+                    <textarea
+                      rows={2}
+                      value={newPkgDesc}
+                      onChange={(e) => setNewPkgDesc(e.target.value)}
+                      placeholder="What is included in this package..."
+                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">Included Services</label>
+                    <input
+                      type="text"
+                      value={newPkgServices}
+                      onChange={(e) => setNewPkgServices(e.target.value)}
+                      placeholder="Photography, Videography, Album (comma separated)"
+                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newPkgNegotiable}
+                        onChange={(e) => setNewPkgNegotiable(e.target.checked)}
+                        className="rounded border-gray-300 text-brand-blue-primary"
+                      />
+                      Allow Negotiation
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newPkgPublished}
+                        onChange={(e) => setNewPkgPublished(e.target.checked)}
+                        className="rounded border-gray-300 text-brand-blue-primary"
+                      />
+                      Publish to Marketplace
+                    </label>
+                  </div>
+
+                  <div className="pt-3 border-t border-border-divider flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowPackageModal(false)}
+                      className="rounded-xl border border-border-default px-4 py-2 text-xs font-semibold text-text-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={pkgSaving}
+                      className="rounded-xl bg-brand-blue-primary px-5 py-2 text-xs font-bold text-white hover:bg-sky-600 disabled:opacity-50"
+                    >
+                      {pkgSaving ? "Creating..." : "Save Package"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      <div className="border-t border-border-divider pt-6">
-        <label className="block text-sm font-semibold text-text-primary">Public Studio Name</label>
-        <input 
-          type="text" 
-          value={profile.name || ""}
-          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-          className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary" 
-          placeholder="e.g. Luminary Studios"
-        />
-      </div>
+      {/* Tab 3: Booking Requests & Payments */}
+      {activeTab === "bookings" && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-base font-bold text-text-primary">Marketplace Inquiries & Booking Requests</h3>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Review customer booking requests, agree on negotiated rates, and verify offline payments.
+            </p>
+          </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-text-primary">Service City</label>
-        <input 
-          type="text" 
-          value={profile.city || ""}
-          onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-          className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary" 
-          placeholder="e.g. Bangalore"
-        />
-      </div>
+          {bookings.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border-default p-8 text-center bg-white">
+              <p className="text-sm font-semibold text-text-secondary">No booking requests received yet.</p>
+              <p className="text-xs text-text-tertiary mt-1">Inquiries from the marketplace will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bookings.map((b) => {
+                const bPayments = payments.filter((p) => p.bookingRequestId === b.id);
 
-      <div>
-        <label className="block text-sm font-semibold text-text-primary">Studio Description</label>
-        <textarea 
-          value={profile.description || ""}
-          onChange={(e) => setProfile({ ...profile, description: e.target.value })}
-          rows={4}
-          className="mt-2 block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary" 
-          placeholder="Tell clients about your style, experience, and services..."
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-semibold text-text-primary">Service Tags</label>
-        <p className="text-xs text-text-secondary mb-2">Comma separated values (e.g. Wedding, Portrait, Corporate)</p>
-        <input 
-          type="text" 
-          value={(profile.tags || []).join(", ")}
-          onChange={(e) => setProfile({ ...profile, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })}
-          className="block w-full rounded-xl border border-border-input px-4 py-2 text-sm focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary" 
-          placeholder="Wedding, Portrait, Corporate"
-        />
-      </div>
+                return (
+                  <div key={b.id} className="rounded-2xl border border-border-default bg-white p-5 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-divider pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-brand-blue-primary">{b.id}</span>
+                          <span className="rounded-full bg-surface-app px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary border border-border-default">
+                            {b.bookingStatus}
+                          </span>
+                        </div>
+                        <h4 className="text-base font-bold text-text-primary mt-1">
+                          {b.customerName} — {b.packageName || b.eventType}
+                        </h4>
+                        <p className="text-xs text-text-secondary">
+                          {b.customerPhone} {b.customerEmail ? `• ${b.customerEmail}` : ""}
+                        </p>
+                      </div>
 
-      <div className="pt-4 border-t border-border-divider flex justify-end">
-        <button 
-          type="submit" 
-          disabled={saving}
-          className="rounded-xl bg-brand-blue-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-sky-600 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save Profile"}
-        </button>
-      </div>
-    </form>
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-text-tertiary uppercase">Agreed / Quoted Price</span>
+                        <p className="text-lg font-extrabold text-text-primary">
+                          ₹{b.agreedPrice.toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-[10px] text-text-secondary">
+                          Advance: ₹{b.advanceRequested.toLocaleString("en-IN")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-text-tertiary">Event Date:</span>{" "}
+                        <span className="font-semibold text-text-primary">{b.eventDate}</span>
+                      </div>
+                      <div>
+                        <span className="text-text-tertiary">Location:</span>{" "}
+                        <span className="font-semibold text-text-primary">{b.location.address}</span>
+                      </div>
+                      {b.notes && (
+                        <div className="col-span-full">
+                          <span className="text-text-tertiary">Notes:</span>{" "}
+                          <span className="text-text-secondary">{b.notes}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Negotiation Form */}
+                    {b.bookingStatus === "OPEN_FOR_NEGOTIATION" && (
+                      <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-blue-900">Negotiation Requested</span>
+                          {negotiatingId !== b.id && (
+                            <button
+                              onClick={() => handleStartNegotiate(b)}
+                              className="rounded-lg bg-blue-700 px-3 py-1 text-[11px] font-bold text-white hover:bg-blue-800"
+                            >
+                              Enter Agreed Amount
+                            </button>
+                          )}
+                        </div>
+
+                        {negotiatingId === b.id && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-blue-200">
+                            <div>
+                              <label className="block text-[10px] font-semibold text-blue-900 mb-0.5">Agreed Price (₹)</label>
+                              <input
+                                type="number"
+                                value={negotiatedPrice}
+                                onChange={(e) => setNegotiatedPrice(Number(e.target.value))}
+                                className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold text-blue-900 mb-0.5">Advance Requested (₹)</label>
+                              <input
+                                type="number"
+                                value={advanceRequested}
+                                onChange={(e) => setAdvanceRequested(Number(e.target.value))}
+                                className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-xs"
+                              />
+                            </div>
+                            <div className="flex items-end gap-1">
+                              <button
+                                onClick={() => handleConfirmNegotiation(b.id)}
+                                disabled={actionLoading}
+                                className="w-full rounded-lg bg-blue-700 py-1.5 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-50"
+                              >
+                                {actionLoading ? "Saving..." : "Confirm Rate"}
+                              </button>
+                              <button
+                                onClick={() => setNegotiatingId(null)}
+                                className="rounded-lg border border-blue-300 bg-white px-2 py-1.5 text-xs font-semibold text-blue-700"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Associated Payment Records & Verification */}
+                    {bPayments.length > 0 && (
+                      <div className="border-t border-border-divider pt-3 space-y-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+                          Recorded Payments
+                        </span>
+                        {bPayments.map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-surface-app p-3 text-xs border border-border-default"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-text-primary">₹{p.amount.toLocaleString("en-IN")}</span>
+                                <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary border border-border-default">
+                                  {p.method}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                    p.verificationStatus === "VERIFIED"
+                                      ? "bg-green-100 text-status-success"
+                                      : "bg-amber-100 text-amber-800"
+                                  }`}
+                                >
+                                  {p.verificationStatus}
+                                </span>
+                              </div>
+                              {p.proof?.referenceNumber && (
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                  Ref/UTR: <span className="font-mono">{p.proof.referenceNumber}</span>
+                                </p>
+                              )}
+                            </div>
+
+                            {p.verificationStatus === "PENDING_VERIFICATION" && (
+                              <button
+                                onClick={() => handleVerifyPayment(p.id)}
+                                disabled={actionLoading}
+                                className="rounded-xl bg-status-success px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50 transition"
+                              >
+                                Verify Payment & Confirm Booking
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

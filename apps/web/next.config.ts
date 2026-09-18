@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "@focoman/validation",
     "@focoman/domain",
     "@focoman/config",
+    "@focoman/entitlements",
   ],
   devIndicators: false,
   eslint: {
@@ -18,6 +19,30 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   compress: true,
+  async redirects() {
+    return [
+      {
+        source: "/features",
+        destination: "/#modules",
+        permanent: true,
+      },
+      {
+        source: "/pricing",
+        destination: "/#pricing",
+        permanent: true,
+      },
+      {
+        source: "/marketplace",
+        destination: "/studios",
+        permanent: true,
+      },
+      {
+        source: "/marketplace/:slug",
+        destination: "/studio/:slug",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

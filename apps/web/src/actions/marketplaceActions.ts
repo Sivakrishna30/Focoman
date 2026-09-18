@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { requireCapability } from "@/lib/entitlementAuth";
 import {
   getMarketplaceProfile,
   upsertMarketplaceProfile,
@@ -69,6 +70,11 @@ export async function saveMarketplaceProfile(
   try {
     const decoded = await requireVerifiedUser(idToken);
     await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    
+    // Server-side entitlement gate: Publishing requires MARKETPLACE_PUBLIC capability
+    if (profileData.isVisible) {
+      await requireCapability(studioId, "MARKETPLACE_PUBLIC");
+    }
     
     const profile = await upsertMarketplaceProfile(studioId, profileData);
     return { success: true, profile };

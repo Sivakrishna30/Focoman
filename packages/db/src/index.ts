@@ -1162,3 +1162,10 @@ export async function getCustomerOrdersHistory(customerId: string): Promise<Orde
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+// ============================================================================
+// 12. STUDIO PLANS & ENTITLEMENTS
+// ============================================================================
+
+export * from './studioPlan';
+
+

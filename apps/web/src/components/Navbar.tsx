@@ -81,11 +81,13 @@ export function Navbar() {
   const { t } = useLanguage();
 
   const navLinks = [
-    { label: t("nav.home", "Home"), href: "/" },
-    { label: t("nav.features", "Features"), href: "/features" },
-    { label: t("nav.pricing", "Pricing"), href: "/pricing" },
-    { label: t("nav.marketplace", "Marketplace"), href: "/marketplace" },
-    { label: t("nav.about", "About Us"), href: "/about" },
+    { label: t("nav.home", "Home"), href: "/#home" },
+    { label: t("nav.modules", "Modules"), href: "/#modules" },
+    { label: t("nav.how_it_works", "How It Works"), href: "/#how-it-works" },
+    { label: t("nav.marketplace", "Marketplace"), href: "/#marketplace" },
+    { label: t("nav.pricing", "Pricing"), href: "/#pricing" },
+    { label: t("nav.faq", "FAQ"), href: "/#faq" },
+    { label: t("nav.studios", "Explore Studios"), href: "/studios" },
   ];
 
   useEffect(() => {

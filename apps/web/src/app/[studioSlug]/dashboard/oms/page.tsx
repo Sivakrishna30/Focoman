@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback, use } from "react";
-import { OrderStatus, TaskStatus, Order, Task, PaymentStatus } from "@focoman/types";
+import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion } from "@focoman/types";
 import {
   getStudioOrdersAction,
   getOrderTasksAction,
   createOrderAction,
   updateTaskStatusAction,
   updatePaymentStatusAction,
+  assignResourceAction,
+  cancelOrderAction,
+  deleteOrderAction,
 } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import {
@@ -244,6 +247,70 @@ export default function OmsPage({
     if (res.success && res.order) {
       setSelected(res.order);
       await loadOrders();
+    }
+  };
+
+  const handleConfirmSuggestion = async (sug: ResourceSuggestion) => {
+    if (!selected) return;
+    const token = workspaceToken ?? (await getIdToken(false));
+    if (!token) return;
+
+    const res = await assignResourceAction({
+      orderId: selected.id,
+      memberId: sug.memberId,
+      memberName: sug.memberName,
+      skill: sug.skill,
+      studioId: studioSlug,
+      idToken: token,
+    });
+
+    if (res.success && res.order) {
+      setSelected(res.order);
+      setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+    } else {
+      alert(res.error || "Failed to assign resource");
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!selected) return;
+    const reason = prompt("Enter cancellation reason for business history records:");
+    if (!reason) return;
+    const token = workspaceToken ?? (await getIdToken(false));
+    if (!token) return;
+
+    const res = await cancelOrderAction({
+      orderId: selected.id,
+      studioId: studioSlug,
+      cancellationReason: reason,
+      idToken: token,
+    });
+
+    if (res.success && res.order) {
+      setSelected(res.order);
+      setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+    } else {
+      alert(res.error || "Failed to cancel order");
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!selected) return;
+    if (!confirm("Soft delete this order? It can be restored within 14 days.")) return;
+    const token = workspaceToken ?? (await getIdToken(false));
+    if (!token) return;
+
+    const res = await deleteOrderAction({
+      orderId: selected.id,
+      studioId: studioSlug,
+      idToken: token,
+    });
+
+    if (res.success) {
+      setOrders((prev) => prev.filter((o) => o.id !== selected.id));
+      setSelected(null);
+    } else {
+      alert(res.error || "Failed to delete order");
     }
   };
 
@@ -553,6 +620,116 @@ export default function OmsPage({
                 Previewing directly inside Focoman · Zero external tabs required
               </p>
             </div>
+          </div>
+
+          {/* Pre-flight Operational Check Report */}
+          {selected.preflightReport && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                  Pre-flight Operational Check
+                </h4>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    selected.preflightReport.hasConflicts
+                      ? "bg-red-100 text-status-error"
+                      : "bg-green-100 text-status-success"
+                  }`}
+                >
+                  {selected.preflightReport.hasConflicts ? "Review Needed" : "Passed Clear"}
+                </span>
+              </div>
+
+              {selected.preflightReport.eventDateConflicts.length > 0 && (
+                <div className="text-xs text-red-700 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                  <p className="font-bold">⚠️ Overlapping Event Conflict:</p>
+                  <p className="text-[11px] mt-0.5">
+                    {selected.preflightReport.eventDateConflicts.join(", ")}
+                  </p>
+                </div>
+              )}
+
+              {selected.preflightReport.warnings.length > 0 && (
+                <div className="space-y-1">
+                  {selected.preflightReport.warnings.map((w, idx) => (
+                    <p key={idx} className="text-[11px] text-amber-900 flex items-center gap-1.5">
+                      <span>•</span> {w}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Automated Resource Suggestions (Owner Reviews & Confirms) */}
+          {selected.resourceSuggestions && selected.resourceSuggestions.length > 0 && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+                    Suggested Resources
+                  </h4>
+                  <p className="text-[10px] text-blue-700">System suggests · Owner reviews & confirms</p>
+                </div>
+                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {selected.resourceSuggestions.length} Available
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {selected.resourceSuggestions.map((sug) => {
+                  const isAssigned = (selected.assignedResources || []).some(
+                    (r) => r.memberId === sug.memberId
+                  );
+
+                  return (
+                    <div
+                      key={sug.memberId}
+                      className="flex items-center justify-between rounded-xl border border-blue-200 bg-white p-2.5 text-xs"
+                    >
+                      <div>
+                        <span className="font-bold text-text-primary">{sug.memberName}</span>
+                        <span className="ml-2 rounded bg-surface-app px-1.5 py-0.5 text-[10px] font-medium text-text-secondary border border-border-default">
+                          {sug.skill}
+                        </span>
+                        <p className="text-[10px] text-text-tertiary mt-0.5">{sug.matchReason}</p>
+                      </div>
+
+                      {isAssigned ? (
+                        <span className="text-[10px] font-bold text-status-success bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                          Assigned ✓
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleConfirmSuggestion(sug)}
+                          className="rounded-lg bg-brand-blue-primary px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-600 transition"
+                        >
+                          Confirm Assignment
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Cancellation & Soft-Deletion Operations */}
+          <div className="border-t border-border-divider pt-4 flex items-center justify-between gap-2">
+            {selected.orderStatus !== "CANCELLED" && (
+              <button
+                onClick={handleCancelOrder}
+                className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
+              >
+                Cancel Order
+              </button>
+            )}
+            <button
+              onClick={handleDeleteOrder}
+              className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-status-error hover:bg-red-100 transition ml-auto"
+            >
+              Delete Order (14-day Recovery)
+            </button>
           </div>
         </aside>
       )}
