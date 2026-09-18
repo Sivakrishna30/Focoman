@@ -111,28 +111,28 @@ export default function FeaturesPage() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: "Customer Directory & Profiles",
-                desc: "Store centralized client contact details with name, phone number, email, and billing address for fast communication.",
+                title: "Centralized Customer Directory",
+                desc: "Store full client profiles with verified phone numbers, email addresses, and physical locations for rapid lookup.",
               },
               {
-                title: "Complete Event & Order History",
-                desc: "Access a full chronological timeline of all past photoshoot bookings, previous packages selected, and total spending with your studio.",
+                title: "Complete Booking & Order History",
+                desc: "View the full chronological record of every past photoshoot booking, package selected, and event date with your studio.",
               },
               {
-                title: "Client Preferences & Shoot Notes",
-                desc: "Record specific client styling preferences, favorite deliverables, and custom shoot notes for every returning client.",
+                title: "Client Lifetime Value (LTV)",
+                desc: "Automatically calculate total cumulative revenue generated per customer across all their historical events to identify your most loyal clients.",
               },
               {
-                title: "Anniversary & Milestone Reminders",
-                desc: "Automated date tracking for 1st wedding anniversaries, birthdays, and recurring family events so you can reach out for repeat business.",
+                title: "Outstanding Receivables Tracking",
+                desc: "Monitor pending balances and overdue milestones per client at a glance before confirming repeat bookings.",
               },
               {
-                title: "Lifetime Value Tracking",
-                desc: "Understand total confirmed revenue generated per client across all their historical shoots to identify and reward your best clients.",
+                title: "Fast Search & Quick Filtering",
+                desc: "Instantly filter your entire customer base by name, phone number, email, or city for effortless communication.",
               },
               {
-                title: "Direct Re-Booking Creation",
-                desc: "Launch new confirmed orders directly from existing client profiles with one click, automatically retaining customer history.",
+                title: "One-Click Order Creation",
+                desc: "Create new confirmed orders directly from an existing customer profile without retyping their contact details.",
               },
             ].map((f, i) => {
               const colors = [

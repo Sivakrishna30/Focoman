@@ -18,8 +18,9 @@ Before making project decisions, agents **MUST** consult `Index.md` to identify 
 
 When evaluating specifications and implementation guidelines:
 
-1. **Primary Product Source of Truth:** **[Focoman Product Discovery Document](product/product-discovery-document.md)** (OMS-First, Confirmed Order Model).
-2. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/identity-and-auth-architecture.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
+1. **Latest Product Amendment:** **[Major Product Design Amendment](product/major-design-amendment-marketplace-booking.md)** (Marketplace → Booking Request → Optional Negotiation → Payment & Verification → Confirmed Order → Pre-flight Check → OMS Lifecycle).
+2. **Primary Product Source of Truth:** **[Focoman Product Discovery Document](product/product-discovery-document.md)** (OMS-First, Confirmed Order Model).
+3. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/identity-and-auth-architecture.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
 3. **Agent Governance & Workflow Specification:** `../Agents.md`.
 4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`, `ISSUE_ANALYSIS.md`.
 5. **Realigned Specifications:** `product/srs-mvp.md` (Realigned product requirements).

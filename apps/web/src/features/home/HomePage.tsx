@@ -58,7 +58,7 @@ export function HomePage() {
               {t("modules.title", "The Challenge We Solve")}
             </span>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
-              Eliminate Scattered WhatsApp Chats, Spreadsheets & Paper Notebooks
+              {t("home.challenge_heading", "Eliminate Scattered WhatsApp Chats, Spreadsheets & Paper Notebooks")}
             </h2>
             <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
               {t("modules.subtitle", "Photography studio owners lose countless hours tracking shoots, chasing deliverables, updating spreadsheets, and managing payments. Focoman brings it all together, so you always know what’s happening, what’s pending, and what needs attention next.")}
@@ -69,9 +69,9 @@ export function HomePage() {
             {/* OMS Panel */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-brand-blue-background px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-wider">
-                Core Operations
+                {t("home.core_ops_badge", "Core Operations")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.oms.title", "Order Management")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.oms.title", "Order Management System - OMS")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 {t("module.oms.desc", "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.")}
               </p>
@@ -80,20 +80,20 @@ export function HomePage() {
             {/* CRM Panel */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-brand-orange-background px-3 py-1 text-[10px] font-bold text-brand-orange-primary uppercase tracking-wider">
-                Support Module
+                {t("home.support_module_badge", "Support Module")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.crm.title", "Customer Relationship Management")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.crm.title", "Customer Relationship Management - CRM")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                {t("module.crm.desc", "Manage client profiles with past event and package history, client styling preferences, and automated anniversary reminders for repeat business.")}
+                {t("module.crm.desc", "Centralize client directories with verified phone numbers, track lifetime value across multiple photoshoot bookings, monitor outstanding receivables, and launch new orders directly from existing customer profiles.")}
               </p>
             </div>
 
             {/* ERP Panel */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-brand-purple-background px-3 py-1 text-[10px] font-bold text-brand-purple-primary uppercase tracking-wider">
-                Support Module
+                {t("home.support_module_badge", "Support Module")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.erp.title", "Studio Operations and Crew Management")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.erp.title", "Studio Operations and Crew Management - ERP")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 {t("module.erp.desc", "Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing.")}
               </p>
@@ -102,7 +102,7 @@ export function HomePage() {
             {/* Google Workspace & Communication */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-green-50 px-3 py-1 text-[10px] font-bold text-status-success uppercase tracking-wider">
-                Native Integrations
+                {t("home.native_integrations_badge", "Native Integrations")}
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.integrations.title", "Google Drive, Calendar & WhatsApp")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
@@ -113,13 +113,13 @@ export function HomePage() {
             {/* Studio Marketplace Panel */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition lg:col-span-2">
               <span className="inline-block rounded-full bg-pink-50 px-3 py-1 text-[10px] font-bold text-pink-600 uppercase tracking-wider">
-                Discovery & Search
+                {t("home.discovery_badge", "Discovery & Search")}
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">
                 {t("nav.marketplace", "Studio Marketplace")}
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                Discover top photography and videography studios near you with verified operational performance metrics, on-time delivery track records, and authentic reviews and ratings. Studio owners maintain full control over their public visibility and profile details, while internal orders, financials, and CRM records remain strictly private.
+                {t("home.marketplace_desc", "Discover top photography and videography studios near you with verified operational performance metrics, on-time delivery track records, and authentic reviews and ratings. Studio owners maintain full control over their public visibility and profile details, while internal orders, financials, and CRM records remain strictly private.")}
               </p>
             </div>
           </div>
@@ -140,46 +140,46 @@ export function HomePage() {
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="mx-auto max-w-3xl text-center mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-              Value Added Services
+              {t("vas.badge", "Value Added Services")}
             </span>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
-              Professional Studio Add-ons
+              {t("vas.title", "Professional Studio Add-ons")}
             </h2>
             <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
-              Optional technical and creative assistance services offered separately from core OMS operations.
+              {t("vas.subtitle", "Optional technical and creative assistance services offered separately from core OMS operations.")}
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-blue-light transition hover:shadow-sm">
               <div className="h-1.5 w-8 rounded-full bg-brand-blue-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">Website Creation</h4>
+              <h4 className="font-bold text-sm text-text-primary">{t("vas.web_create_title", "Website Creation")}</h4>
               <p className="mt-1.5 text-xs text-text-secondary">
-                Custom portfolio and showcase website for your studio brand.
+                {t("vas.web_create_desc", "Custom portfolio and showcase website for your studio brand.")}
               </p>
             </div>
             
             <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-orange-light transition hover:shadow-sm">
               <div className="h-1.5 w-8 rounded-full bg-brand-orange-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">Website Integration</h4>
+              <h4 className="font-bold text-sm text-text-primary">{t("vas.web_int_title", "Website Integration")}</h4>
               <p className="mt-1.5 text-xs text-text-secondary">
-                API integration bridging your existing external website directly into Focoman.
+                {t("vas.web_int_desc", "API integration bridging your existing external website directly into Focoman.")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-purple-light transition hover:shadow-sm">
               <div className="h-1.5 w-8 rounded-full bg-brand-purple-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">Branding & Identity</h4>
+              <h4 className="font-bold text-sm text-text-primary">{t("vas.brand_title", "Branding & Identity")}</h4>
               <p className="mt-1.5 text-xs text-text-secondary">
-                Studio logo design, invoice headers, and branded presentation assets.
+                {t("vas.brand_desc", "Studio logo design, invoice headers, and branded presentation assets.")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-green-200 transition hover:shadow-sm">
               <div className="h-1.5 w-8 rounded-full bg-green-500 mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">Data Migration</h4>
+              <h4 className="font-bold text-sm text-text-primary">{t("vas.data_mig_title", "Data Migration")}</h4>
               <p className="mt-1.5 text-xs text-text-secondary">
-                Import past customer contacts and order histories from spreadsheets.
+                {t("vas.data_mig_desc", "Import past customer contacts and order histories from spreadsheets.")}
               </p>
             </div>
           </div>
@@ -190,13 +190,13 @@ export function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 border-t border-border-divider mt-8">
         <div className="mx-auto max-w-3xl text-center mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-            Clear & Simple Pricing
+            {t("pricing.badge", "Clear & Simple Pricing")}
           </span>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-            Choose the Right Plan for Your Studio
+            {t("pricing.title", "Choose the Right Plan for Your Studio")}
           </h2>
           <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
-            Every plan includes our core Order Management System. Upgrade as your team grows.
+            {t("pricing.subtitle", "Every plan includes our core Order Management System. Upgrade as your team grows.")}
           </p>
         </div>
 
@@ -205,15 +205,15 @@ export function HomePage() {
           <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-blue-light transition flex flex-col justify-between">
             <div>
               <span className="inline-block self-start rounded-full bg-brand-blue-background px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-wider mb-3">
-                Starter
+                {t("pricing.plan_starter", "Starter")}
               </span>
               <h3 className="text-xl font-extrabold text-text-primary">₹499<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">For solo photographers just getting started with order management.</p>
+              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_starter_desc", "For solo photographers just getting started with order management.")}</p>
             </div>
             <div className="mt-6 pt-4 border-t border-border-divider">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
-                Core Order Management & Tracking
+                {t("home.pricing_oms_included", "Order Management System (OMS) Included")}
               </span>
             </div>
           </div>
@@ -221,19 +221,19 @@ export function HomePage() {
           {/* Pro Plan */}
           <div className="rounded-3xl border border-border-default hover:border-brand-orange-light bg-white p-6 shadow-sm flex flex-col justify-between relative transition">
             <span className="absolute -top-3 right-6 rounded-full bg-brand-orange-primary px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
-              Most Popular
+              {t("pricing.plan_pro", "Professional")}
             </span>
             <div>
               <span className="inline-block self-start rounded-full bg-brand-orange-background px-3 py-1 text-[10px] font-bold text-brand-orange-primary uppercase tracking-wider mb-3 mt-1">
-                Professional
+                {t("pricing.plan_pro", "Professional")}
               </span>
               <h3 className="text-xl font-extrabold text-text-primary">₹999<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">For growing studios managing a team with CRM & ERP modules.</p>
+              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_pro_desc", "For growing studios managing a team with CRM & ERP modules.")}</p>
             </div>
             <div className="mt-6 pt-4 border-t border-border-divider">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-orange-primary" />
-                Order Management, Client CRM, and Crew Operations for up to 10 Members
+                CRM & ERP Included
               </span>
             </div>
           </div>
@@ -242,15 +242,15 @@ export function HomePage() {
           <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-purple-light transition flex flex-col justify-between">
             <div>
               <span className="inline-block self-start rounded-full bg-brand-purple-background px-3 py-1 text-[10px] font-bold text-brand-purple-primary uppercase tracking-wider mb-3">
-                Complete
+                {t("pricing.plan_complete", "Complete")}
               </span>
               <h3 className="text-xl font-extrabold text-text-primary">₹1999<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">Full-stack operations with WhatsApp notifications and multi-studio support.</p>
+              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_complete_desc", "Full-stack operations with WhatsApp notifications and multi-studio support.")}</p>
             </div>
             <div className="mt-6 pt-4 border-t border-border-divider">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-purple-primary" />
-                Full Platform + WhatsApp + Multi-Studio
+                {t("module.integrations.title", "Google Drive, Calendar & WhatsApp")}
               </span>
             </div>
           </div>
@@ -262,14 +262,11 @@ export function HomePage() {
             href="/pricing"
             className="inline-flex items-center gap-2 rounded-xl bg-brand-blue-primary px-8 py-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-sky-600"
           >
-            <span>View Details & Compare Plans</span>
+            <span>{t("pricing.btn_compare", "View Details & Compare Plans")}</span>
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </Link>
-          <p className="mt-2 text-xs text-text-tertiary">
-            Explore feature comparison, module inclusion, and support tiers
-          </p>
         </div>
       </section>
 
@@ -277,10 +274,10 @@ export function HomePage() {
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider mt-8">
         <div className="text-center mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-            Got Questions?
+            {t("faq.badge", "Got Questions?")}
           </span>
           <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-text-primary">
-            Frequently Asked Questions
+            {t("faq.title", "Frequently Asked Questions")}
           </h2>
         </div>
 

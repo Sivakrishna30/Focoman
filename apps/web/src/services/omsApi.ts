@@ -23,7 +23,7 @@ export const omsApi = {
    */
   evaluateOrderCompletion(order: Order, tasks: Task[]): OrderStatus {
     const tasksCompleted = tasks.length > 0 && tasks.every(t => t.status === 'COMPLETED');
-    const paymentCompleted = order.paymentStatus === 'PAYMENT_COMPLETED';
+    const paymentCompleted = order.paymentStatus === 'PAID';
 
     return evaluateOrderStatus(
       order.orderStatus,

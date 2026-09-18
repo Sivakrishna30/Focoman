@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function BackButton({ fallbackHref = "/" }: { fallbackHref?: string }) {
+  const { t } = useLanguage();
+
   return (
     <Link
       href={fallbackHref}
@@ -16,7 +19,7 @@ export function BackButton({ fallbackHref = "/" }: { fallbackHref?: string }) {
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
       </svg>
-      Back
+      {t("nav.back", "Back")}
     </Link>
   );
 }

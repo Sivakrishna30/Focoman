@@ -6,6 +6,7 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@focoman/types": "*",
+    "@focoman/config": "*",
     "firebase-admin": "^12.7.0",
     "server-only": "^0.0.1"
   },

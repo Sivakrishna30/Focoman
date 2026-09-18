@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useLanguage, LanguageMode } from "@/context/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface LanguageSwitcherProps {
   className?: string;
@@ -10,58 +10,57 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
 
-  // 3-step simple cycle: Full Tamil (ta_pure) -> Tamil + English (ta_easy) -> Full English (en)
+  // 3-step intentional cycle: En -> Tha (ta_easy) -> Tha/En (thanglish) -> En
   const handleCycleLanguage = () => {
     if (language === "en") {
-      setLanguage("ta_pure");
-    } else if (language === "ta_pure") {
       setLanguage("ta_easy");
+    } else if (language === "ta_easy" || language === "ta_pure") {
+      setLanguage("thanglish");
     } else {
       setLanguage("en");
     }
   };
 
-  const getButtonContent = () => {
+  const getBadgeDetails = () => {
     switch (language) {
+      case "ta_easy":
       case "ta_pure":
         return {
-          label: "Tha",
-          fullTitle: "Full Tamil (Tha)",
-          next: "Tha/En",
-          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          badge: "த",
+          title: "Current: Tamil (த) • Click to switch to Tanglish (த/En)",
+          ariaLabel: "Language selector, currently Tamil",
+          activeClass: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
         };
-      case "ta_easy":
+      case "thanglish":
         return {
-          label: "Tha/En",
-          fullTitle: "Tamil with English terms (Tha/En)",
-          next: "En",
-          badgeClass: "bg-brand-blue-50 text-brand-blue-primary border-brand-blue-200",
+          badge: "த/En",
+          title: "Current: Tanglish (த/En) • Click to switch to English (En)",
+          ariaLabel: "Language selector, currently Tanglish",
+          activeClass: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
         };
       case "en":
       default:
         return {
-          label: "En",
-          fullTitle: "English (En)",
-          next: "Tha",
-          badgeClass: "bg-slate-50 text-text-primary border-border-default",
+          badge: "En",
+          title: "Current: English (En) • Click to switch to Tamil (த)",
+          ariaLabel: "Language selector, currently English",
+          activeClass: "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
         };
     }
   };
 
-  const current = getButtonContent();
+  const current = getBadgeDetails();
 
   return (
     <button
       type="button"
       suppressHydrationWarning
       onClick={handleCycleLanguage}
-      title={`Current: ${current.fullTitle} • Click to switch to ${current.next}`}
-      aria-label={`Change language, current is ${current.fullTitle}`}
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold transition hover:opacity-90 active:scale-95 cursor-pointer shadow-2xs shrink-0 ${current.badgeClass} ${className}`}
+      title={current.title}
+      aria-label={current.ariaLabel}
+      className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold transition hover:opacity-90 active:scale-95 cursor-pointer shadow-2xs shrink-0 select-none ${current.activeClass} ${className}`}
     >
-      <span className="text-[11px] sm:text-xs">🌐</span>
-      <span className="font-extrabold tracking-tight">{current.label}</span>
-      <span className="text-[9px] opacity-60">⇄</span>
+      <span className="font-extrabold tracking-tight">{current.badge}</span>
     </button>
   );
 }

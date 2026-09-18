@@ -10,6 +10,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "badge-brand-blue",
   POST_EVENT_IN_PROGRESS: "badge-brand-orange",
   COMPLETED: "badge-status-success",
+  CANCELLED: "badge-status-error",
 };
 
 interface DashboardOverviewViewProps {
@@ -29,6 +30,7 @@ export function DashboardOverviewView({
     AWAITING_EVENT: t("stage.AWAITING_EVENT", "Awaiting Event"),
     POST_EVENT_IN_PROGRESS: t("stage.POST_EVENT_IN_PROGRESS", "Post-Event In Progress"),
     COMPLETED: t("stage.COMPLETED", "Completed"),
+    CANCELLED: t("stage.CANCELLED", "Cancelled"),
   };
 
   useEffect(() => {

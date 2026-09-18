@@ -4,6 +4,88 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-025 — Hero Title Grammar Correction for Tamil
+
+- **Task:** CHG-025 — Fix Duplicated/Awkward Words in Hero Statement for Tamil & Thanglish
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/context/LanguageContext.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Corrected `hero.title_part1` and `hero.title_highlight` so that concatenating them in Tamil yields a grammatically flawless phrase: **"ஒளிப்பட நிலையங்களுக்கான முழுமையான வணிக இயக்க அமைப்பு"** ("For Photography Studios: A Complete Business Operating System") without repeating "ஒளிப்பட நிலையங்கள்".
+- **Reason:** User feedback pointing out the duplicated/awkward statement in the Tamil hero title.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-024 — Tamil Character Language Badge Update
+
+- **Task:** CHG-024 — Update Language Toggle Badge for Tamil to 'த'
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/context/LanguageContext.tsx`, `apps/web/src/components/LanguageSwitcher.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Updated the language badge for Tamil mode to use the native Tamil character **`த`** instead of English letters `Tha`.
+  - Updated Thanglish mode badge to **`த/En`**.
+- **Reason:** Direct user request: "In language toggle button i still see Tha in english. I want த."
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-023 — Thanglish (Tha/En) Tamil Words Script Conversion
+
+- **Task:** CHG-023 — Replace English Transliterations of Tamil Words in Thanglish Mode with Proper Tamil Script
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/context/LanguageContext.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Updated all Thanglish (`thanglish` / `Tha/En`) translation strings so that all Tamil words are written in native Tamil script (e.g. `உங்கள்`, `மற்றும்`, `அனைத்தையும்`, `ஒரே இடத்தில்`, `சேமிக்கவும்`) rather than transliterated English characters (`unga`, `mattrum`, `ellathayum`, `ore idathula`, `pannunga`).
+  - Retained industry-standard English technical loanwords (such as Studio, Orders, RAW, CRM, ERP, WhatsApp, Spreadsheet) alongside native Tamil script.
+- **Reason:** Direct user request to ensure Tamil words in Thanglish are rendered in proper Tamil script instead of Romanized English letters.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-022 — Language Badges & Light/Dark Theme Switcher Refinement
+
+- **Task:** CHG-022 — Streamline Theme Toggling to Light/Dark & Restore Short Language Badges
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/context/ThemeContext.tsx`, `apps/web/src/context/LanguageContext.tsx`, `apps/web/src/components/ThemeSwitcher.tsx`, `apps/web/src/components/LanguageSwitcher.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. **Light / Dark Theme Switcher**:
+     - Removed monochrome theme mode; theme cycling strictly toggles between Light (`☀️`) and Dark (`🌙`).
+     - Matched the theme toggle button styling directly with the language switcher button (rounded-full pill, border, hover states, consistent padding).
+  2. **Short Language Badges**:
+     - Restored concise badge labels:
+       - **`En`** for English mode
+       - **`Tha`** for Tamil mode (translating the entire UI to Tamil)
+       - **`Tha/En`** for Tanglish mode (spoken Tamil in English script)
+- **Reason:** Direct user instructions to remove monochrome theme and restore short badge labels (`En`, `Tha`, `Tha/En`).
+- **Specification Reference:** User prompt instruction.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
+## CHG-021 — Multilingual, Tanglish Standardization, Monochromatic Design System, & SSR Safety
+
+- **Task:** CHG-021 — UI Language, Tanglish & Responsive Theme Professionalization + Runtime Error Fixes
+- **Date:** 2026-09-16
+- **Area:** `apps/web/src/context/ThemeContext.tsx`, `apps/web/src/context/LanguageContext.tsx`, `apps/web/src/components/ThemeSwitcher.tsx`, `apps/web/src/components/LanguageSwitcher.tsx`, `apps/web/src/components/Navbar.tsx`, `apps/web/src/components/DashboardTopNav.tsx`, `apps/web/src/components/DashboardSidebar.tsx`, `apps/web/src/app/globals.css`, `docs/tasks/ui-language-theme-professionalization/*`, `CHANGELOG.md`
+- **Change:**
+  1. **Monochromatic & Accessible Themes**:
+     - Standardized Light, Dark, and Monochrome palettes across global CSS and components.
+     - Dark mode surfaces configured with `#0B0F19` canvas, `#111827` card elevation, and `#1E293B` borders.
+  2. **Multilingual & Standardized Tanglish**:
+     - Built 3-mode intentional cycling: English (`EN`), Natural Tamil (`தமிழ்`), and Standardized Spoken Tanglish (`TG`).
+     - Preserved industry terms (RAW, Album, Shoot, Deliverables, Invoice, WhatsApp) in standard English across modes.
+     - Standardized single-word English UI action controls (Sign In, Back, Save, Cancel, Add, Edit, Delete).
+  3. **Mobile-First Header & Navigation Density**:
+     - Consolidated language and theme controls into minimal, accessible single-badge and icon buttons.
+     - Verified zero horizontal overflow and responsive scaling across mobile breakpoints (320px–414px) and desktop.
+  4. **SSR & Fast Refresh Runtime Safety**:
+     - Added `typeof document !== "undefined"` and `typeof window !== "undefined"` defensive guards to avoid hydration errors during server/client handoffs and live hot reload.
+- **Reason:** User request to resolve runtime warnings and professionalize language, theme, and mobile navigation density.
+- **Specification Reference:** UI Language, Tanglish & Responsive Theme Professionalization task specification.
+- **Verification:** Verified compilation and linting with 0 errors.
+
+---
+
 ## CHG-020 — Studio Operations & Accounting Copy Refinement: Clean, Minimal Payroll & Auditing Focus
 
 - **Task:** CHG-020 — Remove "Deployment Teams" and Streamline ERP Copy to Minimal, Professional Task Assignment, Payroll, and Auditing

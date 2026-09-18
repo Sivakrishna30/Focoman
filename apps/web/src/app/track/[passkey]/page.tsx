@@ -7,6 +7,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
   POST_EVENT_IN_PROGRESS: "Post-Event In Progress",
   COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
@@ -16,6 +17,8 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   REWORK: "Revising",
   COMPLETED: "Completed",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function TrackOrderPage({ params }: { params: Promise<{ passkey: string }> }) {
   const { passkey } = await params;

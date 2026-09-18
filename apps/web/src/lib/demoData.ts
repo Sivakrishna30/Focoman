@@ -212,7 +212,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 50000,
       remainingAmount: 100000,
     },
-    paymentStatus: "PAYMENT_CONFIRMATION_REQUIRED",
+    paymentStatus: "PARTIAL",
     orderStatus: "AWAITING_EVENT",
     assignedResources: [
       {
@@ -258,7 +258,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 35000,
       remainingAmount: 40000,
     },
-    paymentStatus: "PAYMENT_CONFIRMATION_REQUIRED",
+    paymentStatus: "PARTIAL",
     orderStatus: "POST_EVENT_IN_PROGRESS",
     assignedResources: [
       {
@@ -298,7 +298,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 55000,
       remainingAmount: 0,
     },
-    paymentStatus: "PAYMENT_COMPLETED",
+    paymentStatus: "PAID",
     orderStatus: "POST_EVENT_IN_PROGRESS",
     assignedResources: [
       {
@@ -344,7 +344,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 35000,
       remainingAmount: 0,
     },
-    paymentStatus: "PAYMENT_COMPLETED",
+    paymentStatus: "PAID",
     orderStatus: "COMPLETED",
     assignedResources: [
       {
@@ -384,7 +384,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 45000,
       remainingAmount: 45000,
     },
-    paymentStatus: "PAYMENT_CONFIRMATION_REQUIRED",
+    paymentStatus: "PARTIAL",
     orderStatus: "AWAITING_EVENT",
     assignedResources: [
       {
@@ -424,7 +424,7 @@ export const DEMO_ORDERS: Order[] = [
       advanceAmount: 65000,
       remainingAmount: 0,
     },
-    paymentStatus: "PAYMENT_COMPLETED",
+    paymentStatus: "PAID",
     orderStatus: "COMPLETED",
     assignedResources: [
       {

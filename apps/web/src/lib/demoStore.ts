@@ -120,10 +120,10 @@ export function createDemoOrder(input: {
   const remainingAmount = Math.max(0, input.finalConfirmedPrice - input.advanceAmount);
   const paymentStatus: PaymentStatus =
     input.advanceAmount >= input.finalConfirmedPrice && input.finalConfirmedPrice > 0
-      ? "PAYMENT_COMPLETED"
+      ? "PAID"
       : input.advanceAmount > 0
-      ? "PAYMENT_CONFIRMATION_REQUIRED"
-      : "PAYMENT_PENDING";
+      ? "PARTIAL"
+      : "PENDING";
 
   const newOrder: Order = {
     id: orderId,
@@ -276,7 +276,7 @@ export function updateDemoTaskStatus(
     const order = currentOrders[orderIndex];
     const orderTasks = updatedTasks.filter((t) => t.orderId === orderId);
     const allTasksCompleted = orderTasks.every((t) => t.status === "COMPLETED");
-    const paymentCompleted = order.paymentStatus === "PAYMENT_COMPLETED";
+    const paymentCompleted = order.paymentStatus === "PAID";
 
     if (allTasksCompleted && paymentCompleted && order.orderStatus !== "COMPLETED") {
       newOrderStatus = "COMPLETED";
@@ -330,7 +330,7 @@ export function updateDemoPaymentStatus(
   const orderTasks = currentTasks.filter((t) => t.orderId === orderId);
   const allTasksDone = orderTasks.every((t) => t.status === "COMPLETED");
 
-  if (allTasksDone && paymentStatus === "PAYMENT_COMPLETED") {
+  if (allTasksDone && paymentStatus === "PAID") {
     updatedOrder.orderStatus = "COMPLETED";
   }
 
@@ -457,6 +457,74 @@ export function createDemoCustomer(input: {
 
   saveDemoCustomers([newCustomer, ...currentCustomers]);
   return { success: true, customer: newCustomer };
+}
+
+export function updateDemoCustomer(
+  customerId: string,
+  updates: Partial<Customer>
+): { success: boolean; customer?: Customer } {
+  const current = getDemoCustomers();
+  let updatedCustomer: Customer | undefined;
+  const next = current.map((c) => {
+    if (c.id === customerId) {
+      updatedCustomer = { ...c, ...updates, updatedAt: new Date().toISOString() };
+      return updatedCustomer;
+    }
+    return c;
+  });
+  if (updatedCustomer) {
+    saveDemoCustomers(next);
+    return { success: true, customer: updatedCustomer };
+  }
+  return { success: false };
+}
+
+export function softDeleteDemoCustomer(customerId: string): boolean {
+  const current = getDemoCustomers();
+  const next = current.map((c) => {
+    if (c.id === customerId) {
+      return { ...c, isDeleted: true, deletedAt: new Date().toISOString() };
+    }
+    return c;
+  });
+  saveDemoCustomers(next);
+  return true;
+}
+
+export function restoreDemoCustomer(customerId: string): boolean {
+  const current = getDemoCustomers();
+  const next = current.map((c) => {
+    if (c.id === customerId) {
+      return { ...c, isDeleted: false, deletedAt: null };
+    }
+    return c;
+  });
+  saveDemoCustomers(next);
+  return true;
+}
+
+export function softDeleteDemoOrder(orderId: string): boolean {
+  const current = getDemoOrders();
+  const next = current.map((o) => {
+    if (o.id === orderId) {
+      return { ...o, isDeleted: true, deletedAt: new Date().toISOString() };
+    }
+    return o;
+  });
+  saveDemoOrders(next);
+  return true;
+}
+
+export function restoreDemoOrder(orderId: string): boolean {
+  const current = getDemoOrders();
+  const next = current.map((o) => {
+    if (o.id === orderId) {
+      return { ...o, isDeleted: false, deletedAt: null };
+    }
+    return o;
+  });
+  saveDemoOrders(next);
+  return true;
 }
 
 // ==========================================

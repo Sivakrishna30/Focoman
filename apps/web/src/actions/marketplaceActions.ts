@@ -1,8 +1,53 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
-import { getMarketplaceProfile, upsertMarketplaceProfile, searchMarketplaceProfiles, getMarketplaceProfileBySlug } from "@focoman/db";
-import { MarketplaceProfile } from "@focoman/types";
+import {
+  getMarketplaceProfile,
+  upsertMarketplaceProfile,
+  softDeleteMarketplaceProfile,
+  restoreMarketplaceProfile,
+  searchMarketplaceProfiles,
+  getMarketplaceProfileBySlug,
+  getStudioPackages,
+  getPublishedStudioPackages,
+  saveStudioPackage,
+  updateStudioPackage,
+  softDeleteStudioPackage,
+  createBookingRequest,
+  getBookingRequestsByStudio,
+  getBookingRequestsByCustomer,
+  getBookingRequestById,
+  updateBookingRequest,
+  savePaymentRecord,
+  getPaymentsByStudio,
+  getPaymentById,
+  updatePaymentVerification,
+  saveOrder,
+  getMembersByStudio,
+  getOrdersByStudio,
+} from "@focoman/db";
+import {
+  MarketplaceProfile,
+  StudioPackage,
+  BookingRequest,
+  PaymentRecord,
+  PaymentMethod,
+  Order,
+} from "@focoman/types";
+import { performPreflightCheck, generateResourceSuggestions } from "@focoman/domain";
+import {
+  CreatePackageSchema,
+  UpdatePackageSchema,
+  BookingRequestSchema,
+  NegotiateBookingSchema,
+  RecordPaymentSchema,
+  VerifyPaymentSchema,
+} from "@focoman/validation";
+
+/**
+ * Server Actions for Marketplace Profiles, Packages, Booking Requests, and Payment Verification
+ */
 
 export async function fetchMarketplaceProfile(studioId: string, idToken: string) {
   try {
@@ -11,40 +56,390 @@ export async function fetchMarketplaceProfile(studioId: string, idToken: string)
     
     const profile = await getMarketplaceProfile(studioId);
     return { success: true, profile };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch profile" };
   }
 }
 
-export async function saveMarketplaceProfile(studioId: string, profileData: Partial<Omit<MarketplaceProfile, 'id' | 'studioId' | 'verifiedMetrics' | 'createdAt' | 'updatedAt'>>, idToken: string) {
+export async function saveMarketplaceProfile(
+  studioId: string,
+  profileData: Partial<Omit<MarketplaceProfile, 'id' | 'studioId' | 'verifiedMetrics' | 'createdAt' | 'updatedAt'>>,
+  idToken: string
+) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    const authContext = await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
     
     const profile = await upsertMarketplaceProfile(studioId, profileData);
     return { success: true, profile };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to save profile" };
+  }
+}
+
+export async function deleteMarketplaceProfileAction(studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+
+    await softDeleteMarketplaceProfile(studioId, decoded.uid);
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to unpublish profile" };
+  }
+}
+
+export async function restoreMarketplaceProfileAction(studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+
+    await restoreMarketplaceProfile(studioId);
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to restore profile" };
   }
 }
 
 export async function searchPublicMarketplace(city?: string, tags?: string[]) {
-  // No auth required - public search
+  // Public directory search
   try {
     const profiles = await searchMarketplaceProfiles({ city, tags });
     return { success: true, profiles };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Search failed" };
   }
 }
 
 export async function getPublicMarketplaceProfile(slug: string) {
-  // No auth required - public viewing
+  // Public profile viewing
   try {
     const profile = await getMarketplaceProfileBySlug(slug);
     if (!profile) return { success: false, error: "Profile not found or is not public." };
     return { success: true, profile };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to load public profile" };
+  }
+}
+
+// --- STUDIO PACKAGES ACTIONS ---
+
+export async function getStudioPackagesAction(studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId);
+    const packages = await getStudioPackages(studioId);
+    return { success: true, packages };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch packages" };
+  }
+}
+
+export async function getPublicStudioPackagesAction(studioId: string) {
+  try {
+    const packages = await getPublishedStudioPackages(studioId);
+    return { success: true, packages };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch public packages" };
+  }
+}
+
+export async function createStudioPackageAction(input: unknown, idToken: string) {
+  try {
+    const parsed = CreatePackageSchema.parse(input);
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+
+    const packageId = `PKG-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const now = new Date().toISOString();
+
+    const pkg: StudioPackage = {
+      id: packageId,
+      studioId: parsed.studioId.toLowerCase(),
+      name: parsed.name,
+      description: parsed.description,
+      services: parsed.services,
+      price: parsed.price,
+      isNegotiable: parsed.isNegotiable,
+      isPublished: parsed.isPublished,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await saveStudioPackage(pkg);
+    return { success: true, package: pkg };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to create package" };
+  }
+}
+
+export async function updateStudioPackageAction(input: unknown, idToken: string) {
+  try {
+    const parsed = UpdatePackageSchema.parse(input);
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+
+    const updated = await updateStudioPackage(parsed.packageId, {
+      name: parsed.name,
+      description: parsed.description,
+      services: parsed.services,
+      price: parsed.price,
+      isNegotiable: parsed.isNegotiable,
+      isPublished: parsed.isPublished,
+    });
+
+    return { success: true, package: updated };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to update package" };
+  }
+}
+
+export async function deleteStudioPackageAction(packageId: string, studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+
+    await softDeleteStudioPackage(packageId, decoded.uid);
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to delete package" };
+  }
+}
+
+// --- BOOKING REQUESTS ACTIONS ---
+
+export async function createBookingRequestAction(input: unknown, idToken?: string) {
+  try {
+    const parsed = BookingRequestSchema.parse(input);
+    let customerUid = "GUEST";
+    if (idToken) {
+      const decoded = await requireVerifiedUser(idToken);
+      customerUid = decoded.uid;
+    }
+
+    const bookingId = `BKG-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const now = new Date().toISOString();
+
+    const isNegotiable = parsed.requestNegotiation ?? false;
+
+    const req: BookingRequest = {
+      id: bookingId,
+      studioId: parsed.studioId.toLowerCase(),
+      customerId: customerUid,
+      customerName: parsed.customerName,
+      customerEmail: parsed.customerEmail || undefined,
+      customerPhone: parsed.customerPhone || undefined,
+      packageId: parsed.packageId || undefined,
+      packageName: parsed.packageName || undefined,
+      eventType: parsed.eventType,
+      eventDate: parsed.eventDate,
+      location: {
+        address: parsed.address,
+        mapsUrl: parsed.mapsUrl || undefined,
+      },
+      notes: parsed.notes || undefined,
+      originalPrice: parsed.price,
+      agreedPrice: parsed.price,
+      advanceRequested: Math.round(parsed.price * 0.3), // default 30% advance request
+      isNegotiable,
+      bookingStatus: isNegotiable ? 'OPEN_FOR_NEGOTIATION' : 'BOOKING_REQUEST',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await createBookingRequest(req);
+    return { success: true, bookingRequest: req };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to create booking request" };
+  }
+}
+
+export async function getStudioBookingRequestsAction(studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId);
+
+    const requests = await getBookingRequestsByStudio(studioId);
+    return { success: true, bookingRequests: requests };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch booking requests" };
+  }
+}
+
+export async function getCustomerBookingRequestsAction(idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    const requests = await getBookingRequestsByCustomer(decoded.uid);
+    return { success: true, bookingRequests: requests };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch customer requests" };
+  }
+}
+
+export async function negotiateBookingRequestAction(input: unknown, idToken: string) {
+  try {
+    const parsed = NegotiateBookingSchema.parse(input);
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, parsed.studioId);
+
+    const updated = await updateBookingRequest(parsed.bookingRequestId, {
+      negotiatedPrice: parsed.agreedPrice,
+      agreedPrice: parsed.agreedPrice,
+      advanceRequested: parsed.advanceRequested,
+      bookingStatus: 'AWAITING_PAYMENT',
+    });
+
+    return { success: true, bookingRequest: updated };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to update negotiation" };
+  }
+}
+
+// --- PAYMENT RECORDING & VERIFICATION ACTIONS ---
+
+export async function recordPaymentAction(input: unknown, idToken?: string) {
+  try {
+    const parsed = RecordPaymentSchema.parse(input);
+    let customerUid = parsed.customerId;
+    if (idToken) {
+      const decoded = await requireVerifiedUser(idToken);
+      customerUid = decoded.uid;
+    }
+
+    const paymentId = `PAY-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const now = new Date().toISOString();
+
+    const payment: PaymentRecord = {
+      id: paymentId,
+      orderId: parsed.orderId,
+      bookingRequestId: parsed.bookingRequestId,
+      studioId: parsed.studioId.toLowerCase(),
+      customerId: customerUid,
+      amount: parsed.amount,
+      method: parsed.method as PaymentMethod,
+      status: 'PENDING_VERIFICATION',
+      verificationStatus: 'PENDING_VERIFICATION',
+      proof: parsed.proofUrl || parsed.referenceNumber ? {
+        proofUrl: parsed.proofUrl,
+        referenceNumber: parsed.referenceNumber,
+        notes: parsed.notes,
+        uploadedAt: now,
+      } : undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await savePaymentRecord(payment);
+
+    if (parsed.bookingRequestId) {
+      await updateBookingRequest(parsed.bookingRequestId, {
+        bookingStatus: 'PAYMENT_VERIFICATION',
+      });
+    }
+
+    return { success: true, payment };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to record payment" };
+  }
+}
+
+export async function verifyPaymentAction(input: unknown, idToken: string) {
+  try {
+    const parsed = VerifyPaymentSchema.parse(input);
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+
+    const updatedPayment = await updatePaymentVerification(
+      parsed.paymentId,
+      parsed.verified,
+      decoded.uid,
+      parsed.rejectionReason
+    );
+
+    if (updatedPayment?.bookingRequestId && parsed.verified) {
+      const booking = await getBookingRequestById(updatedPayment.bookingRequestId);
+      if (booking) {
+        // Convert Booking Request to Confirmed Order
+        const orderId = `ORD-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+        const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+        const trackingPasskey = randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase();
+        const now = new Date().toISOString();
+
+        const studioOrders = await getOrdersByStudio(parsed.studioId);
+        const studioMembers = await getMembersByStudio(parsed.studioId);
+
+        const preflight = performPreflightCheck(
+          booking.eventDate,
+          booking.location.address,
+          [booking.packageName || booking.eventType],
+          studioOrders,
+          studioMembers
+        );
+
+        const suggestions = generateResourceSuggestions(
+          booking.eventDate,
+          ['PHOTOGRAPHY', 'VIDEOGRAPHY'],
+          studioMembers,
+          []
+        );
+
+        const newOrder: Order = {
+          id: orderId,
+          studioId: parsed.studioId.toLowerCase(),
+          orderNumber,
+          bookingRequestId: booking.id,
+          customer: {
+            id: booking.customerId,
+            name: booking.customerName,
+            email: booking.customerEmail,
+            phone: booking.customerPhone,
+          },
+          eventType: booking.eventType,
+          eventDate: booking.eventDate,
+          eventLocation: booking.location.address,
+          locationInfo: booking.location,
+          services: [booking.packageName || booking.eventType],
+          packages: booking.packageName ? [booking.packageName] : [],
+          pricing: {
+            estimatedPrice: booking.originalPrice,
+            finalConfirmedPrice: booking.agreedPrice,
+            advanceAmount: updatedPayment.amount,
+            remainingAmount: Math.max(0, booking.agreedPrice - updatedPayment.amount),
+          },
+          paymentStatus: booking.agreedPrice <= updatedPayment.amount ? 'PAID' : 'PARTIAL',
+          orderStatus: 'AWAITING_EVENT',
+          bookingStatus: 'BOOKING_CONFIRMED',
+          assignedResources: [],
+          resourceSuggestions: suggestions,
+          preflightReport: preflight,
+          trackingPasskey,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        await saveOrder(newOrder);
+
+        await updateBookingRequest(booking.id, {
+          bookingStatus: 'BOOKING_CONFIRMED',
+          orderId,
+        });
+      }
+    }
+
+    return { success: true, payment: updatedPayment };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to verify payment" };
+  }
+}
+
+export async function getStudioPaymentsAction(studioId: string, idToken: string) {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioId);
+
+    const payments = await getPaymentsByStudio(studioId);
+    return { success: true, payments };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to fetch studio payments" };
   }
 }

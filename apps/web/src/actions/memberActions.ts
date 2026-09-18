@@ -3,32 +3,60 @@
 import { randomBytes, randomUUID } from "crypto";
 import {
   getMembersByStudio,
+  getDeletedMembersByStudio,
+  getMemberById,
   saveMember,
+  updateMember,
+  softDeleteMember,
+  restoreMember,
   saveInvitation,
   getStudioBySlug,
   getInvitationsByStudio,
+  revokeInvitation,
+  restoreInvitation,
   acceptInvitationTransaction,
 } from "@focoman/db";
 import { StudioMember, StudioInvitation } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
- * Server Actions for Studio Crew & Resource Management
- * CHG-010 & CHG-012: Authorization enforced on all actions.
- * createMemberAction requires STUDIO_OWNER role.
- * IDs use crypto.randomUUID() / crypto.randomBytes() — collision-safe.
- * Full member invitation & activation lifecycle implemented per Auth Architecture.
+ * Server Actions for Studio Crew & Resource Management (ERP)
+ * Complete CRUD: Create, Read (active + deleted), Update, Delete (soft), Restore.
+ * Full invitation lifecycle: Create, List, Revoke, Accept.
  */
 
 export async function getStudioMembersAction(
   studioSlug: string,
   idToken: string
 ): Promise<StudioMember[]> {
-  // Authorization: must be an active studio member to view crew
   const decoded = await requireVerifiedUser(idToken);
   await requireStudioMember(decoded.uid, studioSlug);
-  // Errors propagate — no silent [] fallback
   return await getMembersByStudio(studioSlug);
+}
+
+export async function getDeletedStudioMembersAction(
+  studioSlug: string,
+  idToken: string
+): Promise<StudioMember[]> {
+  const decoded = await requireVerifiedUser(idToken);
+  await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+  return await getDeletedMembersByStudio(studioSlug);
+}
+
+export async function getMemberAction(
+  memberId: string,
+  studioSlug: string,
+  idToken: string
+): Promise<StudioMember | null> {
+  const decoded = await requireVerifiedUser(idToken);
+  await requireStudioMember(decoded.uid, studioSlug);
+
+  const member = await getMemberById(memberId);
+  if (!member) return null;
+  if (member.studioId !== studioSlug.toLowerCase()) {
+    throw new Error("Access denied: Member does not belong to the authorized studio.");
+  }
+  return member;
 }
 
 export async function getStudioInvitationsAction(
@@ -54,7 +82,6 @@ export async function createMemberAction(input: {
   error?: string;
 }> {
   try {
-    // Authorization: only STUDIO_OWNER can create crew members
     const decoded = await requireVerifiedUser(input.idToken);
     await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
 
@@ -82,6 +109,8 @@ export async function createMemberAction(input: {
       email: input.email.trim().toLowerCase(),
       phone: input.phone?.trim() || undefined,
       skills: input.skills,
+      status: 'ACTIVE',
+      isDeleted: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -95,6 +124,7 @@ export async function createMemberAction(input: {
       skills: input.skills,
       role: 'STUDIO_MEMBER',
       status: 'PENDING',
+      isDeleted: false,
       invitedByUid: decoded.uid,
       createdAt: now,
     };
@@ -105,9 +135,105 @@ export async function createMemberAction(input: {
     ]);
 
     return { success: true, member, invitationCode: inviteCode };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[createMemberAction] Error:", err);
-    return { success: false, error: err.message || "Failed to create studio member" };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to create studio member" };
+  }
+}
+
+export async function updateMemberAction(input: {
+  memberId: string;
+  studioId: string;
+  updates: {
+    name?: string;
+    phone?: string;
+    skills?: string[];
+    status?: 'ACTIVE' | 'INACTIVE';
+  };
+  idToken: string;
+}): Promise<{ success: boolean; member?: StudioMember; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    const existing = await getMemberById(input.memberId);
+    if (!existing) {
+      return { success: false, error: "Crew member not found." };
+    }
+    if (existing.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Unauthorized: Member does not belong to this studio." };
+    }
+
+    const updated = await updateMember(input.memberId, {
+      ...(input.updates.name ? { name: input.updates.name.trim() } : {}),
+      ...(input.updates.phone !== undefined ? { phone: input.updates.phone.trim() || undefined } : {}),
+      ...(input.updates.skills ? { skills: input.updates.skills } : {}),
+      ...(input.updates.status ? { status: input.updates.status } : {}),
+    });
+
+    return { success: true, member: updated || undefined };
+  } catch (err: unknown) {
+    console.error("[updateMemberAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update member" };
+  }
+}
+
+export async function deleteMemberAction(input: {
+  memberId: string;
+  studioId: string;
+  idToken: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    const existing = await getMemberById(input.memberId);
+    if (!existing) {
+      return { success: false, error: "Crew member not found." };
+    }
+    if (existing.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Unauthorized: Member does not belong to this studio." };
+    }
+
+    await softDeleteMember(input.memberId, decoded.uid);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[deleteMemberAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to delete member" };
+  }
+}
+
+export async function restoreMemberAction(input: {
+  memberId: string;
+  studioId: string;
+  idToken: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    await restoreMember(input.memberId);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[restoreMemberAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to restore member" };
+  }
+}
+
+export async function revokeInvitationAction(input: {
+  inviteCode: string;
+  studioId: string;
+  idToken: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    await revokeInvitation(input.inviteCode, decoded.uid);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[revokeInvitationAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to revoke invitation" };
   }
 }
 
@@ -126,7 +252,6 @@ export async function acceptInvitationAction(input: {
       return { success: false, error: "Please provide a valid invitation code." };
     }
 
-    // Authenticate user with Google Firebase token
     const decoded = await requireVerifiedUser(input.idToken);
     const uid = decoded.uid;
     const userEmail = decoded.email;
@@ -151,8 +276,25 @@ export async function acceptInvitationAction(input: {
       studioId: res.studioId,
       studioName: res.studioName,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[acceptInvitationAction] Error:", err);
-    return { success: false, error: err.message || "Failed to activate studio invitation." };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to activate studio invitation." };
+  }
+}
+
+export async function restoreInvitationAction(input: {
+  inviteCode: string;
+  studioId: string;
+  idToken: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    await restoreInvitation(input.inviteCode);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[restoreInvitationAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to restore invitation" };
   }
 }

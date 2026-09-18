@@ -1,13 +1,25 @@
 import 'server-only';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { Studio, StudioMember, StudioMembership, StudioInvitation, Customer, Order, Task } from '@focoman/types';
+import type {
+  Studio,
+  StudioMember,
+  StudioMembership,
+  StudioInvitation,
+  Customer,
+  Order,
+  Task,
+  MarketplaceProfile,
+  StudioPackage,
+  BookingRequest,
+  PaymentRecord,
+} from '@focoman/types';
+import { RECOVERY_WINDOW_DAYS } from '@focoman/config';
 
 /**
  * Server-Only Firestore Database Access & Repository Boundary
- * CHG-010: memoryStore fallback removed. Firebase Admin credentials are REQUIRED.
- * The server will throw a startup error if credentials are not configured.
- * There is no graceful in-memory degradation by design (Agents.md Rule 6: No Fake Data).
+ * Supports complete CRUD, soft-delete, restore, and 14-day recovery window.
+ * No in-memory fallback in production.
  */
 
 if (typeof window !== 'undefined') {
@@ -19,10 +31,6 @@ if (typeof window !== 'undefined') {
 let firebaseAppInstance: App | null = null;
 let firestoreDbInstance: Firestore | null = null;
 
-/**
- * Returns a connected Firestore instance or throws a clear configuration error.
- * Fail-fast: if credentials are absent, the error surfaces immediately.
- */
 function parsePrivateKey(rawKey: string | undefined): string | undefined {
   if (!rawKey) return undefined;
   let key = rawKey.trim();
@@ -56,14 +64,12 @@ export function getFirestoreServerInstance(): Firestore {
       projectId,
     });
   } else if (emulatorHost && projectId) {
-    // Firestore Emulator mode for local development
     firebaseAppInstance = initializeApp({ projectId });
   } else {
     throw new Error(
       '[Focoman DB] Firebase Admin credentials are not configured. ' +
       'Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in your environment, ' +
-      'or set FIRESTORE_EMULATOR_HOST to use the Firestore Emulator locally. ' +
-      'In-memory fallback has been intentionally removed per project engineering rules.'
+      'or set FIRESTORE_EMULATOR_HOST to use the Firestore Emulator locally.'
     );
   }
 
@@ -72,12 +78,20 @@ export function getFirestoreServerInstance(): Firestore {
 }
 
 // ============================================================================
-// TYPED REPOSITORY FUNCTIONS FOR SERVER ACTIONS
-// All functions are unconditional — they call Firestore directly.
-// Errors propagate to callers, which surface them to the UI truthfully.
+// RECOVERY HELPER
 // ============================================================================
 
-// 1. STUDIOS
+export function isWithinRecoveryWindow(deletedAt?: string | null, windowDays = RECOVERY_WINDOW_DAYS): boolean {
+  if (!deletedAt) return true;
+  const deletedTime = new Date(deletedAt).getTime();
+  const maxAllowedTime = deletedTime + windowDays * 24 * 60 * 60 * 1000;
+  return Date.now() <= maxAllowedTime;
+}
+
+// ============================================================================
+// 1. STUDIOS & WORKSPACES
+// ============================================================================
+
 export async function getStudioBySlug(slug: string): Promise<Studio | null> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
@@ -86,7 +100,9 @@ export async function getStudioBySlug(slug: string): Promise<Studio | null> {
     .limit(1)
     .get();
   if (!snap.empty) {
-    return snap.docs[0].data() as Studio;
+    const studio = snap.docs[0].data() as Studio;
+    if (studio.isDeleted) return null;
+    return studio;
   }
   return null;
 }
@@ -127,6 +143,48 @@ export async function updateStudio(studioId: string, updates: Partial<Studio>): 
   return snap.exists ? (snap.data() as Studio) : null;
 }
 
+export async function softDeleteStudio(studioId: string, deletedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('studios').doc(studioId).update({
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function restoreStudio(studioId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const docRef = firestore.collection('studios').doc(studioId);
+  const doc = await docRef.get();
+  if (!doc.exists) return false;
+  const data = doc.data() as Studio;
+  if (!isWithinRecoveryWindow(data.deletedAt)) {
+    throw new Error(`Cannot restore studio: Recovery window of ${RECOVERY_WINDOW_DAYS} days has expired.`);
+  }
+  const now = new Date().toISOString();
+  await docRef.update({
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function resetStudioWhatsappConfig(studioId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('studios').doc(studioId).update({
+    whatsappConfig: {},
+    updatedAt: now,
+  });
+  return true;
+}
+
+// MEMBERSHIPS
 export async function getMembershipsByUid(uid: string): Promise<StudioMembership[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
@@ -134,7 +192,7 @@ export async function getMembershipsByUid(uid: string): Promise<StudioMembership
     .where('uid', '==', uid)
     .where('status', '==', 'ACTIVE')
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as StudioMembership);
+  return snap.docs.map((d) => d.data() as StudioMembership);
 }
 
 export async function getMembershipByUidAndStudio(
@@ -153,7 +211,10 @@ export async function getMembershipByUidAndStudio(
   return snap.docs[0].data() as StudioMembership;
 }
 
-// 2. ORDERS
+// ============================================================================
+// 2. ORDERS (OMS)
+// ============================================================================
+
 export async function getOrdersByStudio(studioId: string): Promise<Order[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
@@ -161,10 +222,35 @@ export async function getOrdersByStudio(studioId: string): Promise<Order[]> {
     .where('studioId', '==', studioId.toLowerCase())
     .orderBy('createdAt', 'desc')
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as Order);
+  return snap.docs
+    .map((d) => d.data() as Order)
+    .filter((order) => !order.isDeleted);
+}
+
+export async function getDeletedOrdersByStudio(studioId: string): Promise<Order[]> {
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore
+    .collection('orders')
+    .where('studioId', '==', studioId.toLowerCase())
+    .orderBy('createdAt', 'desc')
+    .get();
+  return snap.docs
+    .map((d) => d.data() as Order)
+    .filter((order) => !!order.isDeleted);
 }
 
 export async function getOrderById(orderId: string): Promise<Order | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('orders').doc(orderId).get();
+  if (doc.exists) {
+    const order = doc.data() as Order;
+    if (order.isDeleted) return null;
+    return order;
+  }
+  return null;
+}
+
+export async function getOrderByIdIncludeDeleted(orderId: string): Promise<Order | null> {
   const firestore = getFirestoreServerInstance();
   const doc = await firestore.collection('orders').doc(orderId).get();
   if (doc.exists) return doc.data() as Order;
@@ -179,7 +265,11 @@ export async function getOrderByPasskey(passkey: string): Promise<Order | null> 
     .where('trackingPasskey', '==', cleanPasskey)
     .limit(1)
     .get();
-  if (!snap.empty) return snap.docs[0].data() as Order;
+  if (!snap.empty) {
+    const order = snap.docs[0].data() as Order;
+    if (order.isDeleted) return null; // Guest tracking strictly hides deleted orders
+    return order;
+  }
   return null;
 }
 
@@ -197,14 +287,107 @@ export async function updateOrder(orderId: string, updates: Partial<Order>): Pro
   return snap.exists ? (snap.data() as Order) : null;
 }
 
-// 3. CUSTOMERS
+export async function softDeleteOrder(orderId: string, deletedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('orders').doc(orderId).update({
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  // Cascade soft-delete to tasks
+  const tasksSnap = await firestore.collection('tasks').where('orderId', '==', orderId).get();
+  if (!tasksSnap.empty) {
+    const batch = firestore.batch();
+    tasksSnap.docs.forEach((doc) => {
+      batch.update(doc.ref, {
+        isDeleted: true,
+        deletedAt: now,
+        deletedBy: deletedByUid,
+        updatedAt: now,
+      });
+    });
+    await batch.commit();
+  }
+  return true;
+}
+
+export async function restoreOrder(orderId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('orders').doc(orderId);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const order = snap.data() as Order;
+  if (!isWithinRecoveryWindow(order.deletedAt)) {
+    throw new Error(`Cannot restore order: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await ref.update({
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  // Cascade restore to tasks
+  const tasksSnap = await firestore.collection('tasks').where('orderId', '==', orderId).get();
+  if (!tasksSnap.empty) {
+    const batch = firestore.batch();
+    tasksSnap.docs.forEach((doc) => {
+      batch.update(doc.ref, {
+        isDeleted: false,
+        deletedAt: null,
+        deletedBy: null,
+        updatedAt: now,
+      });
+    });
+    await batch.commit();
+  }
+  return true;
+}
+
+// ============================================================================
+// 3. CUSTOMERS (CRM)
+// ============================================================================
+
 export async function getCustomersByStudio(studioId: string): Promise<Customer[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
     .collection('customers')
     .where('studioId', '==', studioId.toLowerCase())
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as Customer);
+  return snap.docs
+    .map((d) => d.data() as Customer)
+    .filter((c) => !c.isDeleted);
+}
+
+export async function getDeletedCustomersByStudio(studioId: string): Promise<Customer[]> {
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore
+    .collection('customers')
+    .where('studioId', '==', studioId.toLowerCase())
+    .get();
+  return snap.docs
+    .map((d) => d.data() as Customer)
+    .filter((c) => !!c.isDeleted);
+}
+
+export async function getCustomerById(customerId: string): Promise<Customer | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('customers').doc(customerId).get();
+  if (doc.exists) {
+    const customer = doc.data() as Customer;
+    if (customer.isDeleted) return null;
+    return customer;
+  }
+  return null;
+}
+
+export async function getCustomerByIdIncludeDeleted(customerId: string): Promise<Customer | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('customers').doc(customerId).get();
+  if (doc.exists) return doc.data() as Customer;
+  return null;
 }
 
 export async function saveCustomer(customer: Customer): Promise<Customer> {
@@ -213,14 +396,87 @@ export async function saveCustomer(customer: Customer): Promise<Customer> {
   return customer;
 }
 
-// 4. MEMBERS (CREW)
+export async function updateCustomer(customerId: string, updates: Partial<Customer>): Promise<Customer | null> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('customers').doc(customerId);
+  await ref.update({ ...updates, updatedAt: new Date().toISOString() });
+  const snap = await ref.get();
+  return snap.exists ? (snap.data() as Customer) : null;
+}
+
+export async function softDeleteCustomer(customerId: string, deletedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('customers').doc(customerId).update({
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function restoreCustomer(customerId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('customers').doc(customerId);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const customer = snap.data() as Customer;
+  if (!isWithinRecoveryWindow(customer.deletedAt)) {
+    throw new Error(`Cannot restore customer: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await ref.update({
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
+}
+
+// ============================================================================
+// 4. MEMBERS & CREW (ERP)
+// ============================================================================
+
 export async function getMembersByStudio(studioId: string): Promise<StudioMember[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
     .collection('members')
     .where('studioId', '==', studioId.toLowerCase())
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as StudioMember);
+  return snap.docs
+    .map((d) => d.data() as StudioMember)
+    .filter((m) => !m.isDeleted);
+}
+
+export async function getDeletedMembersByStudio(studioId: string): Promise<StudioMember[]> {
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore
+    .collection('members')
+    .where('studioId', '==', studioId.toLowerCase())
+    .get();
+  return snap.docs
+    .map((d) => d.data() as StudioMember)
+    .filter((m) => !!m.isDeleted);
+}
+
+export async function getMemberById(memberId: string): Promise<StudioMember | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('members').doc(memberId).get();
+  if (doc.exists) {
+    const member = doc.data() as StudioMember;
+    if (member.isDeleted) return null;
+    return member;
+  }
+  return null;
+}
+
+export async function getMemberByIdIncludeDeleted(memberId: string): Promise<StudioMember | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('members').doc(memberId).get();
+  if (doc.exists) return doc.data() as StudioMember;
+  return null;
 }
 
 export async function saveMember(member: StudioMember): Promise<StudioMember> {
@@ -229,7 +485,51 @@ export async function saveMember(member: StudioMember): Promise<StudioMember> {
   return member;
 }
 
+export async function updateMember(memberId: string, updates: Partial<StudioMember>): Promise<StudioMember | null> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('members').doc(memberId);
+  await ref.update({ ...updates, updatedAt: new Date().toISOString() });
+  const snap = await ref.get();
+  return snap.exists ? (snap.data() as StudioMember) : null;
+}
+
+export async function softDeleteMember(memberId: string, deletedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('members').doc(memberId).update({
+    isDeleted: true,
+    status: 'INACTIVE',
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function restoreMember(memberId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('members').doc(memberId);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const member = snap.data() as StudioMember;
+  if (!isWithinRecoveryWindow(member.deletedAt)) {
+    throw new Error(`Cannot restore crew member: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await ref.update({
+    isDeleted: false,
+    status: 'ACTIVE',
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
+}
+
+// ============================================================================
 // 5. TASKS
+// ============================================================================
+
 export async function getTasksByOrder(orderId: string): Promise<Task[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
@@ -237,7 +537,27 @@ export async function getTasksByOrder(orderId: string): Promise<Task[]> {
     .where('orderId', '==', orderId)
     .orderBy('sequenceOrder', 'asc')
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as Task);
+  return snap.docs
+    .map((d) => d.data() as Task)
+    .filter((t) => !t.isDeleted);
+}
+
+export async function getTaskById(taskId: string): Promise<Task | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('tasks').doc(taskId).get();
+  if (doc.exists) {
+    const task = doc.data() as Task;
+    if (task.isDeleted) return null;
+    return task;
+  }
+  return null;
+}
+
+export async function getTaskByIdIncludeDeleted(taskId: string): Promise<Task | null> {
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('tasks').doc(taskId).get();
+  if (doc.exists) return doc.data() as Task;
+  return null;
 }
 
 export async function saveTasks(tasks: Task[]): Promise<Task[]> {
@@ -251,6 +571,12 @@ export async function saveTasks(tasks: Task[]): Promise<Task[]> {
   return tasks;
 }
 
+export async function saveTask(task: Task): Promise<Task> {
+  const firestore = getFirestoreServerInstance();
+  await firestore.collection('tasks').doc(task.id).set(task, { merge: true });
+  return task;
+}
+
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
   const firestore = getFirestoreServerInstance();
   const ref = firestore.collection('tasks').doc(taskId);
@@ -259,7 +585,41 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
   return snap.exists ? (snap.data() as Task) : null;
 }
 
+export async function softDeleteTask(taskId: string, deletedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await firestore.collection('tasks').doc(taskId).update({
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function restoreTask(taskId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const ref = firestore.collection('tasks').doc(taskId);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const task = snap.data() as Task;
+  if (!isWithinRecoveryWindow(task.deletedAt)) {
+    throw new Error(`Cannot restore task: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await ref.update({
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
+}
+
+// ============================================================================
 // 6. INVITATIONS & ONBOARDING
+// ============================================================================
+
 export async function saveInvitation(invitation: StudioInvitation): Promise<StudioInvitation> {
   const firestore = getFirestoreServerInstance();
   await firestore.collection('invitations').doc(invitation.id).set(invitation, { merge: true });
@@ -271,7 +631,9 @@ export async function getInvitationByCode(code: string): Promise<StudioInvitatio
   const firestore = getFirestoreServerInstance();
   const doc = await firestore.collection('invitations').doc(cleanCode).get();
   if (doc.exists) {
-    return doc.data() as StudioInvitation;
+    const invite = doc.data() as StudioInvitation;
+    if (invite.isDeleted || invite.status === 'REVOKED') return null;
+    return invite;
   }
   return null;
 }
@@ -282,7 +644,43 @@ export async function getInvitationsByStudio(studioId: string): Promise<StudioIn
     .collection('invitations')
     .where('studioId', '==', studioId.toLowerCase())
     .get();
-  return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.data() as StudioInvitation);
+  return snap.docs
+    .map((d) => d.data() as StudioInvitation)
+    .filter((inv) => !inv.isDeleted && inv.status !== 'REVOKED');
+}
+
+export async function revokeInvitation(code: string, revokedByUid: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const cleanCode = code.trim().toUpperCase();
+  const now = new Date().toISOString();
+  await firestore.collection('invitations').doc(cleanCode).update({
+    status: 'REVOKED',
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: revokedByUid,
+  });
+  return true;
+}
+
+export async function restoreInvitation(code: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const cleanCode = code.trim().toUpperCase();
+  const docRef = firestore.collection('invitations').doc(cleanCode);
+  const snap = await docRef.get();
+  if (!snap.exists) return false;
+  const invite = snap.data() as StudioInvitation;
+  if (!isWithinRecoveryWindow(invite.deletedAt)) {
+    throw new Error(`Cannot restore invitation: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await docRef.update({
+    status: 'PENDING',
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
 }
 
 export async function acceptInvitationTransaction(input: {
@@ -311,6 +709,10 @@ export async function acceptInvitationTransaction(input: {
 
       const invitation = inviteDoc.data() as StudioInvitation;
 
+      if (invitation.isDeleted || invitation.status === 'REVOKED') {
+        throw new Error('This invitation has been revoked or deleted.');
+      }
+
       if (invitation.status !== 'PENDING') {
         throw new Error(
           invitation.status === 'ACCEPTED'
@@ -319,7 +721,6 @@ export async function acceptInvitationTransaction(input: {
         );
       }
 
-      // Check email match if an invited email was specified
       if (invitation.email && invitation.email.trim()) {
         const invitedEmail = invitation.email.trim().toLowerCase();
         const authedEmail = input.userEmail.trim().toLowerCase();
@@ -357,7 +758,7 @@ export async function acceptInvitationTransaction(input: {
       // 2. Set active membership
       transaction.set(membershipRef, membership, { merge: true });
 
-      // 3. Upsert member record in /members so they appear in studio roster
+      // 3. Upsert member record in /members
       const memberQuery = await firestore
         .collection('members')
         .where('studioId', '==', studioId)
@@ -369,6 +770,10 @@ export async function acceptInvitationTransaction(input: {
         const existingMemberRef = memberQuery.docs[0].ref;
         transaction.update(existingMemberRef, {
           name: input.userName || (memberQuery.docs[0].data() as StudioMember).name,
+          status: 'ACTIVE',
+          isDeleted: false,
+          deletedAt: null,
+          deletedBy: null,
           updatedAt: now,
         });
       } else {
@@ -379,6 +784,8 @@ export async function acceptInvitationTransaction(input: {
           name: input.userName || invitation.name || input.userEmail.split('@')[0],
           email: input.userEmail.toLowerCase(),
           skills: invitation.skills || [],
+          status: 'ACTIVE',
+          isDeleted: false,
           createdAt: now,
           updatedAt: now,
         };
@@ -402,24 +809,31 @@ export async function acceptInvitationTransaction(input: {
   }
 }
 
-// ------------------------------------------------------------------
-// Studio Marketplace Profile Actions (Phase 2)
-// ------------------------------------------------------------------
-
-import { MarketplaceProfile } from '@focoman/types';
+// ============================================================================
+// 7. MARKETPLACE PROFILES
+// ============================================================================
 
 export async function getMarketplaceProfile(studioId: string): Promise<MarketplaceProfile | null> {
   const db = getFirestoreServerInstance();
   const doc = await db.collection('marketplace_profiles').doc(studioId).get();
   if (!doc.exists) return null;
-  return doc.data() as MarketplaceProfile;
+  const profile = doc.data() as MarketplaceProfile;
+  if (profile.isDeleted) return null;
+  return profile;
 }
 
 export async function getMarketplaceProfileBySlug(slug: string): Promise<MarketplaceProfile | null> {
   const db = getFirestoreServerInstance();
-  const snapshot = await db.collection('marketplace_profiles').where('slug', '==', slug).where('isVisible', '==', true).limit(1).get();
+  const snapshot = await db
+    .collection('marketplace_profiles')
+    .where('slug', '==', slug)
+    .where('isVisible', '==', true)
+    .limit(1)
+    .get();
   if (snapshot.empty) return null;
-  return snapshot.docs[0].data() as MarketplaceProfile;
+  const profile = snapshot.docs[0].data() as MarketplaceProfile;
+  if (profile.isDeleted) return null;
+  return profile;
 }
 
 export async function upsertMarketplaceProfile(
@@ -428,22 +842,22 @@ export async function upsertMarketplaceProfile(
 ): Promise<MarketplaceProfile> {
   const db = getFirestoreServerInstance();
   const docRef = db.collection('marketplace_profiles').doc(studioId);
-  
+
   return db.runTransaction(async (transaction) => {
     const doc = await transaction.get(docRef);
     const now = new Date().toISOString();
-    
+
     if (doc.exists) {
       const existing = doc.data() as MarketplaceProfile;
       const updated: MarketplaceProfile = {
         ...existing,
         ...profileData,
+        isDeleted: false,
         updatedAt: now,
       };
       transaction.update(docRef, { ...updated });
       return updated;
     } else {
-      // Fetch studio to get the correct slug
       const studioDoc = await transaction.get(db.collection('studios').doc(studioId));
       if (!studioDoc.exists) throw new Error('Studio not found');
       const studioData = studioDoc.data() as Studio;
@@ -452,14 +866,15 @@ export async function upsertMarketplaceProfile(
         id: studioId,
         studioId,
         name: profileData.name || studioData.name,
-        slug: studioData.id, // we use studio id as slug for now, or you can add slug to studio
+        slug: studioData.id,
         city: profileData.city || studioData.city,
         description: profileData.description || '',
         tags: profileData.tags || [],
         coverImageUrl: profileData.coverImageUrl || '',
         isVisible: profileData.isVisible ?? false,
+        isDeleted: false,
         verifiedMetrics: {
-          onTimeDeliveryPercentage: 100, // Initial safe default
+          onTimeDeliveryPercentage: 100,
           completedOrdersCount: 0,
           lastCalculatedAt: now,
         },
@@ -472,22 +887,278 @@ export async function upsertMarketplaceProfile(
   });
 }
 
+export async function softDeleteMarketplaceProfile(studioId: string, deletedByUid: string): Promise<boolean> {
+  const db = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await db.collection('marketplace_profiles').doc(studioId).update({
+    isVisible: false,
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export async function restoreMarketplaceProfile(studioId: string): Promise<boolean> {
+  const db = getFirestoreServerInstance();
+  const docRef = db.collection('marketplace_profiles').doc(studioId);
+  const doc = await docRef.get();
+  if (!doc.exists) return false;
+  const profile = doc.data() as MarketplaceProfile;
+  if (!isWithinRecoveryWindow(profile.deletedAt)) {
+    throw new Error(`Cannot restore marketplace profile: ${RECOVERY_WINDOW_DAYS}-day recovery window expired.`);
+  }
+  const now = new Date().toISOString();
+  await docRef.update({
+    isVisible: true,
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+  });
+  return true;
+}
+
 export async function searchMarketplaceProfiles(
   filters: { city?: string; tags?: string[] },
   limitCount = 20
 ): Promise<MarketplaceProfile[]> {
   const db = getFirestoreServerInstance();
-  let query: FirebaseFirestore.Query = db.collection('marketplace_profiles').where('isVisible', '==', true);
-  
+  let query: FirebaseFirestore.Query = db
+    .collection('marketplace_profiles')
+    .where('isVisible', '==', true);
+
   if (filters.city) {
-    // Simple exact match for city
     query = query.where('city', '==', filters.city);
   }
-  
+
   if (filters.tags && filters.tags.length > 0) {
     query = query.where('tags', 'array-contains-any', filters.tags);
   }
-  
+
   const snapshot = await query.limit(limitCount).get();
-  return snapshot.docs.map(doc => doc.data() as MarketplaceProfile);
+  return snapshot.docs
+    .map((doc) => doc.data() as MarketplaceProfile)
+    .filter((profile) => !profile.isDeleted);
 }
+
+// ============================================================================
+// 8. STUDIO PACKAGES
+// ============================================================================
+
+export async function getStudioPackages(studioId: string): Promise<StudioPackage[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('studio_packages')
+    .where('studioId', '==', studioId.toLowerCase())
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as StudioPackage)
+    .filter(p => !p.isDeleted);
+}
+
+export async function getPublishedStudioPackages(studioId: string): Promise<StudioPackage[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('studio_packages')
+    .where('studioId', '==', studioId.toLowerCase())
+    .where('isPublished', '==', true)
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as StudioPackage)
+    .filter(p => !p.isDeleted);
+}
+
+export async function saveStudioPackage(pkg: StudioPackage): Promise<void> {
+  const db = getFirestoreServerInstance();
+  await db.collection('studio_packages').doc(pkg.id).set(pkg);
+}
+
+export async function updateStudioPackage(
+  packageId: string,
+  updates: Partial<Omit<StudioPackage, 'id' | 'studioId' | 'createdAt'>>
+): Promise<StudioPackage | null> {
+  const db = getFirestoreServerInstance();
+  const ref = db.collection('studio_packages').doc(packageId);
+  const doc = await ref.get();
+  if (!doc.exists) return null;
+
+  const existing = doc.data() as StudioPackage;
+  const updated: StudioPackage = {
+    ...existing,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await ref.update({ ...updated });
+  return updated;
+}
+
+export async function softDeleteStudioPackage(packageId: string, deletedByUid: string): Promise<boolean> {
+  const db = getFirestoreServerInstance();
+  const now = new Date().toISOString();
+  await db.collection('studio_packages').doc(packageId).update({
+    isDeleted: true,
+    isPublished: false,
+    deletedAt: now,
+    deletedBy: deletedByUid,
+    updatedAt: now,
+  });
+  return true;
+}
+
+// ============================================================================
+// 9. BOOKING REQUESTS & LEADS
+// ============================================================================
+
+export async function createBookingRequest(req: BookingRequest): Promise<void> {
+  const db = getFirestoreServerInstance();
+  await db.collection('booking_requests').doc(req.id).set(req);
+}
+
+export async function getBookingRequestById(id: string): Promise<BookingRequest | null> {
+  const db = getFirestoreServerInstance();
+  const doc = await db.collection('booking_requests').doc(id).get();
+  if (!doc.exists) return null;
+  const req = doc.data() as BookingRequest;
+  if (req.isDeleted) return null;
+  return req;
+}
+
+export async function getBookingRequestsByStudio(studioId: string): Promise<BookingRequest[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('booking_requests')
+    .where('studioId', '==', studioId.toLowerCase())
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as BookingRequest)
+    .filter(r => !r.isDeleted)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getBookingRequestsByCustomer(customerId: string): Promise<BookingRequest[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('booking_requests')
+    .where('customerId', '==', customerId)
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as BookingRequest)
+    .filter(r => !r.isDeleted)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function updateBookingRequest(
+  id: string,
+  updates: Partial<Omit<BookingRequest, 'id' | 'studioId' | 'createdAt'>>
+): Promise<BookingRequest | null> {
+  const db = getFirestoreServerInstance();
+  const ref = db.collection('booking_requests').doc(id);
+  const doc = await ref.get();
+  if (!doc.exists) return null;
+
+  const existing = doc.data() as BookingRequest;
+  const updated: BookingRequest = {
+    ...existing,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await ref.update({ ...updated });
+  return updated;
+}
+
+// ============================================================================
+// 10. PAYMENTS & VERIFICATION
+// ============================================================================
+
+export async function savePaymentRecord(payment: PaymentRecord): Promise<void> {
+  const db = getFirestoreServerInstance();
+  await db.collection('payments').doc(payment.id).set(payment);
+}
+
+export async function getPaymentById(paymentId: string): Promise<PaymentRecord | null> {
+  const db = getFirestoreServerInstance();
+  const doc = await db.collection('payments').doc(paymentId).get();
+  if (!doc.exists) return null;
+  const p = doc.data() as PaymentRecord;
+  if (p.isDeleted) return null;
+  return p;
+}
+
+export async function getPaymentsByOrder(orderId: string): Promise<PaymentRecord[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('payments')
+    .where('orderId', '==', orderId)
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as PaymentRecord)
+    .filter(p => !p.isDeleted);
+}
+
+export async function getPaymentsByStudio(studioId: string): Promise<PaymentRecord[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('payments')
+    .where('studioId', '==', studioId.toLowerCase())
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as PaymentRecord)
+    .filter(p => !p.isDeleted)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function updatePaymentVerification(
+  paymentId: string,
+  verified: boolean,
+  verifiedByUid: string,
+  rejectionReason?: string
+): Promise<PaymentRecord | null> {
+  const db = getFirestoreServerInstance();
+  const ref = db.collection('payments').doc(paymentId);
+  const doc = await ref.get();
+  if (!doc.exists) return null;
+
+  const existing = doc.data() as PaymentRecord;
+  const now = new Date().toISOString();
+
+  const updated: PaymentRecord = {
+    ...existing,
+    status: verified ? 'PAID' : 'PENDING',
+    verificationStatus: verified ? 'VERIFIED' : 'REJECTED',
+    verifiedBy: verifiedByUid,
+    verifiedAt: now,
+    rejectionReason: rejectionReason || undefined,
+    updatedAt: now,
+  };
+
+  await ref.update({ ...updated });
+  return updated;
+}
+
+// ============================================================================
+// 11. CUSTOMER ORDER HISTORY
+// ============================================================================
+
+export async function getCustomerOrdersHistory(customerId: string): Promise<Order[]> {
+  const db = getFirestoreServerInstance();
+  const snapshot = await db
+    .collection('orders')
+    .where('customer.id', '==', customerId)
+    .get();
+
+  return snapshot.docs
+    .map(d => d.data() as Order)
+    .filter(o => !o.isDeleted)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+

@@ -14,6 +14,8 @@ function isDemoSlug(slug: string): boolean {
   return s === "lumina-studios" || s === "demo" || s === "demo-studio";
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
   params,

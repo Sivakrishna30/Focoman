@@ -43,7 +43,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
 
   const navItems = [
     {
-      label: t("nav.home", "Dashboard"),
+      label: t("nav.dashboard", "Dashboard"),
       sublabel: undefined,
       key: "dashboard",
       href: (slug: string) => `/${slug}/dashboard`,
@@ -155,7 +155,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
             className="text-[10px] font-semibold text-brand-blue-primary hover:underline shrink-0"
             title="Switch Workspace"
           >
-            Switch
+            {t("nav.switch", "Switch")}
           </Link>
         </div>
         <p className="text-xs text-text-tertiary truncate">{ownerName}</p>
@@ -244,11 +244,14 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
         })}
       </nav>
 
-      {/* Bottom: Theme Switcher & Sign Out */}
+      {/* Bottom: Language, Theme Switcher & Sign Out */}
       <div className="border-t border-border-divider px-3 py-3 flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-semibold text-text-tertiary">Theme</span>
-          <ThemeSwitcher />
+          <span className="text-[11px] font-semibold text-text-tertiary">{t("nav.theme", "Theme")}</span>
+          <div className="flex items-center gap-1.5">
+            <LanguageSwitcher />
+            <ThemeSwitcher />
+          </div>
         </div>
         <button
           onClick={() => {
@@ -293,7 +296,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
             prefetch={true}
             className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary hover:text-brand-blue-primary hover:bg-brand-blue-50 transition"
           >
-            Switch
+            {t("nav.switch", "Switch")}
           </Link>
         </div>
       </div>

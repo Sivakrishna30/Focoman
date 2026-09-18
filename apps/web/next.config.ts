@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
     "@focoman/types",
     "@focoman/validation",
     "@focoman/domain",
+    "@focoman/config",
   ],
+  devIndicators: false,
   eslint: {
     // Run eslint separately via npm run lint to avoid OOM crashes during build on Cloud Run
     ignoreDuringBuilds: true,

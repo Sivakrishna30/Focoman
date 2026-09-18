@@ -24,12 +24,14 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
   POST_EVENT_IN_PROGRESS: "Post-Event In Progress",
   COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "badge-brand-blue",
   POST_EVENT_IN_PROGRESS: "badge-brand-orange",
   COMPLETED: "badge-status-success",
+  CANCELLED: "badge-status-error",
 };
 
 const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
@@ -433,7 +435,7 @@ export default function OmsPage({
               </h3>
               <div className="flex gap-1.5">
                 <button
-                  onClick={() => handleUpdatePayment("PAYMENT_COMPLETED")}
+                  onClick={() => handleUpdatePayment("PAID")}
                   className="btn-brand-blue py-1 px-2.5 text-[11px]"
                 >
                   Mark Paid

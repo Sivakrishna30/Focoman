@@ -4,16 +4,16 @@ import {
   getStudioBySlug,
   registerStudioTransaction,
   getMembershipsByUid,
+  updateStudio,
+  softDeleteStudio,
+  restoreStudio,
 } from "@focoman/db";
 import { Studio, StudioMembership } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
- * Server Actions for Studio Registration & Multi-Studio Workspaces
- * CHG-010: Authorization enforced on mutating actions.
- * registerStudioAction: ownerUid is derived from the verified token — never trusted from the client.
- * getUserWorkspacesAction: UID is verified against the token — no UID spoofing possible.
- * Source of Truth: Authentication & Multi-Studio Identity Architecture Specification
+ * Server Actions for Studio Registration, Workspaces & Settings
+ * Supports Studio registration, soft-deletion, restoration, and configuration.
  */
 
 export async function checkStudioSlugAvailabilityAction(slug: string): Promise<{
@@ -38,14 +38,13 @@ export async function registerStudioAction(input: {
   city: string;
   website?: string;
   instagram?: string;
-  idToken: string; // Required: Firebase ID token — UID is extracted server-side, not trusted from client
+  idToken: string;
 }): Promise<{
   success: boolean;
   studio?: Studio;
   error?: string;
 }> {
   try {
-    // Verify identity: UID comes from the token, never from client input
     const decoded = await requireVerifiedUser(input.idToken);
     const ownerUid = decoded.uid;
     const ownerEmail = decoded.email || "";
@@ -72,8 +71,9 @@ export async function registerStudioAction(input: {
         crm: true,
         erp: true,
         whatsapp: true,
-        marketplace: false, // Explicit opt-in required for marketplace
+        marketplace: false,
       },
+      isDeleted: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -95,17 +95,45 @@ export async function registerStudioAction(input: {
     }
 
     return { success: true, studio };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[registerStudioAction] Error:", err);
-    return { success: false, error: err.message || "Failed to register studio." };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to register studio." };
   }
 }
 
 export async function getUserWorkspacesAction(idToken: string): Promise<StudioMembership[]> {
-  // UID is derived from the verified token — client cannot supply or spoof a UID
   const decoded = await requireVerifiedUser(idToken);
-  // Errors propagate — no silent [] fallback
   return await getMembershipsByUid(decoded.uid);
+}
+
+export async function updateStudioAction(input: {
+  studioSlug: string;
+  updates: {
+    name?: string;
+    city?: string;
+    website?: string;
+    instagram?: string;
+    features?: Partial<Studio['features']>;
+  };
+  idToken: string;
+}): Promise<{ success: boolean; studio?: Studio; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioMember(decoded.uid, input.studioSlug, "STUDIO_OWNER");
+
+    const updated = await updateStudio(input.studioSlug, {
+      ...(input.updates.name ? { name: input.updates.name.trim() } : {}),
+      ...(input.updates.city ? { city: input.updates.city.trim() } : {}),
+      ...(input.updates.website !== undefined ? { website: input.updates.website.trim() } : {}),
+      ...(input.updates.instagram !== undefined ? { instagram: input.updates.instagram.trim() } : {}),
+      ...(input.updates.features ? { features: input.updates.features as any } : {}),
+    });
+
+    return { success: true, studio: updated || undefined };
+  } catch (err: unknown) {
+    console.error("[updateStudioAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update studio." };
+  }
 }
 
 export async function updateStudioWhatsappConfigAction(
@@ -115,14 +143,75 @@ export async function updateStudioWhatsappConfigAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    // Enforce Studio Owner authorization per identity and auth architecture
     await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
     
-    const { updateStudio } = await import("@focoman/db");
     await updateStudio(studioSlug, { whatsappConfig: config });
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[updateStudioWhatsappConfigAction] Error:", err);
-    return { success: false, error: err.message || "Failed to update config." };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update config." };
+  }
+}
+
+export async function resetStudioWhatsappConfigAction(
+  studioSlug: string,
+  idToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    const defaultToggles: Record<string, boolean> = {
+      master_operational: true,
+      oms_owner_3day_reminder: true,
+      oms_owner_post_event_start: true,
+      oms_owner_raw_photos_sent: true,
+      oms_owner_customer_selection_done: true,
+      oms_owner_album_review_done: true,
+      oms_owner_ready_for_delivery: true,
+      erp_crew_planned_alert: true,
+      erp_crew_task_assigned: true,
+      crm_customer_progress_update: true,
+      crm_customer_delivery_ready: true,
+      crm_customer_payment_reminder: true,
+    };
+
+    await updateStudio(studioSlug, { whatsappConfig: defaultToggles });
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[resetStudioWhatsappConfigAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to reset config." };
+  }
+}
+
+export async function deleteStudioAction(
+  studioSlug: string,
+  idToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    await softDeleteStudio(studioSlug, decoded.uid);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[deleteStudioAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to delete studio." };
+  }
+}
+
+export async function restoreStudioAction(
+  studioSlug: string,
+  idToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    await restoreStudio(studioSlug);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[restoreStudioAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to restore studio." };
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type ThemeMode = "light" | "dark" | "monochrome";
+export type ThemeMode = "light" | "dark";
 
 export interface ThemeContextType {
   theme: ThemeMode;
@@ -19,16 +19,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("focoman_theme") as ThemeMode | null;
-      if (saved && (saved === "light" || saved === "dark" || saved === "monochrome")) {
+      if (saved && (saved === "light" || saved === "dark")) {
         setThemeState(saved);
         applyThemeClass(saved);
-      } else {
-        // Check system preference
-        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-          // Default to light unless user explicitly chose, or match preference
-          setThemeState("light");
-          applyThemeClass("light");
-        }
+      } else if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        setThemeState("light");
+        applyThemeClass("light");
       }
     } catch {
       // Ignore localStorage errors in restricted contexts
@@ -37,13 +33,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyThemeClass = (targetTheme: ThemeMode) => {
+    if (typeof document === "undefined") return;
     const root = document.documentElement;
-    root.classList.remove("dark", "monochrome", "light");
+    root.classList.remove("dark", "light", "monochrome");
     root.setAttribute("data-theme", targetTheme);
     if (targetTheme === "dark") {
       root.classList.add("dark");
-    } else if (targetTheme === "monochrome") {
-      root.classList.add("monochrome");
     } else {
       root.classList.add("light");
     }
@@ -60,10 +55,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const cycleTheme = () => {
-    let nextTheme: ThemeMode = "dark";
-    if (theme === "light") nextTheme = "dark";
-    else if (theme === "dark") nextTheme = "monochrome";
-    else nextTheme = "light";
+    const nextTheme: ThemeMode = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
   };
 

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getPublicMarketplaceProfile } from "@/actions/marketplaceActions";
 import { Navbar } from "@/components/Navbar";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicProfilePage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
   const res = await getPublicMarketplaceProfile(params.slug);
