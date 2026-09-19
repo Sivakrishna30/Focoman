@@ -206,7 +206,7 @@ const PLANS: PlanItem[] = [
 ];
 
 export function PricingAccordion() {
-  const [expandedId, setExpandedId] = useState<string>("professional");
+  const [expandedId, setExpandedId] = useState<string>("");
 
   const togglePlan = (id: string) => {
     setExpandedId((prev) => (prev === id ? "" : id));

@@ -7,18 +7,20 @@ import { PricingAccordion } from "@/components/public/PricingAccordion";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import { StructuredData } from "@/components/public/StructuredData";
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://focoman.web.app";
+
 export const metadata: Metadata = {
   title: "Focoman — Complete Business Operating System for Photography Studios",
   description:
     "Eliminate scattered WhatsApp chats, spreadsheets, and paper notebooks. Focoman brings orders, shoot schedules, dynamic service workflows, crew planning, offline payments, and client deliveries into one unified system.",
   alternates: {
-    canonical: "https://focoman.web.app",
+    canonical: baseUrl,
   },
   openGraph: {
     title: "Focoman — Complete Business Operating System for Photography Studios",
     description:
       "Eliminate scattered WhatsApp chats, spreadsheets, and paper notebooks. Focus beyond the frames with Focoman.",
-    url: "https://focoman.web.app",
+    url: baseUrl,
     siteName: "Focoman",
     locale: "en_US",
     type: "website",
@@ -80,56 +82,32 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 text-[11px] font-semibold text-text-tertiary">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-status-success" />
-                Unlimited Orders &amp; Events
+
+          </div>
+        </section>
+
+        {/* 3. Challenge & Solution Section */}
+        <section id="challenge" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border border-border-default bg-white p-8 sm:p-14 shadow-xs">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <span className="text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
+                Why Focoman?
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
-                No Credit Card Required
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-purple-primary" />
-                14-Day Full Trial
-              </span>
+              <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
+                Eliminate Scattered WhatsApp Chats, Spreadsheets &amp; Paper Notebooks
+              </h2>
+              <p className="mx-auto mt-4 text-sm sm:text-base leading-relaxed text-text-secondary">
+                Photography studio owners lose countless hours tracking shoots, chasing deliverables, and managing payments across fragmented tools. Focoman unifies your entire operation into a single, modular system.
+              </p>
+            </div>
+
+            <div className="mt-12">
+              <ModuleAccordion />
             </div>
           </div>
         </section>
 
-        {/* 3. Challenge Section */}
-        <section id="challenge" className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-border-default bg-white p-8 sm:p-14 shadow-xs text-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-              The Challenge We Solve
-            </span>
-            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
-              Eliminate Scattered WhatsApp Chats, Spreadsheets &amp; Paper Notebooks
-            </h2>
-            <p className="mx-auto mt-4 max-w-3xl text-sm sm:text-base leading-relaxed text-text-secondary">
-              Photography studio owners lose countless hours tracking shoots, chasing deliverables, updating spreadsheets, and managing payments. Focoman brings it all together, so you always know what’s happening, what’s pending, and what needs attention next.
-            </p>
-          </div>
-        </section>
-
-        {/* 4. Core Modules Section */}
-        <section id="modules" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
-          <div className="mx-auto max-w-3xl text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-              Modular Operating Architecture
-            </span>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-text-primary sm:text-4xl">
-              Six Specialized Modules Built for Professional Studios
-            </h2>
-            <p className="mx-auto mt-3 text-sm sm:text-base text-text-secondary">
-              From mandatory core order orchestration to intelligent resource automation and studio discovery storefronts. Click any module to explore its capabilities.
-            </p>
-          </div>
-
-          <ModuleAccordion />
-        </section>
-
-        {/* 5. How Focoman Works */}
+        {/* 4. How Focoman Works */}
         <section id="how-it-works" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider bg-slate-50/50">
           <div className="mx-auto max-w-3xl text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-purple-primary">

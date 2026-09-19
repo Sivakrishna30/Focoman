@@ -16,8 +16,8 @@ interface ModuleData {
 const MODULES: ModuleData[] = [
   {
     number: "01",
-    name: "OMS — Order Management System",
-    shortDesc: "The core engine powering your confirmed orders, shoot milestones, and post-event deliverables.",
+    name: "Order Management (OMS)",
+    shortDesc: "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.",
     keyValue: "Mandatory Core • Unlimited Orders & Events included in all plans",
     tag: "Core Engine",
     tagColor: "bg-brand-blue-background text-brand-blue-primary border-brand-blue-light/50",
@@ -50,8 +50,8 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "02",
-    name: "CRM — Customer Relationship Management",
-    shortDesc: "Centralize customer profiles, order history, and booking records across shoots.",
+    name: "Studio CRM",
+    shortDesc: "Maintain structured customer directories, past booking history, client preferences, and anniversary reminders to drive repeat bookings.",
     keyValue: "Optional Support Module • Begins at Starter (₹499/mo)",
     tag: "Support Module",
     tagColor: "bg-brand-orange-background text-brand-orange-primary border-brand-orange-soft",
@@ -76,8 +76,8 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "03",
-    name: "ERP — Studio Operations & Resource Planning",
-    shortDesc: "Organize crew members, verify availability, plan schedules, and match skills to event dates.",
+    name: "Studio ERP",
+    shortDesc: "Assign shoot tasks, check crew calendar availability, track equipment, and manage crew payroll, travel claims, and audit-ready accounting summaries.",
     keyValue: "Basic in Starter • Advanced & Integrations in Professional • Smart Automation in Complete",
     tag: "Operations & People",
     tagColor: "bg-brand-purple-background text-brand-purple-primary border-brand-purple-light/50",
@@ -110,8 +110,8 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "04",
-    name: "WhatsApp — Premium Operational Communication",
-    shortDesc: "Real-time WhatsApp notifications, status alerts, and operational reminders for studio owners and clients.",
+    name: "WhatsApp Notifications",
+    shortDesc: "Deliver real-time booking confirmations, milestone transitions, and deliverable-ready download links directly to customer and crew phones.",
     keyValue: "Included in Complete (₹1,999/mo) • Purpose-built operational bot",
     tag: "Communication & Bot",
     tagColor: "bg-green-50 text-status-success border-green-200",
@@ -136,8 +136,8 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "05",
-    name: "Marketplace — Studio Storefront & Inquiries",
-    shortDesc: "Independent public studio profile allowing customers to discover your studio, view packages, and submit booking inquiries.",
+    name: "Studio Marketplace",
+    shortDesc: "Independent public studio profile allowing customers to discover your studio near them, view verified operational performance metrics, and submit booking inquiries directly.",
     keyValue: "Configure in Starter • Public Publishing in Professional (₹999/mo) • Not a price comparison engine",
     tag: "Discovery & Storefront",
     tagColor: "bg-pink-50 text-pink-700 border-pink-200",
@@ -166,7 +166,7 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "06",
-    name: "Automation — Intelligent Operational Guidance",
+    name: "Intelligent Automation",
     shortDesc: "Proactive suggestions and workflow automation built on the core principle: System Suggests → Owner Reviews → Owner Confirms.",
     keyValue: "Basic in Starter • Advanced in Professional • Smart Resource Automation in Complete",
     tag: "Workflow Automation",
@@ -193,7 +193,7 @@ const MODULES: ModuleData[] = [
 ];
 
 export function ModuleAccordion() {
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const toggleModule = (index: number) => {
     setExpandedIndex((prev) => (prev === index ? null : index));
@@ -230,7 +230,7 @@ export function ModuleAccordion() {
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold text-text-primary truncate">
+                    <h3 className="text-base sm:text-lg font-bold text-text-primary">
                       {mod.name}
                     </h3>
                     <span
@@ -239,7 +239,7 @@ export function ModuleAccordion() {
                       {mod.tag}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-text-secondary line-clamp-1 sm:line-clamp-none">
+                  <p className="mt-1 text-xs text-text-secondary">
                     {mod.shortDesc}
                   </p>
                 </div>

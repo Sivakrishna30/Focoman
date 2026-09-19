@@ -25,8 +25,8 @@ const FAQS: FaqItem[] = [
     a: "Marketplace is an opt-in discovery capability. Each studio publishes its own independent storefront at /studio/[slug] displaying its location, services, custom packages, pricing, and verified operational metrics (calculated automatically from actual order completion timestamps). Focoman is NOT a price-comparison or discount-ranking site; each studio controls its own brand presentation, and internal financial records, CRM, and crew schedules remain strictly confidential.",
   },
   {
-    q: "Do my clients need to create an account or download an app?",
-    a: "No. Focoman operates with a zero-login guest tracking architecture. Clients receive a secure, private passkey link (/track/[passkey]) where they can view real-time production status, selection gallery links, and deliverable links directly in any web browser without creating accounts or passwords.",
+    q: "Do my clients need an account to view orders and deliverables?",
+    a: "Yes. Clients are first-class users with secure, account-based access to view active bookings, review deliverables, track production progress, and access their complete order history directly in their client portal.",
   },
   {
     q: "How does crew assignment and resource planning work?",
@@ -51,7 +51,7 @@ const FAQS: FaqItem[] = [
 ];
 
 export function FaqAccordion() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleFaq = (idx: number) => {
     setOpenIndex((prev) => (prev === idx ? null : idx));

@@ -122,7 +122,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center gap-3">
           <nav className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium sm:text-sm">
             {navLinks.map((link) => {
@@ -142,25 +142,10 @@ export function Navbar() {
               );
             })}
           </nav>
-
-          {/* Compact Single-line Language Switcher & Theme Switcher */}
-          <LanguageSwitcher />
-          <ThemeSwitcher />
-
-          {user ? (
-            <UserDropdownMenu user={user} />
-          ) : (
-            <Link
-              href="/sign-in"
-              className="inline-flex rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-            >
-              {t("nav.signin", "Sign In")}
-            </Link>
-          )}
         </div>
 
-        {/* Mobile Right: Compact Language Switcher + Theme Switcher + Sign In Button */}
-        <div className="flex items-center gap-1.5 md:hidden shrink-0">
+        {/* Right Side Controls (Language, Theme, Sign In) - Unified for all screens */}
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <LanguageSwitcher />
           <ThemeSwitcher />
           {user ? (
@@ -168,7 +153,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-3 py-1 text-[11px] sm:text-xs font-bold text-white shadow-xs transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white shrink-0"
+              className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white shrink-0"
             >
               {t("nav.signin", "Sign In")}
             </Link>

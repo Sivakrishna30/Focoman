@@ -1,31 +1,32 @@
 export function StructuredData() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://focoman.web.app';
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://focoman.web.app/#organization",
+        "@id": `${baseUrl}/#organization`,
         "name": "Focoman",
-        "url": "https://focoman.web.app",
-        "logo": "https://focoman.web.app/brand/focoman-logo.svg",
+        "url": `${baseUrl}`,
+        "logo": `${baseUrl}/brand/focoman-logo.svg`,
         "description": "Business operating system for photography and cinematography studios.",
       },
       {
         "@type": "WebSite",
-        "@id": "https://focoman.web.app/#website",
-        "url": "https://focoman.web.app",
+        "@id": `${baseUrl}/#website`,
+        "url": `${baseUrl}`,
         "name": "Focoman",
         "publisher": {
-          "@id": "https://focoman.web.app/#organization",
+          "@id": `${baseUrl}/#organization`,
         },
       },
       {
         "@type": "SoftwareApplication",
-        "@id": "https://focoman.web.app/#application",
+        "@id": `${baseUrl}/#application`,
         "name": "Focoman Studio BOS",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "url": "https://focoman.web.app",
+        "url": `${baseUrl}`,
         "description": "A Complete Business Operating System for Photography Studios. Unifies orders, shoot schedules, dynamic service workflows, crew planning, offline payments, and client deliveries.",
         "offers": [
           {

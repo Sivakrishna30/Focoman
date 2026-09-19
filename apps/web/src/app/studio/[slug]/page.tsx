@@ -19,6 +19,7 @@ export async function generateMetadata(props: {
     };
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://focoman.web.app";
   const p = res.profile;
   const title = `${p.name} — Photography Studio in ${p.city} | Focoman`;
   const description = p.description
@@ -29,13 +30,13 @@ export async function generateMetadata(props: {
     title,
     description,
     alternates: {
-      canonical: `https://focoman.web.app/studio/${params.slug}`,
+      canonical: `${baseUrl}/studio/${params.slug}`,
     },
     openGraph: {
       title,
       description,
       type: "profile",
-      url: `https://focoman.web.app/studio/${params.slug}`,
+      url: `${baseUrl}/studio/${params.slug}`,
     },
   };
 }
