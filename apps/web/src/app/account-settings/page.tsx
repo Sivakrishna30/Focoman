@@ -130,8 +130,8 @@ export default function AccountSettingsPage() {
               <p className="text-sm font-semibold text-text-secondary">No studio orders found.</p>
               <p className="text-xs text-text-tertiary mt-1">
                 Explore our verified studios on the{" "}
-                <Link href="/marketplace" className="text-brand-blue-primary font-semibold hover:underline">
-                  Marketplace
+                <Link href="/studios" className="text-brand-blue-primary font-semibold hover:underline">
+                  Studio Marketplace
                 </Link>{" "}
                 to book your next photography session.
               </p>

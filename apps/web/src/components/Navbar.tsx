@@ -84,10 +84,10 @@ export function Navbar() {
     { label: t("nav.home", "Home"), href: "/#home" },
     { label: t("nav.modules", "Modules"), href: "/#modules" },
     { label: t("nav.how_it_works", "How It Works"), href: "/#how-it-works" },
-    { label: t("nav.marketplace", "Marketplace"), href: "/#marketplace" },
+    { label: t("nav.marketplace", "Studio Marketplace"), href: "/studios" },
     { label: t("nav.pricing", "Pricing"), href: "/#pricing" },
+    { label: t("nav.integrations", "Integrations"), href: "/#integrations" },
     { label: t("nav.faq", "FAQ"), href: "/#faq" },
-    { label: t("nav.studios", "Explore Studios"), href: "/studios" },
   ];
 
   useEffect(() => {

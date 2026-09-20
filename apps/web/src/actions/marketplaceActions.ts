@@ -108,7 +108,7 @@ export async function restoreMarketplaceProfileAction(studioId: string, idToken:
 }
 
 export async function searchPublicMarketplace(city?: string, tags?: string[]) {
-  // Public directory search
+  // Public Studio Marketplace search
   try {
     const profiles = await searchMarketplaceProfiles({ city, tags });
     return { success: true, profiles };

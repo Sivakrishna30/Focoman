@@ -4,8 +4,8 @@ import { searchPublicMarketplace } from "@/actions/marketplaceActions";
 import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Browse Photography & Videography Studios | Focoman Marketplace",
-  description: "Discover verified photography and videography studios with authentic operational performance track records and on-time delivery rates.",
+  title: "Studio Marketplace | Browse Photography & Videography Studios | Focoman",
+  description: "Discover verified photography and videography studios on the Studio Marketplace with authentic operational performance track records and on-time delivery rates.",
   alternates: {
     canonical: "https://focoman.web.app/studios",
   },
@@ -31,13 +31,13 @@ export default async function StudiosPage({
         <div className="bg-white border-b border-border-divider pt-12 pb-8 px-4 sm:px-6">
           <div className="mx-auto max-w-5xl text-center">
             <span className="inline-block rounded-full bg-brand-blue-background px-3 py-1 text-xs font-bold text-brand-blue-primary uppercase tracking-wider mb-3">
-              Studio Directory
+              Studio Marketplace
             </span>
             <h1 className="text-3xl font-extrabold text-text-primary tracking-tight sm:text-4xl">
               Verified Photography &amp; Cinematography Studios
             </h1>
             <p className="mt-4 text-text-secondary max-w-2xl mx-auto text-sm sm:text-base">
-              Explore independent photography and videography studios. Review real operational track records, authentic service packages, and submit direct booking inquiries.
+              Explore independent photography and videography studios on the Studio Marketplace. Review real operational track records, authentic service packages, and submit direct booking inquiries.
             </p>
             
             <form
@@ -86,7 +86,7 @@ export default async function StudiosPage({
               <div className="text-center py-20 rounded-2xl border border-dashed border-border-default bg-white p-8">
                 <p className="text-text-primary font-bold text-base">No studios currently listed {city ? `in "${city}"` : ""}.</p>
                 <p className="mt-2 text-text-secondary text-xs">
-                  Studios must be verified on Focoman and opt-in to publish their public storefront.
+                  Studios must be verified on Focoman and opt-in to publish their profile on the Studio Marketplace.
                 </p>
                 {city && (
                   <Link href="/studios" className="mt-4 inline-block text-xs font-bold text-brand-blue-primary hover:underline">
@@ -136,7 +136,7 @@ export default async function StudiosPage({
                         {p.verifiedMetrics?.completedOrdersCount || 0} Verified Deliveries
                       </span>
                       <span className="text-xs font-bold text-brand-blue-primary group-hover:underline">
-                        View Storefront →
+                        View Profile →
                       </span>
                     </div>
                   </Link>

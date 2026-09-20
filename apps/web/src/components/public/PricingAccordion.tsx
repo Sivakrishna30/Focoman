@@ -49,10 +49,10 @@ const PLANS: PlanItem[] = [
     limitations: [
       "No standalone customer CRM directory",
       "No crew or team member management",
-      "No crew assignment or scheduling",
-      "No public marketplace storefront",
-      "No WhatsApp alerts or bot",
+      "No Studio Marketplace profile or booking inquiries",
+      "No WhatsApp alerts or notifications",
       "No Google Calendar or Drive sync",
+      "Single studio workspace (Multi-studio requires Complete)",
     ],
   },
   {
@@ -61,7 +61,7 @@ const PLANS: PlanItem[] = [
     price: "₹499",
     cadence: "per month",
     positioning: "Run Your Studio",
-    valueProp: "For boutique studios ready for customer history, team profiles, manual crew allocation, and inquiry booking.",
+    valueProp: "For boutique studios managing customer history, team profiles, manual crew allocation, and order workflow WhatsApp notifications.",
     badgeColor: "bg-brand-blue-background text-brand-blue-primary border-brand-blue-light/50",
     ctaText: "Choose Starter",
     ctaHref: "/sign-in",
@@ -76,7 +76,6 @@ const PLANS: PlanItem[] = [
           "Centralized customer directory & customer profiles",
           "Customer lifetime confirmed order history",
           "Customer payment & receivables history",
-          "Booking inquiry and request log",
         ],
       },
       {
@@ -88,24 +87,21 @@ const PLANS: PlanItem[] = [
         ],
       },
       {
-        group: "Booking & Inquiries",
+        group: "WhatsApp Notifications",
         items: [
-          "In-app booking requests & lead intake",
-          "Optional negotiation with agreed final amount",
-          "Advance payment requests & offline payment support (Cash, UPI, Bank Transfer)",
-          "Payment proof attachment & owner verification workflow",
-          "Formal booking confirmation transition",
+          "Automated notifications on order workflow pipeline status updates",
+          "Booking confirmations, advance payment receipts & balance due alerts",
+          "Photo selection gallery ready & final delivery notifications",
         ],
       },
-      {
-        group: "Marketplace Configuration",
-        items: [
-          "Configure studio profile, bio, city & specialized tags",
-          "Create and manage studio service packages & pricing",
-          "Toggle negotiable status per package",
-          "Note: Public directory publishing is NOT included in Starter",
-        ],
-      },
+    ],
+    limitations: [
+      "No Studio Marketplace publishing or in-app booking inquiry intake",
+      "No crew calendar scheduling or double-booking conflict checks",
+      "No automated event shoot reminders (Available in Professional)",
+      "No interactive WhatsApp Operations Bot (Exclusive to Complete)",
+      "No Google Calendar or Drive sync",
+      "Single studio workspace (Multi-studio requires Complete)",
     ],
   },
   {
@@ -114,7 +110,7 @@ const PLANS: PlanItem[] = [
     price: "₹999",
     cadence: "per month",
     positioning: "Get Discovered & Operate Your Business",
-    valueProp: "Full studio management with public marketplace publishing, crew availability planning, and Google integrations.",
+    valueProp: "Full studio operations with public Studio Marketplace publishing, incoming booking inquiries, crew availability planning, and automated event reminders.",
     badgeColor: "bg-brand-orange-background text-brand-orange-primary border-brand-orange-soft",
     ctaText: "Choose Professional",
     ctaHref: "/sign-in",
@@ -122,15 +118,18 @@ const PLANS: PlanItem[] = [
       {
         group: "Everything in Starter, plus:",
         items: [
-          "All Free and Starter OMS, CRM, ERP, and Booking capabilities",
+          "All Free and Starter OMS, CRM, ERP, and WhatsApp notification capabilities",
         ],
       },
       {
-        group: "Public Marketplace Publishing",
+        group: "Studio Marketplace & Booking Inquiries",
         items: [
-          "Publish live studio storefront at /studio/[slug]",
+          "Enable & publish live Studio Marketplace profile at /studio/[slug]",
+          "Showcase service packages, pricing & negotiable toggle",
+          "Receive direct incoming booking inquiries from public visitors",
+          "In-app inquiry negotiation & agreed final amount log",
+          "Advance payment verification & booking confirmation transition",
           "Verified operational metrics badge (on-time delivery % & completed orders)",
-          "Receive incoming booking inquiries directly from public visitors",
         ],
       },
       {
@@ -144,19 +143,26 @@ const PLANS: PlanItem[] = [
         ],
       },
       {
-        group: "Native Cloud Integrations",
+        group: "WhatsApp Notifications & Event Reminders",
         items: [
-          "Google Calendar two-way synchronization for shoot dates",
-          "Google Drive embedded folder and photo preview attachment",
+          "All Starter order workflow pipeline status notifications included",
+          "Automated upcoming event shoot & schedule reminders",
+          "New incoming booking inquiry alerts & milestone progress notices",
         ],
       },
       {
-        group: "Analytics & Automation",
+        group: "Native Cloud Integrations & Analytics",
         items: [
-          "Advanced operational automation & recommended next actions",
+          "Google Calendar two-way synchronization for shoot dates",
+          "Google Drive embedded folder and photo preview attachment",
           "Order volume, revenue, workflow pipeline & crew workload reports",
         ],
       },
+    ],
+    limitations: [
+      "No Smart Resource Automation (AI/Intelligent crew assignment by workload/skills)",
+      "No two-way interactive WhatsApp Operations Bot (Exclusive to Complete)",
+      "Single studio workspace (Multi-studio requires Complete)",
     ],
   },
   {
@@ -165,9 +171,9 @@ const PLANS: PlanItem[] = [
     price: "₹1,999",
     cadence: "per month",
     positioning: "Automate & Scale",
-    valueProp: "The ultimate operating system with Smart Resource Automation, WhatsApp notifications & Operations Bot, and multi-studio support.",
+    valueProp: "The ultimate operating system with Smart Resource Automation, interactive WhatsApp Operations Bot, and exclusive multi-studio workspace management.",
     badgeColor: "bg-brand-purple-background text-brand-purple-primary border-brand-purple-light/50",
-    ctaText: "Start 14-Day Complete Trial",
+    ctaText: "Start 30-Day Complete Trial",
     ctaHref: "/sign-in",
     primaryCta: true,
     featuresIncluded: [
@@ -185,20 +191,19 @@ const PLANS: PlanItem[] = [
         ],
       },
       {
-        group: "WhatsApp Communication & Operations Bot",
+        group: "WhatsApp Operations & Interactive Bot",
         items: [
-          "Automated milestone WhatsApp alerts to clients & crew",
-          "Upcoming shoot schedule & call-time reminders",
-          "Payment receipts & balance due notifications",
-          "WhatsApp Operations Bot for checking orders, upcoming shoots, and quick owner status updates",
+          "All Starter & Professional notifications and event reminders included",
+          "Two-way interactive WhatsApp Operations Bot for checking orders, upcoming shoots, and quick status updates",
+          "Interactive event schedule confirmations & task acknowledgments via WhatsApp bot",
         ],
       },
       {
-        group: "Scale & Multi-Studio Architecture",
+        group: "Exclusive Multi-Studio Architecture",
         items: [
-          "Multi-studio workspace management under a single identity",
-          "Multi-studio consolidated analytics & reporting",
-          "Priority operational support",
+          "Multi-studio workspace management under a single identity (Exclusive to Complete)",
+          "Multi-studio consolidated analytics, workload, & revenue reporting",
+          "Priority operational support & dedicated onboarding",
         ],
       },
     ],
@@ -214,28 +219,6 @@ export function PricingAccordion() {
 
   return (
     <div className="space-y-6">
-      {/* Trial & Axiom Notification Banner */}
-      <div className="rounded-2xl border border-brand-blue-light bg-brand-blue-background/40 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-blue-primary text-white text-base font-bold">
-            ★
-          </span>
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-text-primary">
-              14-Day Full-Feature Trial Included
-            </h3>
-            <p className="text-[11px] sm:text-xs text-text-secondary">
-              Experience the full Complete plan for 14 days. If you do not choose a paid plan, your account automatically falls back to Free. All your orders, photos, and studio data are 100% safely preserved.
-            </p>
-          </div>
-        </div>
-        <div className="shrink-0 text-center sm:text-right">
-          <span className="inline-block rounded-full bg-white border border-brand-blue-light/80 px-3 py-1 text-[11px] font-extrabold text-brand-blue-primary shadow-2xs">
-            Unlimited Events &amp; Orders on Every Plan
-          </span>
-        </div>
-      </div>
-
       {/* 4 Plan Accordion Panels */}
       <div className="grid gap-4 lg:grid-cols-4">
         {PLANS.map((plan) => {

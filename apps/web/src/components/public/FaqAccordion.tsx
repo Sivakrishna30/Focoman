@@ -10,43 +10,43 @@ interface FaqItem {
 const FAQS: FaqItem[] = [
   {
     q: "What is Focoman?",
-    a: "Focoman is an OMS-First (Order Management System) Business Operating System built specifically for professional photography and cinematography studios. It unifies shoot orders, service workflows, post-event production milestones, payment tracking, crew planning, and client deliveries in one structured system.",
+    a: "Focoman is a studio operating system designed for photography and cinematography businesses. It unifies confirmed shoot orders, crew scheduling, post-event editing workflows, milestone deliveries, and payments in one structured system.",
   },
   {
-    q: "Can I manage unlimited orders and events on the Free plan?",
-    a: "Yes. Focoman does not charge by event count or order volume. The Free plan includes unlimited confirmed orders and shoots with the complete core Order Management System (OMS), dynamic workflows, delivery tracking, and a 14-day soft-delete recovery window.",
+    q: "Is the Free plan really free with unlimited orders?",
+    a: "Yes. The Free plan includes unlimited confirmed orders, shoot scheduling, dynamic workflows, and milestone tracking. We never charge per event or per order volume.",
   },
   {
-    q: "How does the 14-day trial work?",
-    a: "Every new studio begins with a 14-day full-feature trial with complete access to Complete plan capabilities (including Smart Resource Automation, WhatsApp alerts, and multi-studio support). After 14 days, if you do not select a paid plan, your account automatically falls back to the Free plan. All your orders, event schedules, and studio data are 100% preserved without data loss.",
+    q: "How does the 30-day free trial work?",
+    a: "Every new studio gets 30 days of full access to the Complete plan (Smart Resource Automation, WhatsApp notifications, and multi-studio support) with zero risk and no credit card required. If you don't choose a paid plan after 30 days, your workspace automatically moves to the Free plan with 100% of your studio data safely preserved.",
   },
   {
-    q: "How does the Studio Marketplace work?",
-    a: "Marketplace is an opt-in discovery capability. Each studio publishes its own independent storefront at /studio/[slug] displaying its location, services, custom packages, pricing, and verified operational metrics (calculated automatically from actual order completion timestamps). Focoman is NOT a price-comparison or discount-ranking site; each studio controls its own brand presentation, and internal financial records, CRM, and crew schedules remain strictly confidential.",
+    q: "How are WhatsApp notifications tiered across plans?",
+    a: "Starter (₹499/mo) includes automated notifications for order workflow pipeline status updates, booking confirmations, payment receipts, and gallery delivery links. Professional (₹999/mo) adds automated upcoming event shoot and call-time schedule reminders. Complete (₹1,999/mo) includes all notifications plus the two-way interactive WhatsApp Operations Bot for status lookups and shoot queries.",
   },
   {
-    q: "Do my clients need an account to view orders and deliverables?",
-    a: "Yes. Clients are first-class users with secure, account-based access to view active bookings, review deliverables, track production progress, and access their complete order history directly in their client portal.",
+    q: "What is the Studio Marketplace?",
+    a: "The Studio Marketplace is an opt-in public directory (/studios) where studios showcase packages, starting prices, and live calendar availability to receive direct client booking inquiries. Your internal CRM, financials, and crew rosters remain completely private.",
   },
   {
-    q: "How does crew assignment and resource planning work?",
-    a: "You invite photographers, cinematographers, and editors to your studio workspace using their Google accounts. In Starter, you assign crew manually to shoot tasks. In Professional, you plan schedules using visual availability calendars with automatic double-booking conflict detection and skill-matching verification. In Complete, our Smart Resource Automation recommends optimal crew pairings based on venue location, role requirements, availability, and active workload, following our strict rule: System Suggests → Studio Owner Reviews → Studio Owner Confirms.",
+    q: "How does crew allocation and scheduling work?",
+    a: "Starter provides manual crew assignment to shoot tasks and a team directory. Professional adds interactive crew availability calendars with automatic double-booking conflict checks. Complete introduces Smart Resource Automation, suggesting optimal crew pairings based on role, workload, and location.",
   },
   {
-    q: "How do offline payments and booking confirmation work?",
-    a: "Focoman treats offline payments (Cash, UPI, Direct Bank Transfer) as first-class citizens. When a client submits a booking request, an advance payment request is issued. Clients can upload payment proof (transaction reference or screenshot). The studio owner verifies the payment in-app, which formally transitions the booking request into a confirmed order.",
+    q: "How do offline payments (UPI, Cash, Bank Transfer) work?",
+    a: "Focoman supports standard offline payment methods. Clients can upload payment proof (UPI reference or screenshot). Once the studio owner verifies and marks it received in-app, the booking formally advances to a confirmed order.",
   },
   {
-    q: "How do WhatsApp notifications and the Operations Bot work?",
-    a: "Included in the Complete plan, WhatsApp integration sends real-time milestone alerts to clients and crew members for upcoming call times, upload notices, and balance receipts. The WhatsApp Operations Bot allows studio owners to query active order statuses, check upcoming shoots, and review action items directly from WhatsApp. It is designed purely as an operational assistant, not an AI lead-generation chatbot.",
+    q: "Can I manage multiple studios with one account?",
+    a: "Yes. With a single personal login, you can create or join multiple studio workspaces and switch between them instantly. Multi-studio management is included in the Complete plan (₹1,999/mo).",
   },
   {
-    q: "Can I manage multiple studios with one user account?",
-    a: "Yes. Focoman uses a unified personal identity architecture. Studio owners and freelance crew members can belong to multiple studio workspaces and switch between them effortlessly with one login.",
+    q: "Do clients need to sign in to access their orders?",
+    a: "Yes. Clients log in securely with their Google account to review event details, track editing progress, access selection galleries, and view payment receipts in their private client portal.",
   },
   {
-    q: "Does Focoman include contract templates or e-signatures?",
-    a: "No. Contracts, legal templates, and e-signatures are explicitly outside the scope of Focoman. Pre-event offline discussions and legal agreements happen directly between you and your client outside the app. Focoman focuses on tracking verified business states, confirmed deliverables, and production orchestration.",
+    q: "Does Focoman handle legal contracts or e-signatures?",
+    a: "No. Legal contracts and custom proposals are handled directly between you and your client outside Focoman. We focus on executing confirmed bookings, operational workflows, and milestone delivery.",
   },
 ];
 

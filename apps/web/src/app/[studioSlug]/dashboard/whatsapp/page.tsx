@@ -236,6 +236,43 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
           </div>
         )}
 
+        {/* Interactive Bot Capabilities Callout */}
+        <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="h-2 w-2 rounded-full bg-status-success" />
+            <h3 className="text-sm font-extrabold text-text-primary">
+              Interactive WhatsApp Operations Bot
+            </h3>
+            <span className="badge-status-success text-[10px]">
+              No Login Required
+            </span>
+          </div>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            The central Focoman WhatsApp Bot serves as your mobile operational assistant. It enables two-way communication so team members and owners can stay synchronized without opening the web dashboard.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-surface-app p-3 border border-border-default">
+              <div className="text-[11px] font-bold text-text-primary">Update Status on the Go</div>
+              <p className="mt-1 text-[10px] leading-normal text-text-secondary">
+                Crew can acknowledge call times or mark milestones (e.g. &ldquo;RAW Uploaded&rdquo;, &ldquo;Gallery Ready&rdquo;) directly via bot buttons or commands without opening the tool.
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface-app p-3 border border-border-default">
+              <div className="text-[11px] font-bold text-text-primary">Instant Schedule Queries</div>
+              <p className="mt-1 text-[10px] leading-normal text-text-secondary">
+                Query today&apos;s call times, upcoming shoots for the weekend, or active client deliverable deadlines by texting the bot.
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface-app p-3 border border-border-default">
+              <div className="text-[11px] font-bold text-text-primary">Client Milestone Alerts</div>
+              <p className="mt-1 text-[10px] leading-normal text-text-secondary">
+                Clients automatically receive photo selection galleries, album proofs, and dispatch notices with their private zero-login passkey.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Action Button & Status */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <button

@@ -82,9 +82,9 @@ const translations: Record<string, Record<LanguageMode, string>> = {
   },
   "nav.marketplace": {
     en: "Studio Marketplace",
-    thanglish: "Marketplace",
-    ta_easy: "வணிகச் சந்தை",
-    ta_pure: "வணிகச் சந்தை",
+    thanglish: "Studio Marketplace",
+    ta_easy: "ஸ்டுடியோ சந்தை",
+    ta_pure: "ஸ்டுடியோ சந்தை",
   },
   "nav.about": {
     en: "About Us",
@@ -215,10 +215,10 @@ const translations: Record<string, Record<LanguageMode, string>> = {
 
   // Module 2: CRM
   "module.crm.title": {
-    en: "Customer Relationship Management - CRM",
-    thanglish: "Customer Relationship Management - CRM",
-    ta_easy: "வாடிக்கையாளர் உறவு மேலாண்மை - CRM",
-    ta_pure: "வாடிக்கையாளர் உறவு மேலாண்மை - CRM",
+    en: "Customer Relations - CRM",
+    thanglish: "Customer Relations - CRM",
+    ta_easy: "வாடிக்கையாளர் உறவுகள் - CRM",
+    ta_pure: "வாடிக்கையாளர் உறவுகள் - CRM",
   },
   "module.crm.desc": {
     en: "Centralize client directories with verified phone numbers, track lifetime value across multiple photoshoot bookings, monitor outstanding receivables, and launch new orders directly from existing customer profiles.",
@@ -229,10 +229,10 @@ const translations: Record<string, Record<LanguageMode, string>> = {
 
   // Module 3: ERP
   "module.erp.title": {
-    en: "Studio Operations and Crew Management - ERP",
-    thanglish: "Studio Operations and Crew Management - ERP",
-    ta_easy: "நிலைய இயக்கங்கள் மற்றும் பணிக் குழு மேலாண்மை - ERP",
-    ta_pure: "நிலைய இயக்கங்கள் மற்றும் பணிக் குழு மேலாண்மை - ERP",
+    en: "Studio Operations - ERP",
+    thanglish: "Studio Operations - ERP",
+    ta_easy: "நிலைய இயக்கங்கள் - ERP",
+    ta_pure: "நிலைய இயக்கங்கள் - ERP",
   },
   "module.erp.desc": {
     en: "Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing.",
@@ -241,18 +241,38 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "படப்பிடிப்பு பணிகளை ஒதுக்குங்கள், நாள்காட்டி இருப்பு நிலையைச் சரிபாருங்கள், நிலைய உபகரணங்களைக் கண்காணியுங்கள், குழுவினருக்கான ஊதியம் மற்றும் பயணக் கோரிக்கைகளை நிர்வகியுங்கள். கட்டமைக்கப்பட்ட கணக்கியல் உங்கள் நிலையத்தைத் தணிக்கைக்குத் தயாராக வைக்கிறது.",
   },
 
-  // Integrations Card
+  // Integrations / WhatsApp Card
   "module.integrations.title": {
-    en: "Google Drive, Calendar & WhatsApp",
-    thanglish: "Google Drive, Calendar & WhatsApp",
-    ta_easy: "கூகுள் டிரைவ், நாள்காட்டி மற்றும் வாட்ஸ்அப்",
-    ta_pure: "கூகுள் டிரைவ், நாள்காட்டி மற்றும் வாட்ஸ்அப்",
+    en: "WhatsApp Operations & Bot",
+    thanglish: "WhatsApp Operations & Bot",
+    ta_easy: "வாட்ஸ்அப் இயக்கங்கள் மற்றும் பாட்",
+    ta_pure: "வாட்ஸ்அப் இயக்கங்கள் மற்றும் தானியங்கி பாட்",
   },
   "module.integrations.desc": {
-    en: "Connect Google Drive for photo selection with in-app previews, Google Calendar for crew schedules, and WhatsApp for automated milestone notifications without switching external tabs.",
-    thanglish: "Direct in-app previews-உடன் photo selection-க்கு Google Drive, crew schedule-க்கு Google Calendar, மற்றும் automated milestone alerts-க்கு WhatsApp connect செய்யுங்கள்.",
-    ta_easy: "பயன்பாட்டிலேயே நேரடிப் படக் காட்சியுடன் படத் தேர்விற்காக கூகுள் டிரைவ், குழுவினர் பணிகளுக்கான கூகுள் நாள்காட்டி மற்றும் வெளிப்புறத் தாவல்களுக்கு மாறாமல் தானியங்கி அறிவிப்புகளுக்கான வாட்ஸ்அப்பை இணையுங்கள்.",
-    ta_pure: "பயன்பாட்டிலேயே நேரடிப் படக் காட்சியுடன் படத் தேர்விற்காக கூகுள் டிரைவ், குழுவினர் பணிகளுக்கான கூகுள் நாள்காட்டி மற்றும் வெளிப்புறத் தாவல்களுக்கு மாறாமல் தானியங்கி அறிவிப்புகளுக்கான வாட்ஸ்அப்பை இணையுங்கள்.",
+    en: "Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.",
+    thanglish: "Automated WhatsApp alerts & mobile operations: clients-க்கு booking confirmations & gallery links, crew-க்கு shoot reminders & call-times, மற்றும் real-time order milestone updates எளிதாகப் பெறலாம்.",
+    ta_easy: "தானியங்கி வாட்ஸ்அப் அறிவிப்புகள் மற்றும் கைபேசி இயக்கங்கள்: வாடிக்கையாளர்களுக்கு முன்பதிவு உறுதிப்படுத்தல்கள் மற்றும் புகைப்பட தொகுப்பு இணைப்புகள், குழுவினருக்கு படப்பிடிப்பு நினைவூட்டல்கள் மற்றும் அழைப்பு நேரங்கள், மற்றும் நிகழ்நேர மைல்கல் புதுப்பிப்புகளைப் பெறுங்கள்.",
+    ta_pure: "தானியங்கி வாட்ஸ்அப் அறிவிப்புகள் மற்றும் கைபேசி இயக்கங்கள்: வாடிக்கையாளர்களுக்கு முன்பதிவு உறுதிப்படுத்தல்கள் மற்றும் படத்தொகுப்பு இணைப்புகள், குழுவினருக்குப் படப்பிடிப்பு நினைவூட்டல்கள் மற்றும் அழைப்பு நேரங்கள், மற்றும் நிகழ்நேர மைல்கல் புதுப்பிப்புகளைப் பெறுங்கள்.",
+  },
+
+  // Module 6: Automations
+  "module.automations.title": {
+    en: "Automations & Smart Engine",
+    thanglish: "Automations & Smart Engine",
+    ta_easy: "தானியங்கு மற்றும் ஸ்மார்ட் அமைப்பு",
+    ta_pure: "தானியக்க மற்றும் நுண்ணறிவு அமைப்பு",
+  },
+  "module.automations.desc": {
+    en: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
+    thanglish: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
+    ta_easy: "தொடர் கையேட்டுப் பணிகளைத் தானியங்கு மூலம் எளிதாக்குங்கள்: தொகுப்பு விநியோகங்களை அமைத்திடுங்கள், நேரம் மற்றும் பணிச்சுமை அடிப்படையில் குழுவினரைப் பரிந்துரைத்திடுங்கள், கட்டணக் கணக்கீடுகளைச் செய்திடுங்கள், விநியோகப் பணிகளைத் தானாக முன்னகர்த்துங்கள்.",
+    ta_pure: "தொடர் கையேட்டுப் பணிகளை நுண்ணறிவுத் தானியக்கம் மூலம் கையாளுங்கள்: ஒப்படைப்பு விவரங்களை அமைத்திடுங்கள், நேரம் மற்றும் பணிச்சுமை அடிப்படையில் குழுவினரைப் பரிந்துரைத்திடுங்கள், கட்டணப் பகுப்பாய்வுகளைச் செய்திடுங்கள் மற்றும் உற்பத்தி நிலைகளைத் தானாக முன்னகர்த்துங்கள்.",
+  },
+  "home.automations_badge": {
+    en: "Workflow Automation",
+    thanglish: "Workflow Automation",
+    ta_easy: "பணிப்பாய்வு தானியங்கு",
+    ta_pure: "பணிப்பாய்வுத் தானியக்கம்",
   },
 
   // Dashboard Common
@@ -275,10 +295,10 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "நிலைய இயக்கம் (ERP)",
   },
   "dash.marketplace": {
-    en: "Marketplace",
-    thanglish: "Marketplace",
-    ta_easy: "வணிகச் சந்தை",
-    ta_pure: "வணிகச் சந்தை",
+    en: "Studio Marketplace",
+    thanglish: "Studio Marketplace",
+    ta_easy: "ஸ்டுடியோ சந்தை",
+    ta_pure: "ஸ்டுடியோ சந்தை",
   },
   "dash.whatsapp": {
     en: "WhatsApp",

@@ -39,14 +39,14 @@ Pricing differentiation is based on:
 
 ---
 
-## 3. 14-DAY FULL-FEATURE TRIAL
+## 3. 30-DAY FULL-FEATURE TRIAL
 
-Every new studio receives a **14-day full-feature trial** with COMPLETE plan entitlements.
+Every new studio receives a **30-day full-feature trial** with COMPLETE plan entitlements.
 
 ```
 New Studio Created
       ↓
-14-Day Trial (COMPLETE capabilities)
+30-Day Trial (COMPLETE capabilities)
       ↓
 User Chooses Plan
       ↓
@@ -54,7 +54,7 @@ FREE | STARTER | PROFESSIONAL | COMPLETE
 
 If no action:
       ↓
-FREE (no data deletion)
+FREE (no data deletion, 100% data safely preserved)
 ```
 
 **Trial rules:**
@@ -107,8 +107,9 @@ FREE (no data deletion)
 | Basic Analytics | ✓ | ✓ | ✓ | ✓ |
 | Advanced Analytics | — | — | ✓ | ✓ |
 | **WhatsApp** | | | | |
-| WhatsApp Notifications | — | — | — | ✓ |
-| WhatsApp Operations Bot | — | — | — | ✓ |
+| WhatsApp Notifications (Pipeline Status) | — | ✓ | ✓ | ✓ |
+| WhatsApp Event Shoot Reminders | — | — | ✓ | ✓ |
+| WhatsApp Operations Bot (Interactive) | — | — | — | ✓ |
 | **Multi-Studio** | | | | |
 | Multi-Studio Management | — | — | — | ✓ |
 

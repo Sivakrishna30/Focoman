@@ -103,8 +103,8 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
       ),
     },
     {
-      label: t("dash.marketplace", "Marketplace Profile"),
-      sublabel: "Visibility",
+      label: t("dash.marketplace", "Studio Marketplace"),
+      sublabel: "Public Profile",
       key: "marketplace",
       href: (slug: string) => `/${slug}/dashboard/marketplace`,
       module: "marketplace" as const,

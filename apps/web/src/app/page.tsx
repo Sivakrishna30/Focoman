@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { ModuleAccordion } from "@/components/public/ModuleAccordion";
 import { PricingAccordion } from "@/components/public/PricingAccordion";
+import { IntegrationsSection } from "@/components/public/IntegrationsSection";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import { StructuredData } from "@/components/public/StructuredData";
 
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Focoman — Business Operating System for Photography Studios",
     description:
-      "Bring your studio's work, people, and orders together in one place — and spend less time managing the work, more time creating.",
+      "Bring your studio's work, people, and orders together in one place and spend less time managing the work, more time creating.",
   },
 };
 
@@ -63,7 +64,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-base text-text-secondary sm:text-lg lg:text-xl leading-relaxed">
-              Bring your studio’s work, people, and orders together in one place — and spend less time managing the work, more time creating.
+              Bring your studio’s work, people, and orders together in one place and spend less time managing the work, more time creating.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
@@ -71,7 +72,7 @@ export default function HomePage() {
                 href="/sign-in"
                 className="w-full sm:w-64 text-center rounded-xl bg-brand-blue-primary px-8 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-sky-600 flex items-center justify-center"
               >
-                Start 14-Day Free Trial
+                Start 30-Day Free Trial
               </Link>
               <Link
                 href="/#how-it-works"
@@ -111,133 +112,115 @@ export default function HomePage() {
         <section id="how-it-works" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider bg-slate-50/50">
           <div className="mx-auto max-w-3xl text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-purple-primary">
-              Lifecycle Progression
+              HOW FOCOMAN WORKS
             </span>
             <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-text-primary sm:text-4xl">
-              How Focoman Works: Booking to Final Delivery
+              A Clear Workflow for Every Stage of Your Studio
             </h2>
             <p className="mx-auto mt-3 text-sm sm:text-base text-text-secondary">
-              Focoman seamlessly bridges the pre-confirmation booking journey into structured post-event order production.
+              All your studio operations stay connected through a structured workflow pipeline, keeping every stage organized, clear, and easy to manage.
             </p>
           </div>
 
-          <div className="relative">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Step 1 */}
-              <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs relative flex flex-col justify-between">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-100 font-mono text-xs font-bold text-pink-700 mb-4">
-                    01
-                  </span>
-                  <h3 className="text-base font-bold text-text-primary">Discovery &amp; Inquiry</h3>
-                  <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-                    Client explores your independent studio profile, browses packages and pricing, and submits a booking inquiry. Optional negotiation enables agreeing on a final price.
+          <div className="mx-auto max-w-3xl">
+            <div className="flex flex-col gap-4 relative">
+              {/* Connecting Line */}
+              <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-border-divider hidden sm:block" aria-hidden="true" />
+
+              {/* Stage 1 */}
+              <div className="relative rounded-2xl border border-border-default bg-white p-6 shadow-xs flex flex-col sm:flex-row items-start gap-4">
+                <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 font-mono text-sm font-bold text-pink-700 border border-pink-100">
+                  01
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base font-bold text-text-primary">
+                      Studio Discovery &amp; Booking Request
+                    </h3>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-pink-700 bg-pink-50 px-2 py-0.5 rounded-md border border-pink-100 hidden sm:inline-block">
+                      Discovery
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    Client discovers an independent studio profile, explores its packages and pricing, and submits a booking inquiry.
                   </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-border-divider/50 text-[10px] font-semibold text-text-tertiary uppercase">
-                  Marketplace → Request
                 </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs relative flex flex-col justify-between">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-blue-background font-mono text-xs font-bold text-brand-blue-primary mb-4">
-                    02
-                  </span>
-                  <h3 className="text-base font-bold text-text-primary">Advance &amp; Confirmation</h3>
-                  <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-                    Studio issues an advance payment request. Client submits payment offline (Cash, UPI, Bank Transfer) with receipt proof. Studio verifies payment, confirming the booking.
+              {/* Stage 2 */}
+              <div className="relative rounded-2xl border border-border-default bg-white p-6 shadow-xs flex flex-col sm:flex-row items-start gap-4">
+                <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-blue-background font-mono text-sm font-bold text-brand-blue-primary border border-brand-blue-soft">
+                  02
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base font-bold text-text-primary">
+                      Review &amp; Booking Confirmation
+                    </h3>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-blue-primary bg-brand-blue-background px-2 py-0.5 rounded-md border border-brand-blue-soft hidden sm:inline-block">
+                      Booking
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    Studio reviews the booking request, checks the event date and required availability, and confirms the booking after advance payment verification.
                   </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-border-divider/50 text-[10px] font-semibold text-text-tertiary uppercase">
-                  Verification → Confirmed Order
                 </div>
               </div>
 
-              {/* Step 3 */}
-              <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs relative flex flex-col justify-between">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-orange-background font-mono text-xs font-bold text-brand-orange-primary mb-4">
-                    03
-                  </span>
-                  <h3 className="text-base font-bold text-text-primary">Pre-Flight &amp; Event Shoot</h3>
-                  <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-                    Pre-flight check evaluates date overlaps and crew availability. Studio assigns qualified photographers and cinematographers. The shoot occurs on schedule with full venue coordination.
+              {/* Stage 3 */}
+              <div className="relative rounded-2xl border border-border-default bg-white p-6 shadow-xs flex flex-col sm:flex-row items-start gap-4">
+                <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 font-mono text-sm font-bold text-emerald-700 border border-emerald-100">
+                  03
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base font-bold text-text-primary">
+                      Shoot, Production &amp; Delivery
+                    </h3>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 hidden sm:inline-block">
+                      Production
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    After the shoot, Focoman guides the order through photo selection, editing, customer review, and final album delivery until the order is completed.
                   </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-border-divider/50 text-[10px] font-semibold text-text-tertiary uppercase">
-                  Pre-flight → Shoot Day
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="rounded-2xl border border-border-default bg-white p-6 shadow-xs relative flex flex-col justify-between">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 font-mono text-xs font-bold text-status-success mb-4">
-                    04
-                  </span>
-                  <h3 className="text-base font-bold text-text-primary">Workflow, Delivery &amp; Close</h3>
-                  <p className="mt-2 text-xs text-text-secondary leading-relaxed">
-                    Dynamic workflows track editing, color grading, proofing, and album printing. Client receives deliverables via private passkey link, clears final balance, and order completes.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-border-divider/50 text-[10px] font-semibold text-text-tertiary uppercase">
-                  Production → Final Handover
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 6. Studio Marketplace Section */}
+        {/* 6. Studio Marketplace Showcase Section */}
         <section id="marketplace" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
-          <div className="rounded-3xl border border-border-default bg-gradient-to-br from-white via-white to-pink-50/30 p-8 sm:p-14 shadow-xs">
-            <div className="mx-auto max-w-3xl text-center">
-              <span className="inline-block rounded-full bg-pink-100 px-3 py-1 text-xs font-bold text-pink-700 uppercase tracking-wider mb-3">
-                Studio Discovery
+          <div className="relative overflow-hidden rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-amber-50/50 to-orange-100/40 p-8 sm:p-12 lg:p-14 text-center shadow-xs dark:from-orange-950/20 dark:via-amber-950/15 dark:to-orange-900/10 dark:border-orange-900/40">
+            {/* Subtle background glow */}
+            <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl pointer-events-none dark:bg-orange-600/10" />
+            <div className="absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl pointer-events-none dark:bg-amber-600/10" />
+
+            <div className="relative z-10 mx-auto max-w-3xl">
+              <span className="inline-flex items-center rounded-full bg-brand-orange-background px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-orange-primary border border-brand-orange-soft mb-4">
+                STUDIO MARKETPLACE
               </span>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-text-primary">
-                A Transparent Storefront for Your Studio
+                Showcase Your Studio. Get Discovered.
               </h2>
-              <p className="mt-3 text-sm sm:text-base text-text-secondary leading-relaxed">
-                Focoman is not a price-slashing competition or discount bidding site. Each studio owns its independent storefront with verified operational track records, transparent service packages, and direct booking inquiries.
+              <p className="mt-3.5 text-sm sm:text-base text-text-secondary leading-relaxed max-w-2xl mx-auto">
+                Showcase packages, pricing, and live date availability for booking inquiries, while your client records, orders, and studio financials remain completely private.
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/studios"
-                  className="rounded-xl bg-zinc-900 px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-black"
+                  className="w-full sm:w-auto rounded-xl bg-brand-orange-primary px-6 py-3 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-orange-600"
                 >
-                  Browse Verified Studios Directory →
+                  Explore Studio Marketplace
                 </Link>
                 <Link
                   href="/sign-in"
-                  className="rounded-xl border border-border-default bg-white px-6 py-3 text-xs sm:text-sm font-bold text-text-primary shadow-xs transition hover:bg-slate-50"
+                  className="w-full sm:w-auto rounded-xl border border-brand-orange-primary/30 bg-white px-6 py-3 text-center text-xs sm:text-sm font-bold text-brand-orange-primary shadow-xs transition hover:bg-orange-50"
                 >
-                  Publish Your Studio Storefront
+                  Publish Your Studio
                 </Link>
-              </div>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3 text-left pt-8 border-t border-border-divider">
-                <div>
-                  <h4 className="text-xs font-bold text-text-primary">No Race-to-the-Bottom</h4>
-                  <p className="mt-1 text-[11px] text-text-secondary">
-                    No comparative price filters or cheapest studio leaderboards. Your artistry and reliability are showcased on your terms.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-text-primary">Verified Metrics</h4>
-                  <p className="mt-1 text-[11px] text-text-secondary">
-                    On-time delivery percentages and completed order badges are computed automatically from actual operational history.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-text-primary">Strict Internal Privacy</h4>
-                  <p className="mt-1 text-[11px] text-text-secondary">
-                    Your financial margins, customer CRM list, order details, and internal crew notes remain 100% private and protected.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -247,20 +230,23 @@ export default function HomePage() {
         <section id="pricing" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
           <div className="mx-auto max-w-3xl text-center mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-              Simple, Transparent Pricing
+              SIMPLE, TRANSPARENT PRICING
             </span>
             <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-text-primary sm:text-4xl">
-              Choose the Plan Built for Your Studio’s Stage
+              Choose the Plan That Fits Your Studio
             </h2>
             <p className="mx-auto mt-3 text-sm sm:text-base text-text-secondary">
-              Every plan includes our complete Order Management System with unlimited orders and events. Upgrade as your team and operations expand.
+              Start with the essentials and move to more advanced studio operations as your needs grow.
             </p>
           </div>
 
           <PricingAccordion />
         </section>
 
-        {/* 8. FAQ Section */}
+        {/* 8. Integrations Section */}
+        <IntegrationsSection />
+
+        {/* 9. FAQ Section */}
         <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
           <div className="text-center mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
@@ -277,9 +263,10 @@ export default function HomePage() {
           <FaqAccordion />
         </section>
 
-        {/* 9. Final CTA Section */}
+        {/* 10. Final CTA Section */}
         <section id="cta" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
-          <div className="rounded-3xl border border-brand-blue-primary/30 bg-gradient-to-br from-brand-blue-primary via-sky-600 to-indigo-700 p-8 sm:p-16 text-center text-white shadow-md relative overflow-hidden">
+          {/* Main CTA: 30-Day Trial (Blue Palette) */}
+          <div className="rounded-3xl border border-brand-blue-primary/30 bg-gradient-to-br from-brand-blue-primary via-sky-600 to-indigo-700 p-8 sm:p-14 text-center text-white shadow-md relative overflow-hidden">
             <FocomanShieldWatermark className="pointer-events-none absolute right-0 top-0 h-96 w-96 translate-x-20 -translate-y-20 opacity-10" />
 
             <div className="relative z-10 mx-auto max-w-2xl">
@@ -290,7 +277,7 @@ export default function HomePage() {
                 Transform Your Studio Operations Today
               </h2>
               <p className="mt-4 text-sm sm:text-base text-white/90 leading-relaxed">
-                Join photography and cinematography studios running their orders, crew workflows, and deliveries with peace of mind. Start your 14-day full trial with zero risk.
+                Join photography and cinematography studios running their orders, crew workflows, and deliveries with peace of mind. Start your 30-day full trial with zero risk.
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -298,15 +285,12 @@ export default function HomePage() {
                   href="/sign-in"
                   className="w-full sm:w-auto rounded-xl bg-white px-8 py-3.5 text-xs sm:text-sm font-bold text-brand-blue-primary shadow-sm transition hover:bg-slate-50"
                 >
-                  Start 14-Day Free Trial
-                </Link>
-                <Link
-                  href="/studios"
-                  className="w-full sm:w-auto rounded-xl border border-white/40 bg-white/10 px-8 py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs backdrop-blur-xs transition hover:bg-white/20"
-                >
-                  Explore Studio Directory
+                  Start 30-Day Free Trial
                 </Link>
               </div>
+              <p className="mt-3 text-[11px] text-white/80">
+                No credit card required • 100% of studio data preserved on fallback
+              </p>
             </div>
           </div>
         </section>
@@ -333,17 +317,14 @@ export default function HomePage() {
               <Link href="/#how-it-works" className="hover:text-text-primary transition">
                 How It Works
               </Link>
-              <Link href="/#marketplace" className="hover:text-text-primary transition">
-                Marketplace
+              <Link href="/studios" className="hover:text-brand-blue-primary transition">
+                Studio Marketplace
               </Link>
               <Link href="/#pricing" className="hover:text-text-primary transition">
                 Pricing
               </Link>
               <Link href="/#faq" className="hover:text-text-primary transition">
                 FAQ
-              </Link>
-              <Link href="/studios" className="hover:text-brand-blue-primary transition">
-                Explore Studios
               </Link>
             </nav>
           </div>

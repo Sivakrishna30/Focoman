@@ -1,92 +1,6 @@
 import { Navbar } from "@/components/Navbar";
+import { PricingAccordion } from "@/components/public/PricingAccordion";
 import Link from "next/link";
-
-const PLANS = [
-  {
-    name: "Studio Starter",
-    price: "499",
-    tagline: "For solo photographers and boutique studios.",
-    badge: "STARTER",
-    badgeColor: "bg-brand-blue-background text-brand-blue-primary",
-    borderHover: "hover:border-brand-blue-light",
-    accentColor: "bg-brand-blue-primary",
-    ctaColor: "bg-brand-blue-primary hover:bg-sky-600",
-    ctaText: "Start with Starter",
-    modules: ["Order Management System (OMS)"],
-    features: [
-      "Confirmed order lifecycle management",
-      "Shoot date schedule tracking",
-      "Dynamic post-event workflow pipelines",
-      "Payment advance & balance tracking",
-      "Guest order passkey tracking (zero client login)",
-      "Client delivery link handover attachment",
-      "Multi-studio workspace access via Google Auth",
-      "Up to 2 crew members",
-      "Standard email support",
-    ],
-    notIncluded: [
-      "Customer Relationship Management (CRM)",
-      "Studio Resource Operations (ERP)",
-      "WhatsApp automated operational alerts (Add-on)",
-    ],
-  },
-  {
-    name: "Studio Professional",
-    price: "999",
-    tagline: "For growing studios managing an active crew.",
-    badge: "MOST POPULAR",
-    badgeColor: "bg-brand-orange-background text-brand-orange-primary",
-    borderHover: "hover:border-brand-orange-light",
-    accentColor: "bg-brand-orange-primary",
-    ctaColor: "bg-brand-orange-primary hover:bg-orange-600",
-    ctaText: "Go Professional",
-    modules: [
-      "Order Management System (OMS)",
-      "Customer Relationship Management (CRM)",
-      "Studio Resource Operations (ERP)",
-    ],
-    features: [
-      "Everything in Studio Starter",
-      "Customer directory & confirmed order history",
-      "Crew member profiles & certified skill tagging",
-      "Single-use invitation codes & Google account linking",
-      "Production task assignment & pipeline tracking",
-      "Planned resource availability confirmation",
-      "Up to 10 crew members",
-      "Priority email support",
-    ],
-    notIncluded: [
-      "WhatsApp automated operational alerts (Add-on)",
-    ],
-  },
-  {
-    name: "Studio Complete",
-    price: "1999",
-    tagline: "Full-stack operations for high-volume studios.",
-    badge: "COMPLETE",
-    badgeColor: "bg-brand-purple-background text-brand-purple-primary",
-    borderHover: "hover:border-brand-purple-light",
-    accentColor: "bg-brand-purple-primary",
-    ctaColor: "bg-brand-purple-primary hover:bg-purple-700",
-    ctaText: "Get Complete Access",
-    modules: [
-      "Order Management System (OMS)",
-      "Customer Relationship Management (CRM)",
-      "Studio Resource Operations (ERP)",
-      "WhatsApp Operational Notifications (Pilot)",
-    ],
-    features: [
-      "Everything in Studio Professional",
-      "WhatsApp booking confirmation alerts (Pilot)",
-      "WhatsApp shoot day reminders (Pilot)",
-      "WhatsApp delivery ready notifications (Pilot)",
-      "Unlimited crew members",
-      "Dedicated onboarding assistance",
-      "Priority phone & operational support",
-    ],
-    notIncluded: [],
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -105,90 +19,12 @@ export default function PricingPage() {
           <p className="mx-auto mt-4 max-w-xl text-base text-text-secondary">
             Every plan includes our core Order Management System. Upgrade as your team grows and your operational pipeline expands.
           </p>
-          {/* Product Discovery Phase Note */}
-          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-border-default bg-white p-4 text-xs text-text-secondary shadow-xs">
-            <strong className="text-text-primary">Pilot Program Note:</strong> Pricing tiers and commercial packaging are currently provisional per the Product Discovery Document. All pilot studios during Phase 1 receive full operational access to validate confirmed order workflows and team coordination.
-          </div>
         </div>
       </section>
 
-      {/* Pricing Cards Grid */}
+      {/* Pricing Cards & Guarantees */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3 lg:items-stretch">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`flex flex-col justify-between rounded-3xl border border-border-default bg-white p-8 shadow-sm transition hover:shadow-md ${plan.borderHover}`}
-            >
-              <div>
-                {/* Badge & Plan Name */}
-                <div className="flex items-center justify-between">
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${plan.badgeColor}`}>
-                    {plan.badge}
-                  </span>
-                </div>
-
-                <h2 className="mt-4 text-2xl font-extrabold text-text-primary">{plan.name}</h2>
-                <p className="mt-1 text-xs text-text-secondary">{plan.tagline}</p>
-
-                {/* Price */}
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-sm font-semibold text-text-secondary">₹</span>
-                  <span className="text-4xl font-extrabold text-text-primary">{plan.price}</span>
-                  <span className="text-xs text-text-tertiary">/month</span>
-                </div>
-
-                {/* Modules Included */}
-                <div className="mt-6 border-t border-border-divider pt-6">
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Included Modules</p>
-                  <div className="mt-2 space-y-1">
-                    {plan.modules.map((m) => (
-                      <div key={m} className="flex items-center gap-2 text-xs font-semibold text-text-primary">
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-100 text-status-success font-bold text-[10px]">
-                          ✓
-                        </span>
-                        {m}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Features List */}
-                <div className="mt-6 border-t border-border-divider pt-6">
-                  <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Features</p>
-                  <ul className="mt-3 space-y-2">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-xs text-text-secondary">
-                        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-sky-100 text-brand-blue-primary text-[9px] font-bold">
-                          ✓
-                        </span>
-                        {f}
-                      </li>
-                    ))}
-                    {plan.notIncluded.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-xs text-text-tertiary opacity-60">
-                        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 text-[9px] font-bold">
-                          ✕
-                        </span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <div className="mt-8 pt-6 border-t border-border-divider">
-                <Link
-                  href="/sign-in"
-                  className={`block w-full rounded-xl py-3 text-center text-xs font-bold text-white shadow-xs transition ${plan.ctaColor}`}
-                >
-                  {plan.ctaText}
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+        <PricingAccordion />
       </section>
 
       {/* Footer */}

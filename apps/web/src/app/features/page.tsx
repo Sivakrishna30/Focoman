@@ -26,10 +26,10 @@ export default function FeaturesPage() {
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-brand-blue-background px-3 py-1 text-xs font-bold tracking-widest text-brand-blue-primary uppercase">
-              Module 01: Core OMS
+              Module 01: Core Engine
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Order Management System
+              Order Management System - OMS
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
               The core order management system to track and manage your studio&apos;s confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.
@@ -98,13 +98,13 @@ export default function FeaturesPage() {
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-brand-orange-background px-3 py-1 text-xs font-bold tracking-widest text-brand-orange-primary uppercase">
-              Module 02: Studio CRM
+              Module 02: Support Module
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Customer Relationship Management
+              Customer Relations - CRM
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              Maintain structured customer directories, past booking history, client preferences, and anniversary reminders to drive repeat bookings.
+              Maintain structured customer directories, past booking history, and anniversary reminders to drive repeat bookings.
             </p>
           </div>
 
@@ -158,10 +158,10 @@ export default function FeaturesPage() {
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-brand-purple-background px-3 py-1 text-xs font-bold tracking-widest text-brand-purple-primary uppercase">
-              Module 03: Studio ERP
+              Module 03: Operations & People
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Studio Resource, Operations & Accounting
+              Studio Operations - ERP
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
               Assign shoot tasks, check crew calendar availability, track equipment, and manage crew payroll, travel claims, and audit-ready accounting summaries.
@@ -213,34 +213,46 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Native Integrations */}
+      {/* Module 4: WhatsApp Operations & Bot */}
       <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border-default bg-gradient-to-br from-white via-white to-green-50/30 p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-green-50 px-3 py-1 text-xs font-bold tracking-widest text-status-success uppercase">
-              Embedded Integrations
+              Module 04: Communication & Bot
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Google Workspace & WhatsApp Connectivity
+              WhatsApp Operations & Interactive Bot
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              Integrated directly inside your daily workflows so you and your clients can preview deliverables and manage schedules without leaving Focoman.
+              Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.
             </p>
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: "Google Drive In-App Preview",
-                desc: "Preview photoshoot folders, RAW selection thumbnails, and client deliverables directly inside Focoman without opening separate browser tabs.",
+                title: "Update Status Without Opening the Tool",
+                desc: "Crew members and studio owners can acknowledge call times, confirm shoots, or advance production milestones (e.g. RAW Ingest Done, Gallery Dispatched) directly via interactive WhatsApp bot commands without logging into the web dashboard.",
               },
               {
-                title: "Google Calendar Live Sync",
-                desc: "Automatically push shoot dates, call times, and locations onto crew members' personal Google Calendars with real-time schedule updates.",
+                title: "Purpose-Built Operations Bot",
+                desc: "Direct operational assistant in your WhatsApp chat for querying active order status, reviewing pending/upcoming shoots, receiving automated reminders, and executing owner actions.",
               },
               {
-                title: "WhatsApp Milestone Notifications",
-                desc: "Deliver real-time booking confirmations, milestone transitions, and deliverable-ready download links directly to customer and crew phones.",
+                title: "Automated Milestone Notifications",
+                desc: "Notify clients instantly when RAW photos are uploaded, selection galleries are live, album layout previews are ready for sign-off, or physical albums are dispatched.",
+              },
+              {
+                title: "Crew Shoot Reminders & Call-Times",
+                desc: "Send automated 48-hour and 12-hour call-time reminders to assigned photographers and cinematographers with venue GPS coordinates, call times, and shotlist requirements.",
+              },
+              {
+                title: "Payment & Due Reminders",
+                desc: "Timely, professional balance reminders with payment verification receipts sent straight to WhatsApp, ensuring transparent receivables before handover.",
+              },
+              {
+                title: "Zero-Login Client Passkey Tracking",
+                desc: "Clients never create passwords or download separate apps. Milestone alerts include their collision-safe private passkey link for real-time progress and proofing.",
               },
             ].map((f, i) => {
               const colors = [
@@ -259,12 +271,12 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Module 4: Marketplace */}
+      {/* Module 5: Marketplace */}
       <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-pink-50 px-3 py-1 text-xs font-bold tracking-widest text-pink-600 uppercase">
-              Discovery & Search
+              Module 05: Studio Marketplace
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
               Studio Marketplace
@@ -310,6 +322,67 @@ export default function FeaturesPage() {
               ][i % 5];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-surface-app p-5 transition ${colors.border} hover:shadow-sm`}>
+                <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
+                <h3 className="text-sm font-bold text-text-primary">{f.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-text-secondary">{f.desc}</p>
+              </div>
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* Module 6: Automations */}
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-border-default bg-gradient-to-br from-white via-white to-amber-50/30 p-8 shadow-sm sm:p-12">
+          <div className="flex flex-col gap-2">
+            <span className="inline-block w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-bold tracking-widest text-amber-800 uppercase">
+              Module 06: Smart Automations
+            </span>
+            <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
+              Automations & Smart Engine
+            </h2>
+            <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
+              Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: "Configurable Package Deliverables Setup",
+                desc: "Configure service packages once (edited photos count, teaser video length, full film, album sheet specifications). Focoman automatically breaks down the deliverables and seeds production tasks upon order confirmation.",
+              },
+              {
+                title: "Auto-Assign Crew by Availability & Workload",
+                desc: "Smart resource matching evaluates shoot dates, venue locations, crew skills (candid photographer, traditional videographer, drone pilot, editor), calendar availability, and active workload to suggest conflict-free crew assignments automatically.",
+              },
+              {
+                title: "Automatic Financial Calculations & Breakdowns",
+                desc: "Automated calculation of booking advance deposits, event-day installments, remaining balance dues, crew day rates, and travel expense breakdowns without manual spreadsheet math.",
+              },
+              {
+                title: "Automated Workflow Progression",
+                desc: "When shoot dates pass, the engine automatically spins up the post-event production pipeline, notifying crew to initiate RAW ingests, dual backups, and culling tasks.",
+              },
+              {
+                title: "Pre-Flight Conflict Detection",
+                desc: "Automatic evaluation of date overlaps, member availability, and skill alignment prior to booking confirmation, preventing double-booking catastrophes.",
+              },
+              {
+                title: "Strict Delivery & Payment Completion Lock",
+                desc: "Automatically enforces operational safety gates, ensuring orders cannot be archived as completed until all physical/digital deliverables are delivered and payments are 100% cleared.",
+              },
+            ].map((f, i) => {
+              const colors = [
+                { border: "hover:border-amber-300", bg: "bg-amber-500" },
+                { border: "hover:border-brand-blue-light", bg: "bg-brand-blue-primary" },
+                { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
+                { border: "hover:border-green-300", bg: "bg-green-500" },
+                { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
+                { border: "hover:border-pink-300", bg: "bg-pink-500" },
+              ][i % 6];
+              return (
+              <div key={f.title} className={`rounded-2xl border border-border-default bg-white p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
                 <h3 className="text-sm font-bold text-text-primary">{f.title}</h3>
                 <p className="mt-2 text-xs leading-relaxed text-text-secondary">{f.desc}</p>

@@ -8,7 +8,7 @@ export function StructuredData() {
         "@id": `${baseUrl}/#organization`,
         "name": "Focoman",
         "url": `${baseUrl}`,
-        "logo": `${baseUrl}/brand/focoman-logo.svg`,
+        "logo": `${baseUrl}/brand/focoman-logo.png`,
         "description": "Business operating system for photography and cinematography studios.",
       },
       {
@@ -42,7 +42,7 @@ export function StructuredData() {
             "price": "499",
             "priceCurrency": "INR",
             "billingDuration": "P1M",
-            "description": "Run your studio with Customer Directory, CRM history, basic crew management, and booking inquiries.",
+            "description": "Run your studio with Customer Directory, CRM history, team profiles, manual crew allocation, and order workflow WhatsApp notifications.",
           },
           {
             "@type": "Offer",
@@ -50,7 +50,7 @@ export function StructuredData() {
             "price": "999",
             "priceCurrency": "INR",
             "billingDuration": "P1M",
-            "description": "Get discovered on the Public Studio Marketplace, manage crew availability calendars, and integrate Google Workspace.",
+            "description": "Public Studio Marketplace publishing, incoming booking inquiries, crew availability calendars, automated event reminders, and Google integrations.",
           },
           {
             "@type": "Offer",

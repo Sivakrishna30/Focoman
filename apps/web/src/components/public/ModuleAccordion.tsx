@@ -16,7 +16,7 @@ interface ModuleData {
 const MODULES: ModuleData[] = [
   {
     number: "01",
-    name: "Order Management (OMS)",
+    name: "Order Management System - OMS",
     shortDesc: "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.",
     keyValue: "Mandatory Core • Unlimited Orders & Events included in all plans",
     tag: "Core Engine",
@@ -50,8 +50,8 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "02",
-    name: "Studio CRM",
-    shortDesc: "Maintain structured customer directories, past booking history, client preferences, and anniversary reminders to drive repeat bookings.",
+    name: "Customer Relations - CRM",
+    shortDesc: "Maintain structured customer directories, past booking history, and anniversary reminders to drive repeat bookings.",
     keyValue: "Optional Support Module • Begins at Starter (₹499/mo)",
     tag: "Support Module",
     tagColor: "bg-brand-orange-background text-brand-orange-primary border-brand-orange-soft",
@@ -76,7 +76,7 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "03",
-    name: "Studio ERP",
+    name: "Studio Operations - ERP",
     shortDesc: "Assign shoot tasks, check crew calendar availability, track equipment, and manage crew payroll, travel claims, and audit-ready accounting summaries.",
     keyValue: "Basic in Starter • Advanced & Integrations in Professional • Smart Automation in Complete",
     tag: "Operations & People",
@@ -110,27 +110,35 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "04",
-    name: "WhatsApp Notifications",
-    shortDesc: "Deliver real-time booking confirmations, milestone transitions, and deliverable-ready download links directly to customer and crew phones.",
-    keyValue: "Included in Complete (₹1,999/mo) • Purpose-built operational bot",
-    tag: "Communication & Bot",
+    name: "WhatsApp Operations & Bot",
+    shortDesc: "Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.",
+    keyValue: "Operational Convenience Layer • Central Focoman Bot • Zero Client App Installs",
+    tag: "WhatsApp & Bot",
     tagColor: "bg-green-50 text-status-success border-green-200",
     cards: [
       {
-        title: "Automated Milestone Alerts",
-        desc: "Notify clients instantly when RAW photos are uploaded, selection galleries are ready, or deliverables are dispatched.",
+        title: "Update Status Without Opening the Tool",
+        desc: "Crew members and studio owners can acknowledge call times, confirm shoots, or advance production milestones (e.g. RAW Ingest Done, Gallery Dispatched) directly via interactive WhatsApp bot commands without logging into the web dashboard.",
       },
       {
-        title: "Upcoming Order & Shoot Alerts",
-        desc: "Send shoot schedule reminders to crew members and clients with venue location and call times.",
+        title: "Purpose-Built Operations Bot",
+        desc: "Direct operational assistant in your WhatsApp chat for querying active order status, reviewing pending/upcoming shoots, receiving automated reminders, and executing owner actions.",
+      },
+      {
+        title: "Automated Milestone Notifications",
+        desc: "Notify clients instantly when RAW photos are uploaded, selection galleries are live, album layout previews are ready for sign-off, or physical albums are dispatched.",
+      },
+      {
+        title: "Crew Shoot Reminders & Call-Times",
+        desc: "Send automated 48-hour and 12-hour call-time reminders to assigned photographers and cinematographers with venue GPS coordinates, call times, and shotlist requirements.",
       },
       {
         title: "Payment & Due Reminders",
-        desc: "Timely, professional balance reminders with payment verification receipts sent straight to WhatsApp.",
+        desc: "Timely, professional balance reminders with payment verification receipts sent straight to WhatsApp, ensuring transparent receivables before handover.",
       },
       {
-        title: "WhatsApp Operations Bot",
-        desc: "Direct operational assistant for checking order status, reviewing pending/upcoming shoots, receiving reminders, and executing owner actions.",
+        title: "Zero-Login Client Passkey Tracking",
+        desc: "Clients never create passwords or download separate apps. Milestone alerts include their collision-safe private passkey link for real-time progress and proofing.",
       },
     ],
   },
@@ -138,12 +146,12 @@ const MODULES: ModuleData[] = [
     number: "05",
     name: "Studio Marketplace",
     shortDesc: "Independent public studio profile allowing customers to discover your studio near them, view verified operational performance metrics, and submit booking inquiries directly.",
-    keyValue: "Configure in Starter • Public Publishing in Professional (₹999/mo) • Not a price comparison engine",
-    tag: "Discovery & Storefront",
+    keyValue: "Available in Professional (₹999/mo) • Not a price comparison engine",
+    tag: "Studio Marketplace",
     tagColor: "bg-pink-50 text-pink-700 border-pink-200",
     cards: [
       {
-        title: "Independent Studio Storefront",
+        title: "Public Studio Profile",
         desc: "Your studio owns its unique URL (/studio/[slug]). Showcase your bio, city, services, and verified operational delivery metrics.",
       },
       {
@@ -166,27 +174,35 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "06",
-    name: "Intelligent Automation",
-    shortDesc: "Proactive suggestions and workflow automation built on the core principle: System Suggests → Owner Reviews → Owner Confirms.",
-    keyValue: "Basic in Starter • Advanced in Professional • Smart Resource Automation in Complete",
-    tag: "Workflow Automation",
+    name: "Automations & Smart Engine",
+    shortDesc: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
+    keyValue: "Intelligent Studio Workflows • System Suggests → Owner Confirms",
+    tag: "Automations",
     tagColor: "bg-amber-50 text-amber-800 border-amber-200",
     cards: [
       {
-        title: "System Suggests → Owner Confirms",
-        desc: "Zero autonomous surprises. The system analyzes operational state and proposes actions; the studio owner always has final approval.",
+        title: "Configurable Package Deliverables Setup",
+        desc: "Configure service packages once (edited photos count, teaser video length, full film, album sheet specifications). Focoman automatically breaks down the deliverables and seeds production tasks upon order confirmation.",
       },
       {
-        title: "Event & Status Pipeline Automation",
-        desc: "Automatic progression reminders when shoot dates pass, guiding your team to initiate RAW backups and culling tasks.",
+        title: "Auto-Assign Crew by Availability & Workload",
+        desc: "Smart resource matching evaluates shoot dates, venue locations, crew skills (candid photographer, traditional videographer, drone pilot, editor), calendar availability, and active workload to suggest conflict-free crew assignments automatically.",
       },
       {
-        title: "Payment Advance & Balance Automation",
-        desc: "Automatic invoice balance calculation, advance payment verification state transitions, and delivery clearance locks.",
+        title: "Automatic Calculations & Payment Breakdowns",
+        desc: "Automated calculation of booking advance deposits, event-day installments, remaining balance dues, crew day rates, and travel expense breakdowns without manual spreadsheet math.",
       },
       {
-        title: "Pre-Flight & Conflict Checks",
-        desc: "Automatic evaluation of date overlaps, member availability, and skill alignment prior to booking confirmation.",
+        title: "Automated Workflow Progression",
+        desc: "When shoot dates pass, the engine automatically spins up the post-event production pipeline, notifying crew to initiate RAW ingests, dual backups, and culling tasks.",
+      },
+      {
+        title: "Pre-Flight Conflict Detection",
+        desc: "Automatic evaluation of date overlaps, member availability, and skill alignment prior to booking confirmation, preventing double-booking catastrophes.",
+      },
+      {
+        title: "Strict Delivery & Payment Completion Lock",
+        desc: "Automatically enforces operational safety gates, ensuring orders cannot be archived as completed until all physical/digital deliverables are delivered and payments are 100% cleared.",
       },
     ],
   },
@@ -229,16 +245,9 @@ export function ModuleAccordion() {
                   {mod.number}
                 </span>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold text-text-primary">
-                      {mod.name}
-                    </h3>
-                    <span
-                      className={`inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${mod.tagColor}`}
-                    >
-                      {mod.tag}
-                    </span>
-                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-text-primary">
+                    {mod.name}
+                  </h3>
                   <p className="mt-1 text-xs text-text-secondary">
                     {mod.shortDesc}
                   </p>

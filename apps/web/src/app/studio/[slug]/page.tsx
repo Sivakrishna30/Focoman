@@ -41,7 +41,7 @@ export async function generateMetadata(props: {
   };
 }
 
-export default async function StudioStorefrontPage(props: {
+export default async function StudioPublicProfilePage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const params = await props.params;
@@ -63,14 +63,14 @@ export default async function StudioStorefrontPage(props: {
           href="/studios"
           className="inline-flex items-center gap-2 text-xs font-semibold text-text-tertiary hover:text-text-primary transition mb-8"
         >
-          <span>←</span> Back to Studio Directory
+          <span>←</span> Back to Studio Marketplace
         </Link>
 
         <div className="bg-white rounded-3xl border border-border-default shadow-sm overflow-hidden">
           {/* Header Area */}
           <div className="bg-gradient-to-r from-brand-blue-background via-white to-brand-purple-background p-8 sm:p-12 border-b border-border-divider">
             <span className="inline-block rounded-full bg-brand-blue-background border border-brand-blue-light/50 px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-widest mb-3">
-              Verified Studio Storefront
+              Verified Studio Profile
             </span>
             <h1 className="text-3xl font-extrabold text-text-primary tracking-tight sm:text-4xl">
               {p.name}

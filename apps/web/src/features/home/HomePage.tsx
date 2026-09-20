@@ -82,7 +82,7 @@ export function HomePage() {
               <span className="inline-block rounded-full bg-brand-orange-background px-3 py-1 text-[10px] font-bold text-brand-orange-primary uppercase tracking-wider">
                 {t("home.support_module_badge", "Support Module")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.crm.title", "Customer Relationship Management - CRM")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.crm.title", "Customer Relations - CRM")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 {t("module.crm.desc", "Centralize client directories with verified phone numbers, track lifetime value across multiple photoshoot bookings, monitor outstanding receivables, and launch new orders directly from existing customer profiles.")}
               </p>
@@ -93,25 +93,25 @@ export function HomePage() {
               <span className="inline-block rounded-full bg-brand-purple-background px-3 py-1 text-[10px] font-bold text-brand-purple-primary uppercase tracking-wider">
                 {t("home.support_module_badge", "Support Module")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.erp.title", "Studio Operations and Crew Management - ERP")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.erp.title", "Studio Operations - ERP")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 {t("module.erp.desc", "Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing.")}
               </p>
             </div>
 
-            {/* Google Workspace & Communication */}
+            {/* Google Workspace & WhatsApp Bot */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-green-50 px-3 py-1 text-[10px] font-bold text-status-success uppercase tracking-wider">
-                {t("home.native_integrations_badge", "Native Integrations")}
+                {t("home.native_integrations_badge", "WhatsApp & Integrations")}
               </span>
-              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.integrations.title", "Google Drive, Calendar & WhatsApp")}</h3>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.integrations.title", "WhatsApp Operations & Bot")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                {t("module.integrations.desc", "Connect Google Drive for photo selection with in-app previews, Google Calendar for crew schedules, and WhatsApp for automated milestone notifications without switching external tabs.")}
+                {t("module.integrations.desc", "Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.")}
               </p>
             </div>
             
             {/* Studio Marketplace Panel */}
-            <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition lg:col-span-2">
+            <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-pink-50 px-3 py-1 text-[10px] font-bold text-pink-600 uppercase tracking-wider">
                 {t("home.discovery_badge", "Discovery & Search")}
               </span>
@@ -120,6 +120,19 @@ export function HomePage() {
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
                 {t("home.marketplace_desc", "Discover top photography and videography studios near you with verified operational performance metrics, on-time delivery track records, and authentic reviews and ratings. Studio owners maintain full control over their public visibility and profile details, while internal orders, financials, and CRM records remain strictly private.")}
+              </p>
+            </div>
+
+            {/* Automations Panel */}
+            <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
+              <span className="inline-block rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                {t("home.automations_badge", "Workflow Automation")}
+              </span>
+              <h3 className="mt-4 text-lg font-bold text-text-primary">
+                {t("module.automations.title", "Automations & Smart Engine")}
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                {t("module.automations.desc", "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.")}
               </p>
             </div>
           </div>
