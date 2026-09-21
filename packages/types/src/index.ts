@@ -4,13 +4,23 @@
  */
 
 /**
- * PLAN & ENTITLEMENT TYPES (CHG-026)
+ * PLAN & ENTITLEMENT TYPES (CHG-027 Capability-Based Pricing Model)
  */
-export type PlanType = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'COMPLETE';
+export type PlanType = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'COMPLETE' | 'CUSTOM';
 
 export type CapabilityId =
+  // Primary Capability-Based Pricing IDs
+  | 'OMS_BASIC'              // Free Core: Basic Order Management (₹0)
+  | 'CUSTOMER_BASIC'         // Customer Management Basic (₹199/mo)
+  | 'CUSTOMER_ADVANCED'      // Customer Management Advanced (₹299/mo)
+  | 'CREW_BASIC'             // Crew Management Basic (₹199/mo)
+  | 'CREW_ADVANCED'          // Crew Management Advanced (₹299/mo)
+  | 'MARKETPLACE'            // Studio Marketplace (₹499/mo)
+  | 'DRIVE_CLIENT_REVIEW'    // Google Drive + Client Review (₹299/mo)
+  | 'WHATSAPP_NOTIFICATIONS' // WhatsApp Notifications (₹199/mo)
+  | 'WHATSAPP_OPERATIONS'    // WhatsApp Operations (₹499/mo)
+  // Backward compatibility legacy aliases
   | 'OMS_CORE'
-  | 'CUSTOMER_BASIC'
   | 'CUSTOMER_CRM'
   | 'TEAM_MANAGEMENT'
   | 'MANUAL_ASSIGNMENT'
@@ -32,14 +42,29 @@ export type CapabilityId =
   | 'AUTOMATION_ADVANCED'
   | 'ANALYTICS_BASIC'
   | 'ANALYTICS_ADVANCED'
-  | 'WHATSAPP_NOTIFICATIONS'
   | 'WHATSAPP_BOT'
   | 'MULTI_STUDIO'
   | 'ADVANCED_INTEGRATIONS';
 
+export interface CapabilityMetadata {
+  id: CapabilityId;
+  name: string;
+  category: 'FREE_CORE' | 'CUSTOMER_MANAGEMENT' | 'CREW_MANAGEMENT' | 'STUDIO_MARKETPLACE' | 'DRIVE_CLIENT_REVIEW' | 'WHATSAPP';
+  price: number;
+  description: string;
+  valueProp: string;
+  includedCapabilities?: CapabilityId[];
+  dependencies?: CapabilityId[];
+  features: string[];
+  limitations?: string[];
+  isFreeCore?: boolean;
+  studioScoped: boolean;
+}
+
 export interface StudioPlan {
-  plan: PlanType;
-  isTrial: boolean;
+  plan?: PlanType;
+  selectedCapabilities: CapabilityId[];
+  isTrial?: boolean;
   trialStartedAt?: string;
   trialExpiresAt?: string;
   updatedAt: string;

@@ -439,24 +439,24 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "உங்கள் பகுதியில் உள்ள சிறந்த ஒளிப்பட மற்றும் நிகழ்பட நிலையங்களை அவற்றின் சரியான நேர ஒப்படைப்புத் தரம் மற்றும் வாடிக்கையாளர் மதிப்பீடுகள் மூலம் கண்டறியுங்கள். நிலையத்தின் உள்ளகக் கணக்குகள் மற்றும் வாடிக்கையாளர் விவரங்கள் எப்போதும் முழுமையாகப் பாதுகாக்கப்படும்.",
   },
 
-  // Value Added Services
+  // Value Added Services / Add-ons
   "vas.badge": {
-    en: "Value Added Services",
-    thanglish: "Value Added Services",
-    ta_easy: "கூடுதல் மதிப்புச் சேவைகள்",
-    ta_pure: "கூடுதல் மதிப்புச் சேவைகள்",
+    en: "Value-added services",
+    thanglish: "Value-added services",
+    ta_easy: "கூடுதல் சேவைகள்",
+    ta_pure: "மதிப்புக்கூட்டு சேவைகள்",
   },
   "vas.title": {
-    en: "Professional Studio Add-ons",
-    thanglish: "Professional Studio Add-ons",
-    ta_easy: "தொழில்முறை நிலையக் கூடுதல் சேவைகள்",
-    ta_pure: "தொழில்முறை நிலையக் கூடுதல் சேவைகள்",
+    en: "Studio Setup & Creative Add-ons",
+    thanglish: "Studio Setup & Creative Add-ons",
+    ta_easy: "நிலைய அமைவு மற்றும் ஆக்கப்பூர்வக் கூடுதல் சேவைகள்",
+    ta_pure: "நிலைய அமைவு மற்றும் ஆக்கப்பூர்வக் கூடுதல் சேவைகள்",
   },
   "vas.subtitle": {
-    en: "Optional technical and creative assistance services offered separately from core OMS operations.",
-    thanglish: "விருப்பத் தேர்வு technical மற்றும் creative services உங்கள் studio-விற்கு கிடைக்கும்.",
-    ta_easy: "முதன்மை ஆணை மேலாண்மைக்கு அப்பாற்பட்ட விருப்பத் தேர்வு தொழில்நுட்ப மற்றும் ஆக்கப்பூர்வ உதவிகள்.",
-    ta_pure: "முதன்மை ஆணை மேலாண்மைக்கு அப்பாற்பட்ட விருப்பத் தேர்வு தொழில்நுட்ப மற்றும் ஆக்கப்பூர்வ உதவிகள்.",
+    en: "Optional creative design and onboarding assistance to help set up and elevate your studio operations with a minimal one-time charge.",
+    thanglish: "குறைந்த கட்டணத்தில் உங்கள் studio operations-ஐ setup செய்து elevate செய்ய optional creative மற்றும் onboarding assistance.",
+    ta_easy: "குறைந்த கட்டணத்தில் உங்கள் நிலைய இயக்கங்களை அமைத்து மேம்படுத்த விருப்பத் தேர்வு ஆக்கப்பூர்வ வடிவமைப்பு மற்றும் வழிகாட்டல் உதவிகள்.",
+    ta_pure: "குறைந்த கட்டணத்தில் உங்கள் நிலைய இயக்கங்களை அமைத்து மேம்படுத்த விருப்பத் தேர்வு ஆக்கப்பூர்வ வடிவமைப்பு மற்றும் வழிகாட்டல் உதவிகள்.",
   },
   "vas.web_create_title": {
     en: "Website Creation",

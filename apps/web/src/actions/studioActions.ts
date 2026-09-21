@@ -215,3 +215,21 @@ export async function restoreStudioAction(
     return { success: false, error: err instanceof Error ? err.message : "Failed to restore studio." };
   }
 }
+
+export async function saveStudioCapabilitiesAction(
+  studioSlug: string,
+  selectedCapabilities: string[],
+  idToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    const { updateStudioCapabilities } = await import("@focoman/entitlements");
+    await updateStudioCapabilities(studioSlug, selectedCapabilities as any);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[saveStudioCapabilitiesAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to save studio capabilities." };
+  }
+}

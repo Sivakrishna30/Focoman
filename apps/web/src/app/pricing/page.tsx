@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/Navbar";
-import { PricingAccordion } from "@/components/public/PricingAccordion";
+import { PricingTwoPanels } from "@/components/public/PricingTwoPanels";
+import { FaqAccordion } from "@/components/public/FaqAccordion";
 import Link from "next/link";
 
 export default function PricingPage() {
@@ -11,20 +12,36 @@ export default function PricingPage() {
       <section className="border-b border-border-divider bg-gradient-to-b from-white to-surface-app px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-            Transparent Studio Plans
+            Flexible Capability Pricing
           </span>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
-            Choose the Right Plan for Your Studio
+            Simple &amp; Flexible Studio Pricing
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-text-secondary">
-            Every plan includes our core Order Management System. Upgrade as your team grows and your operational pipeline expands.
+          <p className="mx-auto mt-4 max-w-2xl text-base text-text-secondary">
+            Basic Order Management is always 100% Free. Selectively add only the CRM, Crew, Marketplace, or WhatsApp capabilities your studio needs—no rigid plans, no hidden fees.
           </p>
         </div>
       </section>
 
       {/* Pricing Cards & Guarantees */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <PricingAccordion />
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 space-y-16">
+        <PricingTwoPanels />
+
+        {/* FAQ Section */}
+        <div id="faq" className="space-y-6 pt-8 border-t border-border-divider">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
+              FREQUENTLY ASKED QUESTIONS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
+              Everything You Need to Know
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Have questions about our free tier, modular capabilities, or billing? Find quick answers below.
+            </p>
+          </div>
+          <FaqAccordion />
+        </div>
       </section>
 
       {/* Footer */}

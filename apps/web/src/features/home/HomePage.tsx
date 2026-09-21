@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { Navbar } from "@/components/Navbar";
+import { FaqAccordion } from "@/components/public/FaqAccordion";
+import { PricingTwoPanels } from "@/components/public/PricingTwoPanels";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function HomePage() {
@@ -99,10 +101,10 @@ export function HomePage() {
               </p>
             </div>
 
-            {/* Google Workspace & WhatsApp Bot */}
+            {/* WhatsApp Operations & Bot */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-green-50 px-3 py-1 text-[10px] font-bold text-status-success uppercase tracking-wider">
-                {t("home.native_integrations_badge", "WhatsApp & Integrations")}
+                {t("home.whatsapp_badge", "WhatsApp & Bot")}
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.integrations.title", "WhatsApp Operations & Bot")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
@@ -148,144 +150,79 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Section: Professional Studio Add-ons (VAS) */}
+      {/* Section: Studio Setup & Add-ons (VAS) */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="mx-auto max-w-3xl text-center mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-              {t("vas.badge", "Value Added Services")}
+              {t("vas.badge", "Value-added services")}
             </span>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
-              {t("vas.title", "Professional Studio Add-ons")}
+              {t("vas.title", "Studio Setup & Creative Add-ons")}
             </h2>
             <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
-              {t("vas.subtitle", "Optional technical and creative assistance services offered separately from core OMS operations.")}
+              {t("vas.subtitle", "Optional creative design and onboarding assistance to help set up and elevate your studio operations with a minimal one-time charge.")}
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-blue-light transition hover:shadow-sm">
-              <div className="h-1.5 w-8 rounded-full bg-brand-blue-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">{t("vas.web_create_title", "Website Creation")}</h4>
-              <p className="mt-1.5 text-xs text-text-secondary">
-                {t("vas.web_create_desc", "Custom portfolio and showcase website for your studio brand.")}
-              </p>
-            </div>
-            
-            <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-orange-light transition hover:shadow-sm">
-              <div className="h-1.5 w-8 rounded-full bg-brand-orange-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">{t("vas.web_int_title", "Website Integration")}</h4>
-              <p className="mt-1.5 text-xs text-text-secondary">
-                {t("vas.web_int_desc", "API integration bridging your existing external website directly into Focoman.")}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-brand-purple-light transition hover:shadow-sm">
-              <div className="h-1.5 w-8 rounded-full bg-brand-purple-primary mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">{t("vas.brand_title", "Branding & Identity")}</h4>
-              <p className="mt-1.5 text-xs text-text-secondary">
-                {t("vas.brand_desc", "Studio logo design, invoice headers, and branded presentation assets.")}
-              </p>
+          <div className="grid gap-6 sm:grid-cols-2 max-w-4xl mx-auto">
+            {/* 1. Branding & Website */}
+            <div className="rounded-2xl border border-border-default bg-surface-app p-6 hover:border-brand-blue-primary/40 transition hover:shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="h-1.5 w-8 rounded-full bg-brand-blue-primary" />
+                <span className="font-mono text-xs font-bold text-text-tertiary">01</span>
+              </div>
+              <h4 className="font-bold text-base text-text-primary">Branding &amp; Website</h4>
+              <ul className="mt-4 space-y-2.5">
+                <li className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-[10px]">✓</span>
+                  <span>Logo creation</span>
+                </li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-[10px]">✓</span>
+                  <span>Website / portfolio creation</span>
+                </li>
+              </ul>
             </div>
 
-            <div className="rounded-2xl border border-border-divider bg-surface-app p-6 hover:border-green-200 transition hover:shadow-sm">
-              <div className="h-1.5 w-8 rounded-full bg-green-500 mb-3" />
-              <h4 className="font-bold text-sm text-text-primary">{t("vas.data_mig_title", "Data Migration")}</h4>
-              <p className="mt-1.5 text-xs text-text-secondary">
-                {t("vas.data_mig_desc", "Import past customer contacts and order histories from spreadsheets.")}
-              </p>
+            {/* 2. Data Migration */}
+            <div className="rounded-2xl border border-border-default bg-surface-app p-6 hover:border-brand-orange-primary/40 transition hover:shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="h-1.5 w-8 rounded-full bg-brand-orange-primary" />
+                <span className="font-mono text-xs font-bold text-text-tertiary">02</span>
+              </div>
+              <h4 className="font-bold text-base text-text-primary">Data Migration</h4>
+              <ul className="mt-4 space-y-2.5">
+                <li className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-[10px]">✓</span>
+                  <span>Migrate existing studio data into Focoman</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section: Simple Pricing Highlight */}
+      {/* Section: Flexible Capability Pricing Highlight */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 border-t border-border-divider mt-8">
         <div className="mx-auto max-w-3xl text-center mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
-            {t("pricing.badge", "Clear & Simple Pricing")}
+            {t("pricing.badge", "Flexible Studio Capabilities")}
           </span>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-            {t("pricing.title", "Choose the Right Plan for Your Studio")}
+            {t("pricing.title", "Build Your Plan Around Your Studio Needs")}
           </h2>
           <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
-            {t("pricing.subtitle", "Every plan includes our core Order Management System. Upgrade as your team grows.")}
+            {t("pricing.subtitle", "Basic Order Management is 100% Free forever. Selectively add CRM, Crew, Marketplace, or WhatsApp capabilities as you grow.")}
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-3">
-          {/* Starter Plan */}
-          <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-blue-light transition flex flex-col justify-between">
-            <div>
-              <span className="inline-block self-start rounded-full bg-brand-blue-background px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-wider mb-3">
-                {t("pricing.plan_starter", "Starter")}
-              </span>
-              <h3 className="text-xl font-extrabold text-text-primary">₹499<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_starter_desc", "For solo photographers just getting started with order management.")}</p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-border-divider">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
-                {t("home.pricing_oms_included", "Order Management System (OMS) Included")}
-              </span>
-            </div>
-          </div>
-          
-          {/* Pro Plan */}
-          <div className="rounded-3xl border border-border-default hover:border-brand-orange-light bg-white p-6 shadow-sm flex flex-col justify-between relative transition">
-            <span className="absolute -top-3 right-6 rounded-full bg-brand-orange-primary px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
-              {t("pricing.plan_pro", "Professional")}
-            </span>
-            <div>
-              <span className="inline-block self-start rounded-full bg-brand-orange-background px-3 py-1 text-[10px] font-bold text-brand-orange-primary uppercase tracking-wider mb-3 mt-1">
-                {t("pricing.plan_pro", "Professional")}
-              </span>
-              <h3 className="text-xl font-extrabold text-text-primary">₹999<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_pro_desc", "For growing studios managing a team with CRM & ERP modules.")}</p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-border-divider">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-orange-primary" />
-                CRM & ERP Included
-              </span>
-            </div>
-          </div>
-
-          {/* Complete Plan */}
-          <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-purple-light transition flex flex-col justify-between">
-            <div>
-              <span className="inline-block self-start rounded-full bg-brand-purple-background px-3 py-1 text-[10px] font-bold text-brand-purple-primary uppercase tracking-wider mb-3">
-                {t("pricing.plan_complete", "Complete")}
-              </span>
-              <h3 className="text-xl font-extrabold text-text-primary">₹1999<span className="text-xs font-normal text-text-secondary">/mo</span></h3>
-              <p className="mt-2 text-xs text-text-secondary">{t("pricing.plan_complete_desc", "Full-stack operations with WhatsApp notifications and multi-studio support.")}</p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-border-divider">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-purple-primary" />
-                {t("module.integrations.title", "Google Drive, Calendar & WhatsApp")}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Common View Details Button for All Models */}
-        <div className="mt-10 flex flex-col items-center justify-center text-center">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-blue-primary px-8 py-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-sky-600"
-          >
-            <span>{t("pricing.btn_compare", "View Details & Compare Plans")}</span>
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </Link>
-        </div>
+        <PricingTwoPanels />
       </section>
 
       {/* FAQ Section */}
-      <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider mt-8">
-        <div className="text-center mb-12">
+      <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider mt-8">
+        <div className="text-center mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-primary">
             {t("faq.badge", "Got Questions?")}
           </span>
@@ -294,70 +231,7 @@ export function HomePage() {
           </h2>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-blue-light transition">
-            <h3 className="text-base font-bold text-text-primary">What exactly is Focoman?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Focoman is a comprehensive business operating system designed specifically for photography and videography studios. It combines order management, customer relationship history, and crew operations into one unified, easy-to-use platform.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-orange-light transition">
-            <h3 className="text-base font-bold text-text-primary">Do I have to use every feature?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              No. You only pay for what you actually need. You can start with our Starter plan to handle core order tracking. When your business is ready for client relationship history, crew scheduling, team payouts, or WhatsApp alerts, you can upgrade to our Professional or Complete paid plans anytime.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-purple-light transition">
-            <h3 className="text-base font-bold text-text-primary">Do my customers need to download an app or log in?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              No. Focoman provides guest order tracking through a secure, passkey-protected link. Your clients can view their shoot status, payment details, and final deliverables instantly from any browser without creating an account.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-green-300 transition">
-            <h3 className="text-base font-bold text-text-primary">How does crew management and task assignment work?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              You can invite your photographers, videographers, and editors to your studio workspace. They sign in using their own Google account and only see the specific production tasks and shoots assigned to them, keeping your overall business data and CRM completely private.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-pink-300 transition">
-            <h3 className="text-base font-bold text-text-primary">What is the Studio Marketplace?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Studio Marketplace allows clients to discover verified photography and videography studios in their area based on authentic performance metrics, on-time delivery track records, and client reviews. Studio owners can toggle their public visibility on or off at any time and customize what information to show, ensuring internal business operations and customer records remain completely confidential.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-blue-light transition">
-            <h3 className="text-base font-bold text-text-primary">Can I manage multiple studios with one account?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Yes! Focoman uses a single personal identity system. You can own multiple studios or be a crew member in other studios, and switch between all your workspaces seamlessly from a single dashboard.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-orange-light transition">
-            <h3 className="text-base font-bold text-text-primary">How do the WhatsApp notifications work?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Our Complete plan integrates direct WhatsApp alerts. Customers receive automated updates when their project moves to a new stage, such as editing commencement or deliverables ready, and crew members get instant notifications for new task assignments.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-emerald-300 transition">
-            <h3 className="text-base font-bold text-text-primary">Can we preview Google Drive photos and Google Calendar without leaving Focoman?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Yes. Google Drive and Google Calendar are natively integrated directly into your Order Management and Crew Operations. You and your clients can view RAW photo previews, album deliverables, and crew shoot schedules right inside Focoman without opening or switching to external browser tabs.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border-default bg-white p-6 shadow-sm hover:border-brand-purple-light transition">
-            <h3 className="text-base font-bold text-text-primary">Is my studio data secure in the cloud?</h3>
-            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
-              Absolutely. We use enterprise-grade Google Cloud Infrastructure with end-to-end encryption. Your client lists, financial data, and internal crew communications are strictly isolated and never shared.
-            </p>
-          </div>
-        </div>
+        <FaqAccordion />
       </section>
 
       {/* Footer */}

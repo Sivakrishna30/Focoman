@@ -159,17 +159,23 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
           </Link>
         </div>
         <p className="text-xs text-text-tertiary truncate">{ownerName}</p>
-        <span
-          className={`mt-1.5 inline-block text-[10px] ${
-            plan === "complete"
-              ? "badge-brand-purple"
-              : plan === "professional"
-              ? "badge-brand-orange"
-              : "badge-brand-blue"
-          }`}
-        >
-          {plan === "complete" ? "Studio Complete" : plan === "professional" ? "Studio Professional" : "Studio Starter"}
-        </span>
+        <div className="mt-1.5 flex items-center justify-between">
+          <span
+            className={`inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider ${
+              plan === "complete" || plan === "professional"
+                ? "bg-brand-orange-primary text-white shadow-2xs"
+                : "bg-emerald-100 text-emerald-800"
+            }`}
+          >
+            {plan === "complete" || plan === "professional" ? "PRO" : "FREE"}
+          </span>
+          <Link
+            href={`/pricing/checkout?studio=${studioSlug}`}
+            className="text-[10px] font-bold text-brand-orange-primary hover:underline"
+          >
+            Manage Capabilities →
+          </Link>
+        </div>
       </div>
 
       {/* Nav Items */}
@@ -200,20 +206,22 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
 
           if (!accessible) {
             return (
-              <div
+              <Link
                 key={item.key}
-                title={isDevPortal ? "Only visible in testing mode" : `Enable module in settings to access ${item.label}`}
-                className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 opacity-40"
+                href={`/pricing/checkout?studio=${studioSlug}&upgrade=${item.module || ""}`}
+                onClick={onLinkClick}
+                title={isDevPortal ? "Only visible in testing mode" : `Unlock ${item.label} in your studio configuration`}
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition text-text-tertiary hover:bg-orange-50/70 hover:text-brand-orange-primary"
               >
-                <span className="text-text-tertiary">{item.icon}</span>
+                <span className="text-text-tertiary group-hover:text-brand-orange-primary">{item.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-text-tertiary truncate">{item.label}</p>
+                  <p className="text-xs font-semibold truncate group-hover:text-brand-orange-primary">{item.label}</p>
                   {item.sublabel && <p className="text-[10px] text-text-tertiary">{item.sublabel}</p>}
                 </div>
-                <svg className="h-3 w-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
+                <span className="rounded bg-brand-orange-background px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-brand-orange-primary">
+                  PRO
+                </span>
+              </Link>
             );
           }
 

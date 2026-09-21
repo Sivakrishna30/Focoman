@@ -1,10 +1,9 @@
-import { PLAN_CAPABILITIES, PLAN_PRICES, TRIAL_DURATION_DAYS } from '@focoman/config';
+import { PLAN_CAPABILITIES, TRIAL_DURATION_DAYS, getEffectiveCapabilities } from '@focoman/config';
 import { CapabilityId, PlanType, StudioPlan } from '@focoman/types';
-import { getStudioPlan as getStudioPlanFromDb, upsertStudioPlan as upsertStudioPlanInDb } from '@focoman/db'; // Assume db exports these
+import { getStudioPlan as getStudioPlanFromDb, upsertStudioPlan as upsertStudioPlanInDb } from '@focoman/db';
 
 /**
  * Resolve the effective plan for a studio, considering trial status.
- * If the studio is currently in trial, the effective plan is COMPLETE.
  */
 export function getEffectivePlan(studioPlan?: StudioPlan): PlanType {
   if (!studioPlan) return 'FREE';
@@ -15,16 +14,40 @@ export function getEffectivePlan(studioPlan?: StudioPlan): PlanType {
       return 'COMPLETE';
     }
   }
-  return studioPlan.plan;
+  return studioPlan.plan || 'FREE';
 }
 
 /**
- * Returns true if the given capability is available for the studio's effective plan.
+ * Returns true if the given capability is enabled for the studio's selected capabilities or active trial.
  */
 export function hasCapability(capability: CapabilityId, studioPlan?: StudioPlan): boolean {
-  const effectivePlan = getEffectivePlan(studioPlan);
-  const caps = PLAN_CAPABILITIES[effectivePlan] ?? [];
-  return caps.includes(capability);
+  if (!studioPlan) {
+    // Default to Free Core OMS
+    return capability === 'OMS_BASIC' || capability === 'OMS_CORE';
+  }
+
+  // Active trial grants all capabilities
+  if (isTrialActive(studioPlan)) {
+    return true;
+  }
+
+  // Expand selected capabilities including inclusions
+  const selectedCaps = studioPlan.selectedCapabilities || [];
+  const effectiveCaps = getEffectiveCapabilities(selectedCaps);
+
+  if (effectiveCaps.includes(capability)) {
+    return true;
+  }
+
+  // Fallback check against legacy plan if present
+  if (studioPlan.plan) {
+    const planCaps = PLAN_CAPABILITIES[studioPlan.plan] ?? [];
+    if (planCaps.includes(capability)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -47,24 +70,23 @@ export function isTrialExpired(studioPlan?: StudioPlan): boolean {
 
 /**
  * Returns the plan that the studio should fall back to after trial expiry.
- * By spec, it falls back to FREE.
  */
 export function getEffectivePlanAfterTrial(studioPlan?: StudioPlan): PlanType {
   if (!studioPlan) return 'FREE';
   if (studioPlan.isTrial && isTrialExpired(studioPlan)) {
     return 'FREE';
   }
-  return studioPlan.plan;
+  return studioPlan.plan || 'FREE';
 }
 
 /**
- * Initialize a studio with a FREE plan and start a 14‑day trial.
- * This should be called when a new studio document is created.
+ * Initialize a studio with Free Core (OMS_BASIC) and start a 30‑day trial.
  */
 export async function initializeStudioPlan(studioId: string, nowIso: string = new Date().toISOString()): Promise<void> {
   const trialExpires = new Date();
   trialExpires.setDate(trialExpires.getDate() + TRIAL_DURATION_DAYS);
   const plan: StudioPlan = {
+    selectedCapabilities: ['OMS_BASIC'],
     plan: 'FREE',
     isTrial: true,
     trialStartedAt: nowIso,
@@ -75,19 +97,37 @@ export async function initializeStudioPlan(studioId: string, nowIso: string = ne
 }
 
 /**
- * Change a studio's plan (admin / owner only).
- * Does NOT affect existing data – data is retained.
+ * Save selected capabilities for a studio.
+ */
+export async function updateStudioCapabilities(
+  studioId: string,
+  selectedCapabilities: CapabilityId[],
+  nowIso: string = new Date().toISOString()
+): Promise<void> {
+  const existing = await getStudioPlanFromDb(studioId);
+  const plan: StudioPlan = {
+    selectedCapabilities,
+    plan: 'CUSTOM',
+    isTrial: false,
+    updatedAt: nowIso,
+  };
+  if (existing?.trialStartedAt) {
+    plan.trialStartedAt = existing.trialStartedAt;
+    plan.trialExpiresAt = existing.trialExpiresAt;
+  }
+  await upsertStudioPlanInDb(studioId, plan);
+}
+
+/**
+ * Legacy plan updater compatibility
  */
 export async function updateStudioPlan(studioId: string, newPlan: PlanType, nowIso: string = new Date().toISOString()): Promise<void> {
   const existing = await getStudioPlanFromDb(studioId);
   const plan: StudioPlan = {
+    selectedCapabilities: existing?.selectedCapabilities || ['OMS_BASIC'],
     plan: newPlan,
     isTrial: false,
     updatedAt: nowIso,
   };
-  // Preserve trial fields if they existed
-  if (existing?.isTrial) {
-    plan.isTrial = false; // ending trial on upgrade/downgrade
-  }
   await upsertStudioPlanInDb(studioId, plan);
 }

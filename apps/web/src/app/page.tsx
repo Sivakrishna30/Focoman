@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { FocomanShieldWatermark } from "@/components/FocomanLogo";
 import { ModuleAccordion } from "@/components/public/ModuleAccordion";
-import { PricingAccordion } from "@/components/public/PricingAccordion";
-import { IntegrationsSection } from "@/components/public/IntegrationsSection";
+import { PricingTwoPanels } from "@/components/public/PricingTwoPanels";
+import { ValueAddedServices } from "@/components/public/ValueAddedServices";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import { StructuredData } from "@/components/public/StructuredData";
 
@@ -240,11 +240,11 @@ export default function HomePage() {
             </p>
           </div>
 
-          <PricingAccordion />
+          <PricingTwoPanels />
         </section>
 
-        {/* 8. Integrations Section */}
-        <IntegrationsSection />
+        {/* 8. Value-Added Services Section */}
+        <ValueAddedServices />
 
         {/* 9. FAQ Section */}
         <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
@@ -289,7 +289,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mt-3 text-[11px] text-white/80">
-                No credit card required • 100% of studio data preserved on fallback
+                No credit card required
               </p>
             </div>
           </div>
@@ -297,39 +297,9 @@ export default function HomePage() {
       </main>
 
       {/* 10. Footer */}
-      <footer className="border-t border-border-divider bg-white py-12">
+      <footer className="border-t border-border-divider bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-border-divider">
-            <div>
-              <p className="text-sm font-bold text-text-primary">Focoman</p>
-              <p className="text-xs text-text-secondary mt-1">
-                A Complete Business Operating System for Photography Studios
-              </p>
-            </div>
-
-            <nav className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-text-secondary">
-              <Link href="/#home" className="hover:text-text-primary transition">
-                Home
-              </Link>
-              <Link href="/#modules" className="hover:text-text-primary transition">
-                Modules
-              </Link>
-              <Link href="/#how-it-works" className="hover:text-text-primary transition">
-                How It Works
-              </Link>
-              <Link href="/studios" className="hover:text-brand-blue-primary transition">
-                Studio Marketplace
-              </Link>
-              <Link href="/#pricing" className="hover:text-text-primary transition">
-                Pricing
-              </Link>
-              <Link href="/#faq" className="hover:text-text-primary transition">
-                FAQ
-              </Link>
-            </nav>
-          </div>
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
             <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
             <p>Built for professional photography and cinematography studios.</p>
           </div>

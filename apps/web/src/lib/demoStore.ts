@@ -215,7 +215,7 @@ export function createDemoOrder(input: {
       id: `TSK-${orderId}-${seq}`,
       orderId,
       studioId: DEMO_STUDIO_SLUG,
-      title: "Album Design & Proofing",
+      title: "Album Design & Photo Selection",
       serviceCategory: "ALBUM",
       assignedMemberId: "demo-user-deepak",
       assignedMemberName: "Deepak Verma",

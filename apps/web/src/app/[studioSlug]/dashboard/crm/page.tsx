@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, use, useMemo } from "react";
+import Link from "next/link";
 import { Customer, Order } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
 import { getStudioOrdersAction } from "@/actions/orderActions";
@@ -27,7 +28,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function CrmPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
-  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
+  const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Customer | null>(null);
@@ -171,9 +172,30 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   });
 
   return (
-    <div className="flex h-full bg-surface-app">
-      {/* Customer List Panel */}
-      <div className={`flex flex-col ${selected ? "w-1/2 border-r border-border-default" : "w-full"} h-full`}>
+    <div className="flex flex-col h-full bg-surface-app">
+      {/* Free Plan Upgrade Banner */}
+      {studio && !studio.features?.crm && studio.planInfo?.plan !== "PROFESSIONAL" && studio.planInfo?.plan !== "COMPLETE" && (
+        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2.5 flex items-center justify-between shadow-2xs z-10 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-full bg-brand-orange-primary text-white">
+              PRO CAPABILITY
+            </span>
+            <span className="text-xs text-text-secondary">
+              Customer Management (CRM) is a modular capability. Upgrade to manage client history, receivables, and lead tracking.
+            </span>
+          </div>
+          <Link
+            href={`/pricing/checkout?studio=${studioSlug}&upgrade=crm`}
+            className="text-xs font-bold text-white bg-brand-orange-primary px-3 py-1 rounded-lg hover:bg-orange-600 transition shrink-0"
+          >
+            Upgrade &amp; Checkout →
+          </Link>
+        </div>
+      )}
+
+      <div className="flex flex-1 min-h-0">
+        {/* Customer List Panel */}
+        <div className={`flex flex-col ${selected ? "w-1/2 border-r border-border-default" : "w-full"} h-full`}>
         <header className="header-brand-orange">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -342,6 +364,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
           </div>
         </div>
       )}
+      </div>
 
       {/* Add Customer Modal */}
       {showModal && (

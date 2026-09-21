@@ -1,281 +1,99 @@
 # FOCOMAN — APPROVED PRICING MODEL & FEATURE ENTITLEMENT ARCHITECTURE
 
-**Amendment:** CHG-026  
-**Status:** APPROVED — September 18, 2026  
-**Supersedes:** Any previous provisional pricing in `docs/` or `pricing/page.tsx`
+**Amendment:** CHG-027  
+**Status:** APPROVED — September 21, 2026  
+**Supersedes:** CHG-026 (Fixed 4-Plan Pricing Model)
 
 ---
 
-## 1. PLAN STRUCTURE
+## 1. CAPABILITY-BASED PRICING MODEL OVERVIEW
 
-Focoman has exactly **four** customer-facing plan states:
+Focoman uses a **flexible capability-based pricing model**. Rigid fixed plans (Starter, Professional, Complete) are replaced with a **Free Core + Optional Paid Capabilities** architecture.
 
-| Plan | Price | Positioning |
-|------|-------|-------------|
-| FREE | ₹0/month | "Manage Your Orders" |
-| STARTER | ₹499/month | "Run Your Studio" |
-| PROFESSIONAL | ₹999/month | "Get Discovered & Operate Your Business" |
-| COMPLETE | ₹1,999/month | "Automate & Scale" |
-
-**No additional plans.** Do NOT create event-based plans, project-count plans, enterprise plans, agency plans, or add-on pricing tiers unless separately approved.
+### Pricing Philosophy
+- **Free Core (Basic Order Management):** Always ₹0/month forever. No order count caps, event caps, or storage retention fees.
+- **Modular Add-On Capabilities:** Studios selectively pay only for the exact capabilities they need.
+- **No Per-Message or Volume Fees:** Capabilities are charged at flat monthly rates. No per-message WhatsApp billing, no per-order commission, and no raw media storage fees.
+- **Studio-Scoped Ownership:** Capabilities belong to individual studio workspaces (`studios/{studioSlug}/planInfo`). Multi-studio operators can configure different capabilities per workspace.
 
 ---
 
-## 2. PRICING PHILOSOPHY
+## 2. CAPABILITY CATALOG & PRICING
 
-Focoman does **NOT** use event/order count as the primary pricing mechanism.
-
-- **Unlimited orders** on all plans
-- **Unlimited events** on all plans
-- **No storage-as-pricing** model
-
-Pricing differentiation is based on:
-- Feature capability
-- Business value
-- Automation level
-- Marketplace visibility
-- Communication (WhatsApp)
-- Scale (Multi-Studio)
+| Capability ID | Capability Name | Price | Dependency / Included In | Description & Features |
+|--------------|-----------------|-------|--------------------------|------------------------|
+| `OMS_BASIC` | **Basic Order Management (Free Core)** | **₹0/mo** | Included for every studio | Create, view, edit, cancel orders; status workflow tracking; passkey tracking link; basic operational dashboard. |
+| `CUSTOMER_BASIC` | **Customer Management Basic** | **₹199/mo** | Standalone | Searchable customer directory, profiles, order & payment history, booking history. |
+| `CUSTOMER_ADVANCED` | **Customer Management Advanced** | **₹299/mo** | Includes `CUSTOMER_BASIC` | Anniversary reminders, customer milestone alerts, repeat booking re-engagement outreach. |
+| `CREW_BASIC` | **Crew Management Basic** | **₹199/mo** | Standalone | Crew profiles, roles, skills database, manual assignment to events, basic availability calendar. |
+| `CREW_ADVANCED` | **Crew Management Advanced** | **₹299/mo** | Includes `CREW_BASIC` | Workload tracking, double-booking conflict detection, workload-aware resource suggestions. |
+| `MARKETPLACE` | **Studio Marketplace** | **₹499/mo** | Standalone | Public studio profile, customizable packages & pricing, booking inquiries, negotiation flow, confirmed order sync. |
+| `DRIVE_CLIENT_REVIEW` | **Google Drive + Client Review** | **₹299/mo** | Standalone | In-app Google Drive photo previews, client photo selection comments, review status tracking in production. |
+| `WHATSAPP_NOTIFICATIONS` | **WhatsApp Notifications** | **₹199/mo** | Standalone | Fixed operational event alerts (order confirmation, crew dispatch, gallery ready, milestone updates, delivery alerts). |
+| `WHATSAPP_OPERATIONS` | **WhatsApp Operations** | **₹499/mo** | Includes `WHATSAPP_NOTIFICATIONS` | Studio Owner interactive WhatsApp Operations Bot (order queries, event status, crew call-time lookup; 499 msgs/mo limit). |
 
 ---
 
-## 3. 30-DAY FULL-FEATURE TRIAL
+## 3. PRICING CALCULATIONS & DEPENDENCY RULES
 
-Every new studio receives a **30-day full-feature trial** with COMPLETE plan entitlements.
-
-```
-New Studio Created
-      ↓
-30-Day Trial (COMPLETE capabilities)
-      ↓
-User Chooses Plan
-      ↓
-FREE | STARTER | PROFESSIONAL | COMPLETE
-
-If no action:
-      ↓
-FREE (no data deletion, 100% data safely preserved)
-```
-
-**Trial rules:**
-- Data is NEVER deleted when trial expires
-- Orders, customers, payments, and history are preserved
-- Features become inaccessible per FREE plan entitlement after trial
+1. **No Double Charging:** When a studio selects an Advanced capability (e.g. `CUSTOMER_ADVANCED` at ₹299), the system automatically grants the corresponding Basic capability (`CUSTOMER_BASIC`) without additional charge.
+2. **Category Max Rule:**
+   - Customer Management: ₹0, ₹199 (Basic), or ₹299 (Advanced).
+   - Crew Management: ₹0, ₹199 (Basic), or ₹299 (Advanced).
+   - Studio Marketplace: ₹0 or ₹499.
+   - Google Drive + Client Review: ₹0 or ₹299.
+   - WhatsApp: ₹0, ₹199 (Notifications), or ₹499 (Operations Bot).
+3. **Combined Monthly Rate Formula:**
+   $$\text{Total Price} = \text{Cost}(\text{Customer}) + \text{Cost}(\text{Crew}) + \text{Cost}(\text{Marketplace}) + \text{Cost}(\text{Drive}) + \text{Cost}(\text{WhatsApp})$$
 
 ---
 
-## 4. FEATURE MATRIX
+## 4. WHATSAPP OPERATIONS BOT ACCESS & LIMITS
 
-| Capability | FREE | STARTER ₹499 | PROFESSIONAL ₹999 | COMPLETE ₹1,999 |
-|-----------|------|--------------|-------------------|-----------------|
-| **OMS** | | | | |
-| Unlimited Orders | ✓ | ✓ | ✓ | ✓ |
-| Unlimited Events | ✓ | ✓ | ✓ | ✓ |
-| Core OMS | ✓ | ✓ | ✓ | ✓ |
-| Task & Status Tracking | ✓ | ✓ | ✓ | ✓ |
-| Delivery Tracking | ✓ | ✓ | ✓ | ✓ |
-| Basic Payment Tracking | ✓ | ✓ | ✓ | ✓ |
-| **CRM** | | | | |
-| Basic Customer Info (in orders) | ✓ | ✓ | ✓ | ✓ |
-| Customer CRM Directory | — | ✓ | ✓ | ✓ |
-| Customer History | — | ✓ | ✓ | ✓ |
-| **ERP** | | | | |
-| Team Management | — | ✓ | ✓ | ✓ |
-| Roles & Skills | — | ✓ | ✓ | ✓ |
-| Manual Assignment | — | ✓ | ✓ | ✓ |
-| Availability & Schedule | — | — | ✓ | ✓ |
-| Workload Planning | — | — | ✓ | ✓ |
-| Conflict Detection | — | — | ✓ | ✓ |
-| Resource Suggestions | — | — | ✓ | ✓ |
-| Smart Resource Automation | — | — | — | ✓ |
-| **Booking & Payments** | | | | |
-| Booking Requests | — | ✓ | ✓ | ✓ |
-| Negotiation | — | ✓ | ✓ | ✓ |
-| Offline Payment Recording | — | ✓ | ✓ | ✓ |
-| Payment Proof | — | ✓ | ✓ | ✓ |
-| Payment Verification | — | ✓ | ✓ | ✓ |
-| **Marketplace** | | | | |
-| Marketplace Configuration | — | ✓ | ✓ | ✓ |
-| **Public Marketplace Listing** | — | — | **✓** | ✓ |
-| **Integrations** | | | | |
-| Google Calendar | — | — | ✓ | ✓ |
-| Google Drive | — | — | ✓ | ✓ |
-| **Automation** | | | | |
-| Basic Automation | — | ✓ | ✓ | ✓ |
-| Advanced Automation | — | — | ✓ | ✓ |
-| **Analytics** | | | | |
-| Basic Analytics | ✓ | ✓ | ✓ | ✓ |
-| Advanced Analytics | — | — | ✓ | ✓ |
-| **WhatsApp** | | | | |
-| WhatsApp Notifications (Pipeline Status) | — | ✓ | ✓ | ✓ |
-| WhatsApp Event Shoot Reminders | — | — | ✓ | ✓ |
-| WhatsApp Operations Bot (Interactive) | — | — | — | ✓ |
-| **Multi-Studio** | | | | |
-| Multi-Studio Management | — | — | — | ✓ |
+- **Target User:** Restricted strictly to **Studio Owners** (`STUDIO_OWNER`). General crew members and clients cannot use the bot.
+- **Capabilities:** Check active orders, upcoming event schedules, pending production tasks, and crew call times via chat.
+- **Operational Safeguard Limit:** 499 bot messages/interactions per studio per month.
+- **Limit Exceeded Behavior:** Returns a friendly operational message informing the owner that the monthly limit has been reached until the next billing cycle. No hidden overage charges or automatic credit card deductions.
 
 ---
 
-## 5. PLAN DETAILS
+## 5. TECHNICAL ARCHITECTURE & ENTITLEMENTS
 
-### FREE — ₹0
-
-Genuine usable experience. Focuses on core order management.
-
-**Includes:**
-- Unlimited orders and events
-- Full OMS lifecycle (create, view, edit, cancel, delete/recover)
-- Basic customer info within orders (name, phone, email)
-- Task and status tracking
-- Basic payment tracking
-- Delivery tracking
-- Basic analytics dashboard
-
-**Does NOT include:** CRM directory, team management, marketplace, WhatsApp, booking requests, negotiation, Google integrations
-
----
-
-### STARTER — ₹499/month
-
-First serious studio management plan.
-
-**Everything in FREE plus:**
-- Customer CRM directory & history
-- Basic ERP: studio members, roles, skills, manual assignment
-- Booking requests from marketplace inquiries
-- Optional negotiation
-- Offline payment recording (Cash, UPI, Bank Transfer, Other)
-- Payment proof attachment
-- Studio owner payment verification
-- Booking confirmation flow
-- Marketplace configuration (internal only — cannot publish publicly)
-- Basic automation
-
----
-
-### PROFESSIONAL — ₹999/month
-
-Introduces public marketplace visibility and advanced operations.
-
-**Everything in STARTER plus:**
-- **Public Studio Marketplace listing** (primary Professional differentiator)
-- Member availability & schedule planning
-- Workload visibility
-- Conflict detection
-- Resource suggestions (System Suggests → Owner Confirms)
-- Google Calendar integration
-- Google Drive integration
-- Advanced automation
-- Advanced analytics
-
----
-
-### COMPLETE — ₹1,999/month
-
-Full automation and scale.
-
-**Everything in PROFESSIONAL plus:**
-- Smart Resource Automation (AI-powered suggestions — owner always confirms)
-- WhatsApp Notifications (outbound: Focoman → WhatsApp)
-- WhatsApp Operations Bot (interactive: Focoman ↔ WhatsApp)
-- Multi-Studio management
-- Advanced multi-studio analytics
-
----
-
-## 6. MARKETPLACE MONETIZATION PRINCIPLE
-
-**Public marketplace publishing is gated to PROFESSIONAL+.**
-
-Upgrade journey:
-```
-FREE → "I need studio management" → STARTER ₹499
-STARTER → "I want customers to find me" → PROFESSIONAL ₹999
-PROFESSIONAL → "I want automation" → COMPLETE ₹1,999
+### Firestore Schema
+Stored on the studio document:
+```json
+{
+  "planInfo": {
+    "selectedCapabilities": ["CUSTOMER_BASIC", "WHATSAPP_NOTIFICATIONS"],
+    "isTrial": false,
+    "updatedAt": "2026-09-21T12:00:00Z"
+  }
+}
 ```
 
-STARTER users MAY configure their marketplace profile internally (name, description, packages, pricing, negotiable flag) but CANNOT set `isVisible: true` — this is enforced server-side.
+### Entitlement Helper (`@focoman/entitlements`)
+```typescript
+import { getEffectiveCapabilities } from '@focoman/config';
 
----
-
-## 7. ENTITLEMENT ARCHITECTURE
-
-### Central Capability IDs
-
-```
-OMS_CORE
-CUSTOMER_BASIC
-CUSTOMER_CRM
-TEAM_MANAGEMENT
-MANUAL_ASSIGNMENT
-MARKETPLACE_CONFIGURATION
-MARKETPLACE_PUBLIC
-BOOKING_REQUESTS
-NEGOTIATION
-PAYMENT_RECORDING
-PAYMENT_VERIFICATION
-ERP_BASIC
-ERP_AVAILABILITY
-ERP_WORKLOAD
-ERP_CONFLICT_DETECTION
-ERP_RESOURCE_SUGGESTION
-ERP_SMART_RESOURCE_AUTOMATION
-GOOGLE_CALENDAR
-GOOGLE_DRIVE
-AUTOMATION_BASIC
-AUTOMATION_ADVANCED
-ANALYTICS_BASIC
-ANALYTICS_ADVANCED
-WHATSAPP_NOTIFICATIONS
-WHATSAPP_BOT
-MULTI_STUDIO
-ADVANCED_INTEGRATIONS
+export function hasCapability(capability: CapabilityId, studioPlan?: StudioPlan): boolean {
+  if (!studioPlan) return capability === 'OMS_BASIC' || capability === 'OMS_CORE';
+  if (isTrialActive(studioPlan)) return true;
+  
+  const effectiveCaps = getEffectiveCapabilities(studioPlan.selectedCapabilities || []);
+  return effectiveCaps.includes(capability);
+}
 ```
 
-### Implementation Location
+---
 
-- Types: `packages/types/src/index.ts` — `PlanType`, `CapabilityId`, `StudioPlan`
-- Constants: `packages/config/src/index.ts` — `PLAN_CAPABILITIES`, `PLAN_PRICES`, `TRIAL_DURATION_DAYS`
-- Logic: `packages/entitlements/src/index.ts` — `hasCapability()`, `getEffectivePlan()`, `isTrialActive()`
-- Server enforcement: `apps/web/src/lib/entitlementAuth.ts` — `requireCapability()`
+## 6. DEFERRED FEATURES
 
-### Critical Rule: Product Capability ≠ Pricing Logic
-
-Domain logic (e.g., `generateResourceSuggestions()`) must NOT contain plan checks.  
-Plan checks live exclusively in the entitlement layer.  
-Server actions call `requireCapability()` before invoking domain functions.
+The following features are **explicitly deferred** to future releases and are not part of the current capability model:
+- Business Analytics & Financial Reports
+- Crew Payroll & Automated Compensation Disbursal
 
 ---
 
-## 8. DOWNGRADE SAFETY
+## 7. MIGRATION & BACKWARD COMPATIBILITY
 
-Downgrading NEVER destroys data.
-
-On downgrade (e.g., COMPLETE → FREE):
-- Orders: preserved
-- Customers: preserved
-- Payments: preserved
-- Marketplace config: preserved (but cannot publish)
-- Team members: preserved (but management UI gated)
-- Historical records: preserved
-
-Features become inaccessible per new plan entitlement, but all data remains safe.
-
----
-
-## 9. SECURITY REQUIREMENTS
-
-- Plan restrictions are NEVER enforced only in frontend code
-- Server-side `requireCapability()` checks are mandatory for all plan-gated actions
-- Marketplace `isVisible: true` requires server-side PROFESSIONAL+ check
-- Studio isolation enforced at all levels
-- Customer isolation: `customerId === decoded.uid` check on all customer-facing endpoints
-
----
-
-## 10. CONTRACTS — EXCLUDED
-
-Contracts, e-signatures, contract templates, and signing workflows are **OUT OF SCOPE** for Focoman. Do not implement or advertise.
-
----
-
-*Document created: CHG-026, September 18, 2026*
+Existing studio records with legacy `plan` values (`FREE`, `STARTER`, `PROFESSIONAL`, `COMPLETE`) are seamlessly mapped via `PLAN_CAPABILITIES` to their corresponding capability sets, ensuring zero disruption for existing users.

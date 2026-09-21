@@ -36,43 +36,23 @@ export default function FeaturesPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Confirmed Order Intake",
-                desc: "Record confirmed photography orders with customer info, event type, date, venue, packages, and confirmed pricing.",
+                title: "Confirmed Order",
+                desc: "Create and manage confirmed orders and the complete post-event workflow from RAW backup and photo selection through editing, album design, client review, printing, final delivery, and payment completion.",
               },
               {
-                title: "Planned Resource Assignments",
-                desc: "Assign team members to upcoming shoot dates and track their availability confirmation before the event.",
+                title: "Studio Marketplace Complete Workflow",
+                desc: "Manage Studio Marketplace bookings through a pre-event workflow covering leads and inquiries, advance payment, booking confirmation, and event planning, in addition to the post-event workflow through to final delivery and payment completion.",
               },
               {
-                title: "Event Date Scheduling",
-                desc: "Keep a clear view of all upcoming shoot dates to ensure photographers and gear are perfectly prepared.",
+                title: "Client Passkey Tracking",
+                desc: "Give clients a secure, private link to track their event progress and access their gallery, photos, and delivery links without creating an account.",
               },
               {
-                title: "Dynamic Service Workflows",
-                desc: "Workflows generated automatically based on order services: Photography tasks, Videography tasks, and Album design stages.",
-              },
-              {
-                title: "Post-Event Production Pipeline",
-                desc: "Stage-by-stage accountability: RAW backup → Photo culling → Color grading → Video editing → Album design → Final delivery.",
-              },
-              {
-                title: "Independent Payment Tracking",
-                desc: "Track Confirmed Price, Advance Received, and Remaining Balance due independently from the production stage.",
-              },
-              {
-                title: "Guest Order Access Code",
-                desc: "Zero-friction order status lookup for clients. Customers check real-time progress using their unique access code without passwords.",
-              },
-              {
-                title: "Google Drive Sync & In-App Preview",
-                desc: "Link order folders with embedded preview inside Focoman. View RAW photo thumbnails, proofing galleries, and deliverable files directly without opening external browser tabs.",
-              },
-              {
-                title: "Strict Completion Gate",
-                desc: "Orders can only be marked Completed when both downstream production tasks are finished AND payments are fully collected.",
+                title: "Order Lifecycle & Recovery",
+                desc: "Manage active, cancelled, and completed orders separately, with a 14-day recovery window for deleted orders.",
               },
             ].map((f, i) => {
               const colors = [
@@ -80,8 +60,7 @@ export default function FeaturesPage() {
                 { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
                 { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
                 { border: "hover:border-green-300", bg: "bg-green-500" },
-                { border: "hover:border-pink-300", bg: "bg-pink-500" }
-              ][i % 5];
+              ][i % 4];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-surface-app p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
@@ -115,20 +94,20 @@ export default function FeaturesPage() {
                 desc: "Store full client profiles with verified phone numbers, email addresses, and physical locations for rapid lookup.",
               },
               {
-                title: "Complete Booking & Order History",
-                desc: "View the full chronological record of every past photoshoot booking, package selected, and event date with your studio.",
+                title: "Order, Payment & Receivables History",
+                desc: "Instant visibility into all past and active photoshoot orders, cumulative customer spend, historical receipts, advance deposits, and outstanding receivables across years of service.",
+              },
+              {
+                title: "Anniversary & Customer Milestone Reminders",
+                desc: "Use previous event dates to remind studios about upcoming anniversaries and important customer milestones, creating opportunities to reconnect and offer relevant photography services.",
               },
               {
                 title: "Client Lifetime Value (LTV)",
                 desc: "Automatically calculate total cumulative revenue generated per customer across all their historical events to identify your most loyal clients.",
               },
               {
-                title: "Outstanding Receivables Tracking",
-                desc: "Monitor pending balances and overdue milestones per client at a glance before confirming repeat bookings.",
-              },
-              {
-                title: "Fast Search & Quick Filtering",
-                desc: "Instantly filter your entire customer base by name, phone number, email, or city for effortless communication.",
+                title: "Booking & Inquiry Records",
+                desc: "Review past booking inquiries, lead history, and shoot requests directly attached to customer profile records.",
               },
               {
                 title: "One-Click Order Creation",
@@ -140,8 +119,9 @@ export default function FeaturesPage() {
                 { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
                 { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
                 { border: "hover:border-green-300", bg: "bg-green-500" },
-                { border: "hover:border-pink-300", bg: "bg-pink-500" }
-              ][i % 5];
+                { border: "hover:border-pink-300", bg: "bg-pink-500" },
+                { border: "hover:border-amber-300", bg: "bg-amber-500" }
+              ][i % 6];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-surface-app p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
@@ -168,31 +148,23 @@ export default function FeaturesPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Google Calendar & Availability Sync",
-                desc: "Visual calendar scheduling assistant with two-way Google Calendar synchronization, showing crew blocked time and availability before assigning shoots to prevent double-booking.",
+                title: "Crew Profiles & Roles",
+                desc: "Create crew member profiles and assign their roles and skills, such as videographers, editors, drone pilots, and other studio crew.",
               },
               {
-                title: "Crew Task Assignment & Ownership",
-                desc: "Assign photographers, videographers, and editors to specific event dates and post-production deliverables with clear task ownership and status tracking.",
+                title: "Manual Crew Assignment",
+                desc: "Manually assign crew members to confirmed events based on their availability and current workload.",
               },
               {
-                title: "Asset & Equipment Tracking",
-                desc: "Track checkout and return of cameras, lenses, gimbals, mics, and memory cards assigned to shoots or team members so gear never goes missing.",
+                title: "Crew Workload Tracker",
+                desc: "Give studio owners a clear view of each crew member’s assigned projects, pending work, and current project status.",
               },
               {
-                title: "Crew Payroll & Compensation",
-                desc: "Track per-event day rates, shoot wages, travel allowances, and standard tax withholdings with a clear payout approval workflow.",
-              },
-              {
-                title: "Travel & Incidental Claims",
-                desc: "Allow crew to submit travel, fuel, and meal claims for out-of-station shoots with studio owner review and approval.",
-              },
-              {
-                title: "Auditing, Accounts & Tax Readiness",
-                desc: "Consolidates studio income, crew payouts, and approved travel expenses into clean financial records. Gives you a transparent audit trail of true profitability and makes annual tax filing fast, accurate, and completely stress-free.",
+                title: "Smart Resource Suggestions",
+                desc: "Suggest suitable crew members based on event date, location, required roles and skills, availability, and workload. The studio owner reviews and confirms the suggested assignment.",
               },
             ].map((f, i) => {
               const colors = [
@@ -200,8 +172,7 @@ export default function FeaturesPage() {
                 { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
                 { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
                 { border: "hover:border-green-300", bg: "bg-green-500" },
-                { border: "hover:border-pink-300", bg: "bg-pink-500" }
-              ][i % 5];
+              ][i % 4];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-surface-app p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
@@ -228,38 +199,31 @@ export default function FeaturesPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Update Status Without Opening the Tool",
-                desc: "Crew members and studio owners can acknowledge call times, confirm shoots, or advance production milestones (e.g. RAW Ingest Done, Gallery Dispatched) directly via interactive WhatsApp bot commands without logging into the web dashboard.",
+                title: "Automated WhatsApp Notifications",
+                desc: "Send booking confirmations, event reminders, production updates, gallery links, and delivery updates to clients and crew through WhatsApp.",
               },
               {
-                title: "Purpose-Built Operations Bot",
-                desc: "Direct operational assistant in your WhatsApp chat for querying active order status, reviewing pending/upcoming shoots, receiving automated reminders, and executing owner actions.",
+                title: "WhatsApp Status Updates",
+                desc: "Allow studio owners and crew members to update supported event and production statuses directly through WhatsApp without opening the Focoman dashboard.",
               },
               {
-                title: "Automated Milestone Notifications",
-                desc: "Notify clients instantly when RAW photos are uploaded, selection galleries are live, album layout previews are ready for sign-off, or physical albums are dispatched.",
+                title: "Focoman Operations Bot",
+                desc: "Use the Focoman WhatsApp Bot to check active orders, upcoming events, pending tasks, and other supported studio operations directly from WhatsApp.",
               },
               {
-                title: "Crew Shoot Reminders & Call-Times",
-                desc: "Send automated 48-hour and 12-hour call-time reminders to assigned photographers and cinematographers with venue GPS coordinates, call times, and shotlist requirements.",
-              },
-              {
-                title: "Payment & Due Reminders",
-                desc: "Timely, professional balance reminders with payment verification receipts sent straight to WhatsApp, ensuring transparent receivables before handover.",
-              },
-              {
-                title: "Zero-Login Client Passkey Tracking",
-                desc: "Clients never create passwords or download separate apps. Milestone alerts include their collision-safe private passkey link for real-time progress and proofing.",
+                title: "Crew Reminders & Call Times",
+                desc: "Send scheduled reminders to assigned crew members with event date, call time, venue location, and required shoot information.",
               },
             ].map((f, i) => {
               const colors = [
                 { border: "hover:border-green-300", bg: "bg-green-500" },
                 { border: "hover:border-brand-blue-light", bg: "bg-brand-blue-primary" },
                 { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
-              ][i % 3];
+                { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
+              ][i % 4];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-white p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />
@@ -346,31 +310,23 @@ export default function FeaturesPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Configurable Package Deliverables Setup",
-                desc: "Configure service packages once (edited photos count, teaser video length, full film, album sheet specifications). Focoman automatically breaks down the deliverables and seeds production tasks upon order confirmation.",
-              },
-              {
-                title: "Auto-Assign Crew by Availability & Workload",
-                desc: "Smart resource matching evaluates shoot dates, venue locations, crew skills (candid photographer, traditional videographer, drone pilot, editor), calendar availability, and active workload to suggest conflict-free crew assignments automatically.",
-              },
-              {
-                title: "Automatic Financial Calculations & Breakdowns",
-                desc: "Automated calculation of booking advance deposits, event-day installments, remaining balance dues, crew day rates, and travel expense breakdowns without manual spreadsheet math.",
+                title: "Automatic Payment Calculations",
+                desc: "Automatically calculate advance payments, event-day installments, remaining balances, crew day rates, and configured travel expenses.",
               },
               {
                 title: "Automated Workflow Progression",
-                desc: "When shoot dates pass, the engine automatically spins up the post-event production pipeline, notifying crew to initiate RAW ingests, dual backups, and culling tasks.",
+                desc: "Automatically start the required post-event production workflow when an event is completed, and notify the relevant crew about their pending production tasks.",
               },
               {
                 title: "Pre-Flight Conflict Detection",
-                desc: "Automatic evaluation of date overlaps, member availability, and skill alignment prior to booking confirmation, preventing double-booking catastrophes.",
+                desc: "Check event dates, crew availability, workload, and required skills before booking confirmation to identify potential scheduling and resource conflicts.",
               },
               {
-                title: "Strict Delivery & Payment Completion Lock",
-                desc: "Automatically enforces operational safety gates, ensuring orders cannot be archived as completed until all physical/digital deliverables are delivered and payments are 100% cleared.",
+                title: "Native Studio Integrations",
+                desc: "Synchronize crew shoot schedules directly with Google Calendar, and manage Google Drive folders with in-app preview and client comments options.",
               },
             ].map((f, i) => {
               const colors = [
@@ -378,9 +334,7 @@ export default function FeaturesPage() {
                 { border: "hover:border-brand-blue-light", bg: "bg-brand-blue-primary" },
                 { border: "hover:border-brand-purple-light", bg: "bg-brand-purple-primary" },
                 { border: "hover:border-green-300", bg: "bg-green-500" },
-                { border: "hover:border-brand-orange-light", bg: "bg-brand-orange-primary" },
-                { border: "hover:border-pink-300", bg: "bg-pink-500" },
-              ][i % 6];
+              ][i % 4];
               return (
               <div key={f.title} className={`rounded-2xl border border-border-default bg-white p-5 transition ${colors.border} hover:shadow-sm`}>
                 <div className={`h-1.5 w-8 rounded-full mb-4 ${colors.bg}`} />

@@ -42,6 +42,12 @@ export function DashboardTopNav() {
     <div className="h-14 border-b border-border-default bg-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-text-tertiary">Studio OS</span>
+        <Link
+          href="/pricing/checkout"
+          className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 text-brand-orange-primary hover:bg-orange-200 transition"
+        >
+          Plan &amp; Capabilities
+        </Link>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
@@ -71,6 +77,13 @@ export function DashboardTopNav() {
                   className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
                 >
                   {t("nav.workspaces", "My Workspaces")}
+                </Link>
+                <Link
+                  href="/pricing/checkout"
+                  onClick={() => setIsOpen(false)}
+                  className="block px-4 py-2 text-xs font-bold text-brand-orange-primary hover:bg-orange-50 transition"
+                >
+                  ★ Upgrade &amp; Capabilities
                 </Link>
                 <Link
                   href="/account-settings"
