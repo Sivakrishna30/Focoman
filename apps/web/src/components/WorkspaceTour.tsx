@@ -77,10 +77,15 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 export function WorkspaceTour({ isOpen, onClose, studioName: _studioName }: WorkspaceTourProps) {
+  const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetFound, setTargetFound] = useState(true);
   const blurbRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const step = TOUR_STEPS[currentStep];
 
@@ -158,7 +163,7 @@ export function WorkspaceTour({ isOpen, onClose, studioName: _studioName }: Work
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleFinish, handleNext, handlePrev]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   // Calculate blurb position coordinates based on target rect and preferred direction
   let blurbStyle: React.CSSProperties = {

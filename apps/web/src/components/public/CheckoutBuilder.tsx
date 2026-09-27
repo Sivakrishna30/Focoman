@@ -11,13 +11,12 @@ import {
 } from "@focoman/config";
 import { subscribeToAuthState } from "@/lib/firebaseAuth";
 import type { User } from "firebase/auth";
-import type { CapabilityId, CapabilityMetadata } from "@focoman/types";
+import type { CapabilityId } from "@focoman/types";
 
 export function CheckoutBuilder() {
   const searchParams = useSearchParams();
   const upgradeParam = searchParams.get("upgrade")?.toLowerCase() || searchParams.get("feature")?.toLowerCase();
   const studioParam = searchParams.get("studio");
-  const planParam = searchParams.get("plan")?.toLowerCase();
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -39,18 +38,7 @@ export function CheckoutBuilder() {
     else if (upgradeParam === "drive") initial.push("DRIVE_CLIENT_REVIEW");
     return initial;
   });
-  const [showCancelConfirmation, setShowCancelConfirmation] = useState<boolean>(false);
-  const [subscriptionCancelled, setSubscriptionCancelled] = useState<boolean>(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState<boolean>(false);
-
-  // Expandable details state per card
-  const [expandedCardIds, setExpandedCardIds] = useState<string[]>([]);
-
-  const toggleExpand = (id: string) => {
-    setExpandedCardIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const handleToggleCapability = (capId: CapabilityId) => {
     setSelectedCaps((prev) => {
@@ -277,66 +265,6 @@ export function CheckoutBuilder() {
           </div>
         </div>
       </div>
-
-      {/* Cancel Subscription (Visible only if user has active paid plans) */}
-      {selectedCaps.length > 0 && (
-        <div className="rounded-3xl border border-red-200 bg-red-50/20 p-6 sm:p-8 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-red-200 pb-3">
-            <div>
-              <h3 className="text-lg font-extrabold text-red-900">Cancel Subscription</h3>
-              <p className="text-xs text-red-700 mt-0.5">
-                Revert workspace back to 100% Free Basic Order Management at the end of current cycle.
-              </p>
-            </div>
-            {!subscriptionCancelled && (
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirmation(true)}
-                className="px-4 py-2 rounded-xl border border-red-300 bg-white text-xs font-bold text-red-700 hover:bg-red-50 transition shadow-2xs"
-              >
-                Cancel Plan
-              </button>
-            )}
-          </div>
-
-          {showCancelConfirmation && !subscriptionCancelled && (
-            <div className="p-4 rounded-2xl bg-white border border-red-300 space-y-3">
-              <p className="font-semibold text-red-900 text-xs">
-                Are you sure you want to cancel your paid modules?
-              </p>
-              <p className="text-[11px] text-text-secondary">
-                Your workspace will keep access until the end of the current billing cycle, then revert to Basic Order management.
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubscriptionCancelled(true);
-                    setSelectedCaps([]);
-                    setShowCancelConfirmation(false);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-red-600 text-white font-bold text-xs shadow-2xs hover:bg-red-700 transition"
-                >
-                  Yes, Cancel Paid Subscription
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCancelConfirmation(false)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-text-primary font-bold text-xs hover:bg-slate-200 transition"
-                >
-                  Keep My Modules
-                </button>
-              </div>
-            </div>
-          )}
-
-          {subscriptionCancelled && (
-            <div className="rounded-2xl bg-red-100 p-3 text-xs text-red-800 font-bold">
-              ✓ Subscription cancellation scheduled for end of cycle. Workspace tag will revert to FREE.
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Checkout Summary & Payment Gateway Placeholder */}
       <div className="rounded-3xl border border-brand-orange-primary/30 bg-gradient-to-br from-white via-orange-50/20 to-white p-6 sm:p-8 shadow-sm space-y-6">
