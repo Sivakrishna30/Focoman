@@ -43,7 +43,7 @@ export function DashboardTopNav() {
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-text-tertiary">Studio OS</span>
         <Link
-          href="/pricing/checkout"
+          href="/checkout"
           className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 text-brand-orange-primary hover:bg-orange-200 transition"
         >
           Plan &amp; Capabilities
@@ -51,9 +51,6 @@ export function DashboardTopNav() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <LanguageSwitcher />
-        <ThemeSwitcher />
-
         {user && (
           <div className="relative" ref={dropdownRef}>
             <button
@@ -79,7 +76,7 @@ export function DashboardTopNav() {
                   {t("nav.workspaces", "My Workspaces")}
                 </Link>
                 <Link
-                  href="/pricing/checkout"
+                  href="/checkout"
                   onClick={() => setIsOpen(false)}
                   className="block px-4 py-2 text-xs font-bold text-brand-orange-primary hover:bg-orange-50 transition"
                 >

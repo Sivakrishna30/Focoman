@@ -32,7 +32,7 @@ export default function FeaturesPage() {
               Order Management System - OMS
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              The core order management system to track and manage your studio&apos;s confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.
+              Track and manage orders and their status across every milestone, from lead and inquiry through booking, event, production, and final delivery.
             </p>
           </div>
 
@@ -40,19 +40,19 @@ export default function FeaturesPage() {
             {[
               {
                 title: "Confirmed Order",
-                desc: "Create and manage confirmed orders and the complete post-event workflow from RAW backup and photo selection through editing, album design, client review, printing, final delivery, and payment completion.",
+                desc: "Create and manage confirmed orders with customer details, event information, package details, pricing, payments, and the complete post-event workflow through final delivery.",
               },
               {
-                title: "Studio Marketplace Complete Workflow",
-                desc: "Manage Studio Marketplace bookings through a pre-event workflow covering leads and inquiries, advance payment, booking confirmation, and event planning, in addition to the post-event workflow through to final delivery and payment completion.",
+                title: "Studio Marketplace Orders",
+                desc: "Manage leads and bookings from Studio Marketplace packages, including customer details, selected packages, advance payment, booking confirmation, event planning, and the post-event workflow.",
+              },
+              {
+                title: "Order Status Tracking",
+                desc: "View pending, active, and completed orders in one place and check the current status of each order throughout the booking and production workflow.",
               },
               {
                 title: "Client Passkey Tracking",
-                desc: "Give clients a secure, private link to track their event progress and access their gallery, photos, and delivery links without creating an account.",
-              },
-              {
-                title: "Order Lifecycle & Recovery",
-                desc: "Manage active, cancelled, and completed orders separately, with a 14-day recovery window for deleted orders.",
+                desc: "Give clients a password-protected private link to check their event progress and access their gallery, photos, and delivery links without creating an account.",
               },
             ].map((f, i) => {
               const colors = [
@@ -102,7 +102,7 @@ export default function FeaturesPage() {
                 desc: "Use previous event dates to remind studios about upcoming anniversaries and important customer milestones, creating opportunities to reconnect and offer relevant photography services.",
               },
               {
-                title: "Client Lifetime Value (LTV)",
+                title: "Client Lifetime Value - LTV",
                 desc: "Automatically calculate total cumulative revenue generated per customer across all their historical events to identify your most loyal clients.",
               },
               {
@@ -133,38 +133,38 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Module 3: ERP */}
+      {/* Module 3: Studio Operations - ERP */}
       <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-brand-purple-background px-3 py-1 text-xs font-bold tracking-widest text-brand-purple-primary uppercase">
-              Module 03: Operations & People
+              Module 03: Operations &amp; ERP
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
               Studio Operations - ERP
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              Assign shoot tasks, check crew calendar availability, track equipment, and manage crew payroll, travel claims, and audit-ready accounting summaries.
+              Manage your studio team, assign shoots and production tasks, check crew availability, and keep track of crew expenses and payments.
             </p>
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Crew Profiles & Roles",
-                desc: "Create crew member profiles and assign their roles and skills, such as videographers, editors, drone pilots, and other studio crew.",
+                title: "Team Directory & Roles",
+                desc: "Add photographers, videographers, drone pilots, and editors with their roles, skills, and contact details so your studio team is organized in one place.",
               },
               {
-                title: "Manual Crew Assignment",
-                desc: "Manually assign crew members to confirmed events based on their availability and current workload.",
+                title: "Shoot & Task Assignment",
+                desc: "Assign team members to confirmed shoots and production tasks, and keep track of the work assigned to each crew member across active projects.",
               },
               {
-                title: "Crew Workload Tracker",
-                desc: "Give studio owners a clear view of each crew member’s assigned projects, pending work, and current project status.",
+                title: "Crew Availability",
+                desc: "Check crew availability before assigning shoots and tasks, and view the current availability of team members when planning upcoming studio work.",
               },
               {
-                title: "Smart Resource Suggestions",
-                desc: "Suggest suitable crew members based on event date, location, required roles and skills, availability, and workload. The studio owner reviews and confirms the suggested assignment.",
+                title: "Expenses & Crew Payments",
+                desc: "Record shoot day-rates, travel expenses, and crew payments to keep track of production costs and understand the expenses related to each studio project.",
               },
             ].map((f, i) => {
               const colors = [
@@ -295,38 +295,38 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Module 6: Automations */}
+      {/* Module 6: Business Reports & Analytics */}
       <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-border-default bg-gradient-to-br from-white via-white to-amber-50/30 p-8 shadow-sm sm:p-12">
           <div className="flex flex-col gap-2">
             <span className="inline-block w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-bold tracking-widest text-amber-800 uppercase">
-              Module 06: Smart Automations
+              Module 06: Business Growth
             </span>
             <h2 className="text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
-              Automations & Smart Engine
+              Business Reports &amp; Analytics
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.
+              Clear monthly and yearly revenue charts, pending client balance tracking, and profit insights by photoshoot package to help your studio grow and earn more.
             </p>
           </div>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {[
               {
-                title: "Automatic Payment Calculations",
-                desc: "Automatically calculate advance payments, event-day installments, remaining balances, crew day rates, and configured travel expenses.",
+                title: "Monthly & Yearly Revenue Reports",
+                desc: "See your total studio earnings by month and year. Track growth over time and compare peak wedding season vs off-season revenue.",
               },
               {
-                title: "Automated Workflow Progression",
-                desc: "Automatically start the required post-event production workflow when an event is completed, and notify the relevant crew about their pending production tasks.",
+                title: "Pending Balances & Cash Flow",
+                desc: "Instant list of all pending client dues, advance deposits received, and balance payments to collect before album delivery.",
               },
               {
-                title: "Pre-Flight Conflict Detection",
-                desc: "Check event dates, crew availability, workload, and required skills before booking confirmation to identify potential scheduling and resource conflicts.",
+                title: "Most Profitable Shoot Packages",
+                desc: "Know exactly which photoshoot packages earn you the most profit—Weddings, Engagements, Receptions, Baby Shoots, or Corporate Events.",
               },
               {
-                title: "Native Studio Integrations",
-                desc: "Synchronize crew shoot schedules directly with Google Calendar, and manage Google Drive folders with in-app preview and client comments options.",
+                title: "On-Time Delivery & Speed",
+                desc: "Review your average turnaround time from shoot day to final album hand-off to maintain high client satisfaction and earn 5-star reviews.",
               },
             ].map((f, i) => {
               const colors = [

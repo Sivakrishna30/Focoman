@@ -277,7 +277,7 @@ export default function HomePage() {
                 Transform Your Studio Operations Today
               </h2>
               <p className="mt-4 text-sm sm:text-base text-white/90 leading-relaxed">
-                Join photography and cinematography studios running their orders, crew workflows, and deliveries with peace of mind. Start your 30-day full trial with zero risk.
+                Join photography studios running their orders, crew workflows, and deliveries with peace of mind. Start your 30-day full trial with zero risk.
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -301,7 +301,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
             <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
-            <p>Built for professional photography and cinematography studios.</p>
+            <p>Built for professional photography studios.</p>
           </div>
         </div>
       </footer>

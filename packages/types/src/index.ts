@@ -9,19 +9,25 @@
 export type PlanType = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'COMPLETE' | 'CUSTOM';
 
 export type CapabilityId =
-  // Primary Capability-Based Pricing IDs
+  // Primary Capability-Based Pricing IDs (CHG-030)
   | 'OMS_BASIC'              // Free Core: Basic Order Management (₹0)
-  | 'CUSTOMER_BASIC'         // Customer Management Basic (₹199/mo)
-  | 'CUSTOMER_ADVANCED'      // Customer Management Advanced (₹299/mo)
-  | 'CREW_BASIC'             // Crew Management Basic (₹199/mo)
-  | 'CREW_ADVANCED'          // Crew Management Advanced (₹299/mo)
-  | 'MARKETPLACE'            // Studio Marketplace (₹499/mo)
-  | 'DRIVE_CLIENT_REVIEW'    // Google Drive + Client Review (₹299/mo)
-  | 'WHATSAPP_NOTIFICATIONS' // WhatsApp Notifications (₹199/mo)
-  | 'WHATSAPP_OPERATIONS'    // WhatsApp Operations (₹499/mo)
+  | 'OMS_ADVANCED'           // OMS Advanced: Google Drive Preview & Review (₹299/mo)
+  | 'CUSTOMER_CRM'           // Customer Relations (CRM) (₹299/mo)
+  | 'STUDIO_ERP'             // Studio Operations - ERP (₹299/mo)
+  | 'WHATSAPP_ALERTS'        // WhatsApp Notifications (Alerts) (₹499/mo)
+  | 'WHATSAPP_BOT'           // WhatsApp Operations & Bot (₹999/mo)
+  | 'STUDIO_MARKETPLACE'     // Studio Marketplace (₹999/mo)
+  | 'BUSINESS_REPORTS'       // Business Reports & Analytics (₹299/mo)
   // Backward compatibility legacy aliases
+  | 'CUSTOMER_BASIC'         // Alias to Customer CRM
+  | 'CUSTOMER_ADVANCED'      // Alias to Customer CRM
+  | 'CREW_BASIC'             // Alias to Studio Operations - ERP
+  | 'CREW_ADVANCED'          // Alias to Studio Operations - ERP
+  | 'MARKETPLACE'            // Alias to Studio Marketplace
+  | 'DRIVE_CLIENT_REVIEW'    // Alias to OMS Advanced
+  | 'WHATSAPP_NOTIFICATIONS' // Alias to WhatsApp Alerts
+  | 'WHATSAPP_OPERATIONS'    // Alias to WhatsApp Operations & Bot
   | 'OMS_CORE'
-  | 'CUSTOMER_CRM'
   | 'TEAM_MANAGEMENT'
   | 'MANUAL_ASSIGNMENT'
   | 'MARKETPLACE_CONFIGURATION'
@@ -42,14 +48,20 @@ export type CapabilityId =
   | 'AUTOMATION_ADVANCED'
   | 'ANALYTICS_BASIC'
   | 'ANALYTICS_ADVANCED'
-  | 'WHATSAPP_BOT'
   | 'MULTI_STUDIO'
   | 'ADVANCED_INTEGRATIONS';
 
 export interface CapabilityMetadata {
   id: CapabilityId;
   name: string;
-  category: 'FREE_CORE' | 'CUSTOMER_MANAGEMENT' | 'CREW_MANAGEMENT' | 'STUDIO_MARKETPLACE' | 'DRIVE_CLIENT_REVIEW' | 'WHATSAPP';
+  category:
+    | 'FREE_CORE'
+    | 'CUSTOMER_MANAGEMENT'
+    | 'CREW_MANAGEMENT'
+    | 'STUDIO_MARKETPLACE'
+    | 'DRIVE_CLIENT_REVIEW'
+    | 'WHATSAPP'
+    | 'BUSINESS_REPORTS';
   price: number;
   description: string;
   valueProp: string;
@@ -250,6 +262,7 @@ export interface Studio extends SoftDeletable {
     erp: boolean;
     whatsapp: boolean;
     marketplace: boolean;
+    reports?: boolean;
   };
   createdAt: string;
   updatedAt: string;

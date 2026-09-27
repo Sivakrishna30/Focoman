@@ -207,10 +207,10 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "ஆணை மேலாண்மை அமைப்பு - OMS",
   },
   "module.oms.desc": {
-    en: "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.",
-    thanglish: "RAW photo selection மற்றும் editing முதல் final album delivery மற்றும் client payments வரை ஒவ்வொரு milestone-லும் confirmed orders-ஐ எளிதாக track செய்து manage செய்யுங்கள்.",
-    ta_easy: "மூலப் படங்கள் தேர்வு மற்றும் திருத்தப் பணிகள் முதல் இறுதி ஆல்பம் ஒப்படைப்பு மற்றும் வாடிக்கையாளர் கட்டணங்கள் வரை ஒவ்வொரு மைல்கல்லிலும் உறுதிசெய்யப்பட்ட ஆணைகளைக் கண்காணித்து நிர்வகியுங்கள்.",
-    ta_pure: "மூலப் படங்கள் தேர்வு மற்றும் திருத்தப் பணிகள் முதல் இறுதி ஆல்பம் ஒப்படைப்பு மற்றும் வாடிக்கையாளர் கட்டணங்கள் வரை ஒவ்வொரு மைல்கல்லிலும் உறுதிசெய்யப்பட்ட ஆணைகளைக் கண்காணித்து நிர்வகியுங்கள்.",
+    en: "Track and manage orders and their status across every milestone, from lead and inquiry through booking, event, production, and final delivery.",
+    thanglish: "Inquiry மற்றும் booking முதல் event, production, மற்றும் final delivery வரை ஒவ்வொரு milestone-லும் orders மற்றும் status-ஐ எளிதாக track செய்து manage செய்யுங்கள்.",
+    ta_easy: "விசாரணை மற்றும் முன்பதிவு முதல் நிகழ்வு, தயாரிப்பு மற்றும் இறுதி ஒப்படைப்பு வரை ஒவ்வொரு மைல்கல்லிலும் ஆணைகளையும் அவற்றின் நிலைகளையும் கண்காணித்து நிர்வகியுங்கள்.",
+    ta_pure: "விசாரணை மற்றும் முன்பதிவு முதல் நிகழ்வு, தயாரிப்பு மற்றும் இறுதி ஒப்படைப்பு வரை ஒவ்வொரு மைல்கல்லிலும் ஆணைகளையும் அவற்றின் நிலைகளையும் கண்காணித்து நிர்வகியுங்கள்.",
   },
 
   // Module 2: CRM
@@ -227,7 +227,7 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "வாடிக்கையாளர் தொடர்பு விவரங்களை ஒருமுகப்படுத்துங்கள், பல படப்பிடிப்பு முன்பதிவுகளின் வாழ்நாள் மதிப்பை (LTV) கண்காணியுங்கள், நிலுவைத் தொகையைக் கண்காணிக்கவும், ஏற்கனவே உள்ள வாடிக்கையாளர் விவரக்குறிப்பிலிருந்து நேரடியாக புதிய ஆணைகளைத் தொடங்கவும்.",
   },
 
-  // Module 3: ERP
+  // Module 3: Studio Operations - ERP
   "module.erp.title": {
     en: "Studio Operations - ERP",
     thanglish: "Studio Operations - ERP",
@@ -235,10 +235,10 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "நிலைய இயக்கங்கள் - ERP",
   },
   "module.erp.desc": {
-    en: "Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing.",
-    thanglish: "Shoot tasks assign செய்யுங்கள், crew calendar availability check செய்யுங்கள், studio gear track செய்து crew payroll மற்றும் travel claims manage செய்யுங்கள். Clean accounting உங்கள் studio net profit-ஐ துல்லியமாக track செய்ய உதவும்.",
-    ta_easy: "படப்பிடிப்பு பணிகளை ஒதுக்குங்கள், நாள்காட்டி இருப்பு நிலையைச் சரிபாருங்கள், நிலைய உபகரணங்களைக் கண்காணியுங்கள், குழுவினருக்கான ஊதியம் மற்றும் பயணக் கோரிக்கைகளை நிர்வகியுங்கள். கட்டமைக்கப்பட்ட கணக்கியல் உங்கள் நிலையத்தைத் தணிக்கைக்குத் தயாராக வைக்கிறது.",
-    ta_pure: "படப்பிடிப்பு பணிகளை ஒதுக்குங்கள், நாள்காட்டி இருப்பு நிலையைச் சரிபாருங்கள், நிலைய உபகரணங்களைக் கண்காணியுங்கள், குழுவினருக்கான ஊதியம் மற்றும் பயணக் கோரிக்கைகளை நிர்வகியுங்கள். கட்டமைக்கப்பட்ட கணக்கியல் உங்கள் நிலையத்தைத் தணிக்கைக்குத் தயாராக வைக்கிறது.",
+    en: "Manage your studio team, assign shoots and production tasks, check crew availability, and keep track of crew expenses and payments.",
+    thanglish: "உங்கள் studio team-ஐ manage செய்யவும், shoots மற்றும் production tasks assign செய்யவும், crew availability செக் செய்யவும், மற்றும் crew expenses & payments-ஐ ஒரே இடத்தில் கண்காணிக்கவும்.",
+    ta_easy: "உங்கள் நிலையக் குழுவை நிர்வகியுங்கள், படப்பிடிப்புகள் மற்றும் தயாரிப்புப் பணிகளை ஒதுக்குங்கள், குழுவினரின் இருப்பைச் சரிபார்க்கவும், மற்றும் குழுவினரின் செலவுகள் மற்றும் ஊதியங்களைக் கண்காணியுங்கள்.",
+    ta_pure: "உங்கள் நிலையக் குழுவை நிர்வகியுங்கள், படப்பிடிப்புகள் மற்றும் தயாரிப்புப் பணிகளை ஒதுக்குங்கள், குழுவினரின் இருப்பைச் சரிபார்க்கவும், மற்றும் குழுவினரின் செலவுகள் மற்றும் ஊதியங்களைக் கண்காணியுங்கள்.",
   },
 
   // Integrations / WhatsApp Card
@@ -255,44 +255,64 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_pure: "தானியங்கி வாட்ஸ்அப் அறிவிப்புகள் மற்றும் கைபேசி இயக்கங்கள்: வாடிக்கையாளர்களுக்கு முன்பதிவு உறுதிப்படுத்தல்கள் மற்றும் படத்தொகுப்பு இணைப்புகள், குழுவினருக்குப் படப்பிடிப்பு நினைவூட்டல்கள் மற்றும் அழைப்பு நேரங்கள், மற்றும் நிகழ்நேர மைல்கல் புதுப்பிப்புகளைப் பெறுங்கள்.",
   },
 
-  // Module 6: Automations
+  // Module 6: Business Reports & Analytics
+  "module.reports.title": {
+    en: "Business Reports & Analytics",
+    thanglish: "Business Reports & Analytics",
+    ta_easy: "வணிக அறிக்கைகள் மற்றும் பகுப்பாய்வு",
+    ta_pure: "வணிக அறிக்கைகள் மற்றும் பகுப்பாய்வு",
+  },
+  "module.reports.desc": {
+    en: "Make more money with clear monthly and yearly revenue charts, track pending client balances before album delivery, and discover your most profitable photoshoot packages.",
+    thanglish: "Monthly & yearly revenue charts மூலம் உங்கள் வருமானத்தை அறியலாம், album delivery-க்கு முன் pending balances-ஐத் தவறாமல் பெறலாம், மற்றும் அதிக லாபம் தரும் packages-ஐக் கண்டறியலாம்.",
+    ta_easy: "மாதாந்திர மற்றும் வருடாந்திர வருவாய் வரைபடங்களுடன் அதிக வருவாய் ஈட்டுங்கள், ஆல்பம் ஒப்படைப்பிற்கு முன் நிலுவைத் தொகைகளைக் கண்காணியுங்கள், மற்றும் அதிக லாபம் தரும் படப்பிடிப்பு தொகுப்புகளைக் கண்டறியுங்கள்.",
+    ta_pure: "மாதாந்திர மற்றும் வருடாந்திர வருவாய் வரைபடங்களுடன் அதிக வருவாய் ஈட்டுங்கள், படத்தொகுப்பு ஒப்படைப்பிற்கு முன் நிலுவைத் தொகைகளைக் கண்காணியுங்கள், மற்றும் அதிக லாபம் தரும் படப்பிடிப்பு தொகுப்புகளைக் கண்டறியுங்கள்.",
+  },
+  "home.reports_badge": {
+    en: "Business Growth",
+    thanglish: "Business Growth",
+    ta_easy: "வணிக வளர்ச்சி",
+    ta_pure: "வணிக வளர்ச்சி",
+  },
+
+  // Legacy Automations fallback
   "module.automations.title": {
-    en: "Automations & Smart Engine",
-    thanglish: "Automations & Smart Engine",
-    ta_easy: "தானியங்கு மற்றும் ஸ்மார்ட் அமைப்பு",
-    ta_pure: "தானியக்க மற்றும் நுண்ணறிவு அமைப்பு",
+    en: "Business Reports & Analytics",
+    thanglish: "Business Reports & Analytics",
+    ta_easy: "வணிக அறிக்கைகள் மற்றும் பகுப்பாய்வு",
+    ta_pure: "வணிக அறிக்கைகள் மற்றும் பகுப்பாய்வு",
   },
   "module.automations.desc": {
-    en: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
-    thanglish: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
-    ta_easy: "தொடர் கையேட்டுப் பணிகளைத் தானியங்கு மூலம் எளிதாக்குங்கள்: தொகுப்பு விநியோகங்களை அமைத்திடுங்கள், நேரம் மற்றும் பணிச்சுமை அடிப்படையில் குழுவினரைப் பரிந்துரைத்திடுங்கள், கட்டணக் கணக்கீடுகளைச் செய்திடுங்கள், விநியோகப் பணிகளைத் தானாக முன்னகர்த்துங்கள்.",
-    ta_pure: "தொடர் கையேட்டுப் பணிகளை நுண்ணறிவுத் தானியக்கம் மூலம் கையாளுங்கள்: ஒப்படைப்பு விவரங்களை அமைத்திடுங்கள், நேரம் மற்றும் பணிச்சுமை அடிப்படையில் குழுவினரைப் பரிந்துரைத்திடுங்கள், கட்டணப் பகுப்பாய்வுகளைச் செய்திடுங்கள் மற்றும் உற்பத்தி நிலைகளைத் தானாக முன்னகர்த்துங்கள்.",
+    en: "Make more money with clear monthly and yearly revenue charts, track pending client balances before album delivery, and discover your most profitable photoshoot packages.",
+    thanglish: "Monthly & yearly revenue charts மூலம் உங்கள் வருமானத்தை அறியலாம், album delivery-க்கு முன் pending balances-ஐத் தவறாமல் பெறலாம், மற்றும் அதிக லாபம் தரும் packages-ஐக் கண்டறியலாம்.",
+    ta_easy: "மாதாந்திர மற்றும் வருடாந்திர வருவாய் வரைபடங்களுடன் அதிக வருவாய் ஈட்டுங்கள், ஆல்பம் ஒப்படைப்பிற்கு முன் நிலுவைத் தொகைகளைக் கண்காணியுங்கள், மற்றும் அதிக லாபம் தரும் படப்பிடிப்பு தொகுப்புகளைக் கண்டறியுங்கள்.",
+    ta_pure: "மாதாந்திர மற்றும் வருடாந்திர வருவாய் வரைபடங்களுடன் அதிக வருவாய் ஈட்டுங்கள், படத்தொகுப்பு ஒப்படைப்பிற்கு முன் நிலுவைத் தொகைகளைக் கண்காணியுங்கள், மற்றும் அதிக லாபம் தரும் படப்பிடிப்பு தொகுப்புகளைக் கண்டறியுங்கள்.",
   },
   "home.automations_badge": {
-    en: "Workflow Automation",
-    thanglish: "Workflow Automation",
-    ta_easy: "பணிப்பாய்வு தானியங்கு",
-    ta_pure: "பணிப்பாய்வுத் தானியக்கம்",
+    en: "Business Growth",
+    thanglish: "Business Growth",
+    ta_easy: "வணிக வளர்ச்சி",
+    ta_pure: "வணிக வளர்ச்சி",
   },
 
   // Dashboard Common
   "dash.orders": {
-    en: "Orders (OMS)",
-    thanglish: "Orders (OMS)",
+    en: "Orders - OMS",
+    thanglish: "Orders - OMS",
     ta_easy: "ஆணைகள்",
-    ta_pure: "ஆணைகள் (OMS)",
+    ta_pure: "ஆணைகள் - OMS",
   },
   "dash.crm": {
     en: "CRM",
     thanglish: "CRM",
     ta_easy: "வாடிக்கையாளர் மேலாண்மை",
-    ta_pure: "வாடிக்கையாளர் உறவு (CRM)",
+    ta_pure: "வாடிக்கையாளர் உறவு - CRM",
   },
   "dash.erp": {
-    en: "Operations (ERP)",
-    thanglish: "Operations (ERP)",
+    en: "Operations - ERP",
+    thanglish: "Operations - ERP",
     ta_easy: "நிலைய இயக்கங்கள்",
-    ta_pure: "நிலைய இயக்கம் (ERP)",
+    ta_pure: "நிலைய இயக்கம் - ERP",
   },
   "dash.marketplace": {
     en: "Studio Marketplace",
@@ -305,6 +325,12 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     thanglish: "WhatsApp",
     ta_easy: "வாட்ஸ்அப் செய்தி",
     ta_pure: "வாட்ஸ்அப் செய்தி",
+  },
+  "dash.reports": {
+    en: "Business Reports",
+    thanglish: "Business Reports",
+    ta_easy: "வணிக அறிக்கைகள்",
+    ta_pure: "வணிக அறிக்கைகள்",
   },
   "dash.devportal": {
     en: "Developer Portal",

@@ -4,7 +4,164 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
-## CHG-025 — Hero Title Grammar Correction for Tamil
+## CHG-036 — Restoration of Exact Approved & Reviewed Landing Page Module Content
+
+- **Task:** CHG-036 — Restore Exact Reviewed Data and Descriptions in `ModuleAccordion.tsx`
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/ModuleAccordion.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. Restored the exact approved original copy, names, short descriptions, and feature card details across all 6 core modules (`Order Management System (OMS)`, `Customer Relationship Management (CRM)`, `Studio Operations & Crew Management (ERP)`, `WhatsApp Operations & Bot`, `Studio Marketplace & Booking Inquiries`, and `Business Reports & Financial Analytics`).
+  2. Preserved the robust native HTML `<details>` and `<summary>` accordion dropdown toggle mechanics.
+- **Reason:** Revert unreviewed placeholder content and keep the exact client-approved photography studio system copy.
+- **Verification:** Verified applet build and dev server restart with 0 errors.
+
+---
+
+## CHG-035 — Landing Page Native Accordion Dropdown Toggle Architecture
+
+- **Task:** CHG-035 — Convert Landing Page Module and FAQ Accordions to Native HTML `<details>` and `<summary>` Elements
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/ModuleAccordion.tsx`, `apps/web/src/components/public/FaqAccordion.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. Replaced custom React button state event listeners in `ModuleAccordion` and `FaqAccordion` with standard browser-native HTML `<details>` and `<summary>` elements.
+  2. Applied Tailwind CSS `open:` and `group-open:` styling rules for card borders, focus rings, shadows, and animated chevron rotation.
+  3. Kept all accordions collapsed by default without adding any additional buttons, options, or UI clutter.
+- **Reason:** Guarantee 100% reliable expansion and collapsing across all browser environments, touch devices, and iframe previews natively at the browser rendering layer.
+- **Verification:** Verified applet build and dev server restart with 0 errors.
+
+---
+
+## CHG-034 — Removal of Language Switcher & Theme Switcher Controls for Phase 1 Scope
+
+- **Task:** CHG-034 — Remove Language Switcher and Theme Switcher Buttons Across All Top Panels and Sidebars
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/Navbar.tsx`, `apps/web/src/components/DashboardTopNav.tsx`, `apps/web/src/components/DashboardSidebar.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. Removed `LanguageSwitcher` and `ThemeSwitcher` button controls and component imports from public top navigation (`Navbar.tsx`), workspace top navigation (`DashboardTopNav.tsx`), and workspace sidebar navigation and mobile header (`DashboardSidebar.tsx`).
+  2. Preserved core authentication and workspace navigation buttons cleanly without redundant controls.
+- **Reason:** Language and theme switching are out of scope for Phase 1.
+- **Verification:** Verified applet build and domain unit tests pass with 0 errors.
+
+---
+
+## CHG-033 — Landing Page Accordion Expand/Collapse Fix & Photography-Only Copy Unification
+
+- **Task:** CHG-033 — Fix Landing Page Dropdown / Accordion Toggling and Remove "Cinematography" Mentions
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/ModuleAccordion.tsx`, `apps/web/src/components/public/FaqAccordion.tsx`, `apps/web/src/app/page.tsx`, `apps/web/src/components/public/StructuredData.tsx`, `apps/web/src/app/features/page.tsx`, `packages/config/src/index.ts`, `CHANGELOG.md`
+- **Change:**
+  1. **Landing Page Dropdowns / Accordions Expansion Fix**:
+     - Fixed `ModuleAccordion` and `FaqAccordion` click handling with explicit pointer-events scoping to ensure clicks on headers reliably expand and collapse panels across all browsers and devices.
+     - Added initial open states (`[0]`) so the first module and FAQ are open by default, demonstrating expandable interactivity immediately.
+     - Added global "Expand all / Collapse all" controls to both module and FAQ sections.
+     - Linked navbar `#modules` navigation anchor correctly to the modules section.
+  2. **Copy Simplification (Photography Studios Only)**:
+     - Removed all references to "cinematography" and "cinematographers" across landing page copy, schema metadata, features breakdown, and config capabilities, consistently focusing on "Photography Studios", "photographers", "drone pilots", and "editors".
+- **Reason:** User report that dropdowns were not expanding on click on the landing page, and request to eliminate the word "cinematography" to keep focus strictly on photography studios.
+- **Verification:** Verified applet build and 20 domain unit tests pass with 0 errors.
+
+---
+
+## CHG-032 — Removal of Bracketed Content on Landing Page (Hyphen Style)
+
+- **Task:** CHG-032 — Eliminate Bracket Content Like `(CRM)` Across Landing Page in Favor of Clean Hyphenated Labels
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/PricingTwoPanels.tsx`, `apps/web/src/components/public/CheckoutBuilder.tsx`, `apps/web/src/components/public/FaqAccordion.tsx`, `packages/config/src/index.ts`, `apps/web/src/app/features/page.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Removed bracketed acronyms and labels (e.g. `(CRM)`, `(OMS)`, `(Drive Preview & Review)`, `(Alerts)`, `(LTV)`) across the landing page, pricing section, FAQ, and checkout builder.
+  - Converted them to clean hyphen-delimited labels: `Customer Relations - CRM`, `Studio Operations - ERP`, `Order Management System - OMS`, `OMS Advanced - Drive Preview & Review`, `Client Lifetime Value - LTV`.
+- **Reason:** User request to remove all bracketed abbreviations and standardize on hyphenated naming across the landing page and public catalog.
+- **Verification:** Verified applet build and unit tests pass with 0 errors.
+
+---
+
+## CHG-031 — Renaming Studio Operations & Crew to Studio Operations - ERP
+
+- **Task:** CHG-031 — Align Module 3 Naming to Studio Operations - ERP
+- **Date:** 2026-09-26
+- **Area:** `packages/types/src/index.ts`, `packages/config/src/index.ts`, `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/components/public/ModuleAccordion.tsx`, `apps/web/src/components/public/PricingTwoPanels.tsx`, `apps/web/src/components/public/CheckoutBuilder.tsx`, `apps/web/src/app/pricing/page.tsx`, `apps/web/src/app/features/page.tsx`, `apps/web/src/context/LanguageContext.tsx`, `CHANGELOG.md`
+- **Change:** Standardized Module 03 title from `Studio Operations & Crew` to `Studio Operations - ERP` across all public and internal configuration interfaces.
+- **Reason:** User request to match the concise hyphenated naming convention.
+- **Verification:** Verified applet build and unit tests pass with 0 errors.
+
+---
+
+- **Task:** CHG-030 — Streamline Pricing into Single Units, Introduce Business Reports & Analytics Studio Dashboard
+- **Date:** 2026-09-26
+- **Area:** `packages/types/src/index.ts`, `packages/config/src/index.ts`, `apps/web/src/components/public/PricingTwoPanels.tsx`, `apps/web/src/components/public/CheckoutBuilder.tsx`, `apps/web/src/components/DashboardSidebar.tsx`, `apps/web/src/app/[studioSlug]/dashboard/reports/page.tsx`, `apps/web/src/features/dashboard/BusinessReportsView.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. **Clean Single-Unit Module Pricing**: Eliminated confusing basic/advanced tier fragmentation inside add-ons:
+     - Basic Order Management (OMS): **₹0** (Free core forever)
+     - Customer Relations (CRM): **₹299/mo** (Single unit: directory, history, LTV, and anniversary reminders)
+     - Studio Operations & Crew (ERP): **₹299/mo** (Single unit: team directory, shoot assignments, conflict alerts, payouts)
+     - Business Reports & Analytics: **₹299/mo** (Single unit: monthly/yearly revenue, pending balances, category profit)
+     - OMS Advanced: **₹299/mo** (In-app Google Drive preview, photo selection/rejection, and review comments)
+     - WhatsApp Notifications (Alerts): **₹499/mo** (Automated shoot reminders, booking confirmations, delivery links)
+     - WhatsApp Operations & Bot: **₹999/mo** (Studio owner interactive bot + all automated notifications)
+     - Studio Marketplace: **₹999/mo** (Public studio profile, packages showcase, city discovery, direct booking inquiries)
+  2. **Interactive Studio Business Reports Feature**: Added functional `/[studioSlug]/dashboard/reports` page allowing studio owners to view gross booked revenue, advance cash collected, outstanding balance receivables pipeline before album delivery, monthly revenue bars, category profitability, and print report actions.
+  3. **Sidebar Navigation & Checkout Updates**: Integrated `reports` nav item into the studio dashboard sidebar and aligned CheckoutBuilder and Pricing panels with the exact single-unit pricing model.
+- **Reason:** User feedback to eliminate confusing basic/advanced splits, unify module pricing into clear single units, and provide actionable business reports to help studio owners earn more.
+- **Verification:** Verified compilation and domain tests with 0 errors.
+
+---
+
+## CHG-029 — Studio Operations Plain Language, Business Reports Module & FAQ Streamlining
+
+- **Task:** CHG-029 — Simplify Operations Language, Replace Automation with Business Reports, and Crisp FAQ Overhaul
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/features/home/HomePage.tsx`, `apps/web/src/app/features/page.tsx`, `apps/web/src/components/public/ModuleAccordion.tsx`, `apps/web/src/components/public/FaqAccordion.tsx`, `apps/web/src/context/LanguageContext.tsx`, `CHANGELOG.md`
+- **Change:**
+  1. **Simplified Operations Language**: Replaced corporate jargon (e.g. "rosters", "resource allocation") with direct studio terms ("photographers & editors", "team members", "assign shoots", "avoid double-booking", "expenses & crew payouts").
+  2. **Dedicated Business Reports & Analytics Module (Module 06)**: Replaced the redundant "Automations" module on the Homepage and Features page with a dedicated business growth module highlighting monthly/yearly revenue charts, pending client balance tracking, most profitable photoshoot packages, and on-time delivery turnaround time.
+  3. **Crisp 6-Question FAQ Overhaul**: Replaced the bloated 14-item FAQ with 6 punchy, edge-case-driven questions covering: free-forever scope, Google Drive photo selection/rejection UX, photographer double-booking conflict alerts, WhatsApp owner bot access, marketplace data privacy, and business reports value.
+- **Reason:** User feedback requesting plain studio language, replacing redundant automations with a standalone business reports module, and condensing the FAQ to a crisp, high-impact list covering essential edge cases.
+- **Verification:** Verified compilation and domain tests with 0 errors.
+
+---
+
+- **Task:** CHG-028 — Clarify RAW Photo Storage & In-App Selection Experience in FAQ
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/FaqAccordion.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Revised the FAQ answer for *"Does Focoman store my raw photos and videos?"*.
+  - Replaced the confusing *"submit selected photo numbers"* wording with the exact operational UX: *"mark photos as selected or rejected, and leave review comments directly inside their private tracking link"*.
+- **Reason:** User feedback pointing out that "selected photo numbers" is confusing and misaligned with the in-app preview capability where clients directly review, select/reject photos, and submit feedback.
+- **Verification:** Verified compilation and domain tests with 0 errors.
+
+---
+
+## CHG-027 — FAQ Accuracy Correction for Payment Tracking
+
+- **Task:** CHG-027 — Correct Basic Order Management FAQ Answer to Align with Payment Architecture
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/FaqAccordion.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Corrected the FAQ answer for *"What is included in Basic Order Management, and is it really free forever?"*.
+  - Replaced the inaccurate *"manage payment milestones"* phrase with accurate operational terminology: *"record advance payments and balance due"*.
+- **Reason:** User feedback noting that Focoman does not use stage-based payment milestones, but tracks total order amount, advances received, and outstanding balance due.
+- **Verification:** Verified compilation and domain tests with 0 errors.
+
+---
+
+## CHG-026 — Landing Page Add-On Features Display Streamlining
+
+- **Task:** CHG-026 — Remove Clumsy Per-Item Pricing Parentheticals from Landing Page Add-On Capabilities
+- **Date:** 2026-09-26
+- **Area:** `apps/web/src/components/public/PricingTwoPanels.tsx`, `CHANGELOG.md`
+- **Change:**
+  - Removed clumsy per-item pricing parentheticals (e.g. `(Basic ₹199/mo · Advanced ₹299/mo)`, `(₹499/mo)`, etc.) from the Professional / Flexible Model panel.
+  - Replaced the section with a clean, minimal feature list:
+    1. Advanced customer management
+    2. Studio operations & crew management
+    3. Marketplace listing & discovery
+    4. OMS advanced drive preview & photo selection
+    5. WhatsApp alerts and operational bot
+  - Maintained clear routing to `/pricing/checkout` for visitors wishing to inspect granular add-on prices, calculations, and custom packages.
+- **Reason:** Direct user request to eliminate clumsy inline pricing text on the landing page in favor of a clean, minimal feature list.
+- **Verification:** Verified compilation and domain tests with 0 errors.
+
+---
 
 - **Task:** CHG-025 — Fix Duplicated/Awkward Words in Hero Statement for Tamil & Thanglish
 - **Date:** 2026-09-16

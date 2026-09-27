@@ -97,7 +97,7 @@ export function HomePage() {
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">{t("module.erp.title", "Studio Operations - ERP")}</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                {t("module.erp.desc", "Assign shoot tasks, check crew calendar availability, track studio gear, and manage crew payroll and travel claims. Structured accounting and expense summaries keep your studio audit-ready, tracking true net profit and simplifying tax filing.")}
+                {t("module.erp.desc", "Add photographers and editors, assign shoots to team members, avoid double-booking, and log expenses and crew payouts in one place.")}
               </p>
             </div>
 
@@ -125,16 +125,16 @@ export function HomePage() {
               </p>
             </div>
 
-            {/* Automations Panel */}
+            {/* Business Reports & Analytics Panel */}
             <div className="rounded-2xl border border-border-default bg-white p-6 hover:shadow-md transition">
               <span className="inline-block rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                {t("home.automations_badge", "Workflow Automation")}
+                {t("home.reports_badge", "Business Growth")}
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">
-                {t("module.automations.title", "Automations & Smart Engine")}
+                {t("module.reports.title", "Business Reports & Analytics")}
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                {t("module.automations.desc", "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.")}
+                {t("module.reports.desc", "Make more money with clear monthly and yearly revenue charts, track pending client balances before album delivery, and discover your most profitable photoshoot packages.")}
               </p>
             </div>
           </div>

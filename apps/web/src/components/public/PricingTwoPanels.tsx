@@ -99,7 +99,7 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
                 Build your own plan using our flexible model
               </h2>
               <p className="mt-1 text-xs text-text-secondary leading-relaxed">
-                Selectively add CRM, Crew Management, Studio Marketplace, OMS Advanced (Drive In-App Preview &amp; Photo Selection), or WhatsApp Operations to your workspace.
+                Select from the below modules based on your requirements.
               </p>
             </div>
 
@@ -108,7 +108,7 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
               <div>
                 <span className="text-xs font-semibold text-text-tertiary block">Modular Pricing Starting From</span>
                 <div className="mt-0.5 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">₹199</span>
+                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">₹299</span>
                   <span className="text-xs text-text-secondary font-medium">/month</span>
                 </div>
               </div>
@@ -117,57 +117,61 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
             {/* Feature Overview (Display Only) */}
             <div className="space-y-3 pt-2">
               <span className="text-xs font-bold text-text-primary uppercase tracking-wider block">
-                Available Add-On Capabilities:
+                Available Add-On Modules:
               </span>
               <div className="space-y-2.5 text-xs text-text-secondary">
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
                     ✓
                   </span>
-                  <div>
-                    <span className="text-text-primary font-bold">Customer Management</span>
-                    <span className="text-text-tertiary ml-1.5">(Basic ₹199/mo · Advanced ₹299/mo)</span>
-                  </div>
+                  <span className="text-text-primary font-medium leading-tight">
+                    Customer Relations - CRM
+                  </span>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
                     ✓
                   </span>
-                  <div>
-                    <span className="text-text-primary font-bold">Crew Management &amp; Conflict Detection</span>
-                    <span className="text-text-tertiary ml-1.5">(Basic ₹199/mo · Advanced ₹299/mo)</span>
-                  </div>
+                  <span className="text-text-primary font-medium leading-tight">
+                    Studio Operations - ERP
+                  </span>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
                     ✓
                   </span>
-                  <div>
-                    <span className="text-text-primary font-bold">Studio Discovery Marketplace</span>
-                    <span className="text-text-tertiary ml-1.5">(₹499/mo)</span>
-                  </div>
+                  <span className="text-text-primary font-medium leading-tight">
+                    Business Reports &amp; Analytics
+                  </span>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
                     ✓
                   </span>
-                  <div>
-                    <span className="text-text-primary font-bold">OMS Advanced: Drive Preview &amp; Photo Selection</span>
-                    <span className="text-text-tertiary ml-1.5">(₹299/mo)</span>
-                  </div>
+                  <span className="text-text-primary font-medium leading-tight">
+                    OMS Advanced - Drive Preview &amp; Review
+                  </span>
                 </div>
 
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
                     ✓
                   </span>
-                  <div>
-                    <span className="text-text-primary font-bold">WhatsApp Lifecycle Alerts &amp; Owner Bot</span>
-                    <span className="text-text-tertiary ml-1.5">(Notifications ₹199/mo · Operations ₹499/mo)</span>
-                  </div>
+                  <span className="text-text-primary font-medium leading-tight">
+                    WhatsApp Alerts &amp; Operations Bot
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5">
+                    ✓
+                  </span>
+                  <span className="text-text-primary font-medium leading-tight">
+                    Studio Marketplace Showcase
+                  </span>
                 </div>
               </div>
             </div>
@@ -176,7 +180,7 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
           {/* CTA Button to Checkout Page */}
           <div className="mt-8 pt-6 border-t border-border-divider">
             <Link
-              href="/pricing/checkout"
+              href="/checkout"
               className="w-full rounded-xl bg-brand-orange-primary px-6 py-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-orange-600 flex items-center justify-center gap-2"
             >
               <span>Check Details &amp; Build Plan</span>

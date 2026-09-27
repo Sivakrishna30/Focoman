@@ -86,7 +86,6 @@ export function Navbar() {
     { label: t("nav.how_it_works", "How It Works"), href: "/#how-it-works" },
     { label: t("nav.marketplace", "Studio Marketplace"), href: "/studios" },
     { label: t("nav.pricing", "Pricing"), href: "/#pricing" },
-    { label: t("nav.integrations", "Integrations"), href: "/#integrations" },
     { label: t("nav.faq", "FAQ"), href: "/#faq" },
   ];
 
@@ -105,7 +104,7 @@ export function Navbar() {
           {/* Mobile Nav Toggle - Left Corner */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden rounded-lg p-1.5 text-text-secondary hover:bg-gray-100 focus:outline-none"
+            className="lg:hidden rounded-lg p-1.5 text-text-secondary hover:bg-gray-100 focus:outline-none"
             aria-label="Toggle Menu"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,7 +122,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           <nav className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium sm:text-sm">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -144,10 +143,8 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Side Controls (Language, Theme, Sign In) - Unified for all screens */}
+        {/* Right Side Controls (Sign In) - Unified for all screens */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          <LanguageSwitcher />
-          <ThemeSwitcher />
           {user ? (
             <UserDropdownMenu user={user} />
           ) : (
@@ -163,7 +160,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border-default bg-white px-4 py-4 shadow-lg absolute w-full left-0">
+        <div className="lg:hidden border-t border-border-default bg-white px-4 py-4 shadow-lg absolute w-full left-0">
           <nav className="flex flex-col gap-2">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;

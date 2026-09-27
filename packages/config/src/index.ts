@@ -69,65 +69,99 @@ export const FREE_CORE_CAPABILITY: CapabilityMetadata = {
 
 export const PURCHASABLE_CAPABILITIES: CapabilityMetadata[] = [
   {
-    id: 'CUSTOMER_BASIC',
-    name: 'Customer Management Basic',
-    category: 'CUSTOMER_MANAGEMENT',
-    price: 199,
-    description: 'Central customer directory with profiles and order history.',
-    valueProp: 'Organize client relationships and track lifetime value.',
-    features: [
-      'Customer directory and searchable profiles',
-      'Customer order history',
-      'Payment and receivables history',
-      'Booking and inquiry history',
-    ],
-    studioScoped: true,
-  },
-  {
-    id: 'CUSTOMER_ADVANCED',
-    name: 'Customer Management Advanced',
+    id: 'CUSTOMER_CRM',
+    name: 'Customer Relations - CRM',
     category: 'CUSTOMER_MANAGEMENT',
     price: 299,
-    description: 'Smart customer re-engagement and milestone tracking.',
-    valueProp: 'Automate anniversary reminders and repeat booking outreach.',
-    includedCapabilities: ['CUSTOMER_BASIC'],
+    description: 'Central customer directory, order history, lifetime spend, and anniversary reminders.',
+    valueProp: 'Manage client profiles, past shoot history, and repeat booking anniversary reminders.',
     features: [
-      'Includes all Customer Management Basic capabilities',
-      'Anniversary reminders & notifications',
-      'Customer milestone reminders',
-      'Re-engagement reminders based on previous events',
+      'Customer directory with searchable profiles, phone, email, and addresses',
+      'Complete customer photoshoot and order history',
+      'Cumulative customer spend, advance receipts, and balance due history',
+      'Automated wedding anniversary and milestone reminder notifications',
     ],
     studioScoped: true,
   },
   {
-    id: 'CREW_BASIC',
-    name: 'Crew Management Basic',
-    category: 'CREW_MANAGEMENT',
-    price: 199,
-    description: 'Roster management, skills directory, and manual assignment.',
-    valueProp: 'Streamline team coordination and task allocation.',
-    features: [
-      'Crew profiles, roles, and skills database',
-      'Manual crew assignment to events and tasks',
-      'Basic crew availability calendar',
-      'Smart Resource Suggestions (Studio owner remains in control)',
-    ],
-    studioScoped: true,
-  },
-  {
-    id: 'CREW_ADVANCED',
-    name: 'Crew Management Advanced',
+    id: 'STUDIO_ERP',
+    name: 'Studio Operations - ERP',
     category: 'CREW_MANAGEMENT',
     price: 299,
-    description: 'Conflict detection, workload tracking, and automated suggestions.',
-    valueProp: 'Avoid double-booking and balance crew workload seamlessly.',
-    includedCapabilities: ['CREW_BASIC'],
+    description: 'Add photographers and editors, assign shoots, check crew availability, and log expenses and payouts.',
+    valueProp: 'Streamline team assignments, calendar availability, and expense payouts based on crew availability.',
     features: [
-      'Includes all Crew Management Basic capabilities',
-      'Crew workload tracking and allocation balance',
-      'Advanced availability visibility',
-      'Double-booking conflict detection',
-      'Workload-aware resource suggestions (Suggests → Owner reviews → Owner confirms)',
+      'Team directory for photographers, videographers, drone pilots, and editors',
+      'Shoot and editing task assignment with availability calendar',
+      'Check crew availability when planning upcoming studio work',
+      'Shoot day-rates, travel expenses, and crew payment payout logs',
+    ],
+    studioScoped: true,
+  },
+  {
+    id: 'BUSINESS_REPORTS',
+    name: 'Business Reports & Analytics',
+    category: 'BUSINESS_REPORTS',
+    price: 299,
+    description: 'Monthly & yearly revenue charts, pending balance dues tracking, and package profitability insights.',
+    valueProp: 'Make more money with clear monthly revenue curves and track pending balances before album release.',
+    features: [
+      'Monthly and yearly revenue charts and year-over-year growth curves',
+      'Pending balance dues pipeline to ensure full payment before album delivery',
+      'Most profitable photoshoot package categories breakdown',
+      'Shoot-to-delivery turnaround time (TAT) and on-time performance metrics',
+    ],
+    studioScoped: true,
+  },
+  {
+    id: 'DRIVE_CLIENT_REVIEW',
+    name: 'OMS Advanced - Drive Preview & Review',
+    category: 'DRIVE_CLIENT_REVIEW',
+    price: 299,
+    description: 'In-app Google Drive photo previews, client photo selection/rejection, and review comments.',
+    valueProp: 'Connect Google Drive so clients can review and select photos inside their private link.',
+    features: [
+      'Google Drive folder integration linked directly to orders',
+      'In-app gallery preview for clients without downloading large RAW files',
+      'Clients mark photos as selected or rejected interactively',
+      'Direct review comments on photos for the editing team',
+      'Review status tracking in production workflow',
+    ],
+    studioScoped: true,
+  },
+  {
+    id: 'WHATSAPP_NOTIFICATIONS',
+    name: 'WhatsApp Notifications - Alerts',
+    category: 'WHATSAPP',
+    price: 499,
+    description: 'Automated WhatsApp alerts for booking confirmations, shoot reminders, and gallery delivery links.',
+    valueProp: 'Keep clients and crew informed automatically on WhatsApp at key milestones.',
+    features: [
+      'Booking and order confirmation alerts sent to clients',
+      'Crew shoot reminders, call-times, and venue directions',
+      'Selection gallery ready notifications with direct tracking link',
+      'Final album delivery and dispatch notifications',
+    ],
+    studioScoped: true,
+  },
+  {
+    id: 'WHATSAPP_OPERATIONS',
+    name: 'WhatsApp Operations & Bot',
+    category: 'WHATSAPP',
+    price: 999,
+    description: 'Interactive WhatsApp Bot for Studio Owners plus all automated notifications.',
+    valueProp: 'Manage and query your studio operations directly via WhatsApp chat.',
+    includedCapabilities: ['WHATSAPP_NOTIFICATIONS'],
+    features: [
+      'Includes all automated WhatsApp Notifications & Alerts',
+      'Interactive WhatsApp Operations Bot for the verified studio owner',
+      'Query active orders, upcoming shoot schedules, and pending tasks via chat',
+      'Update operational order progress directly through WhatsApp',
+      '499 bot queries included per month with no overage charges',
+    ],
+    limitations: [
+      'Studio Owner access only (restricted from customers and general crew)',
+      'Operational usage safeguard: 499 bot messages/interactions per studio per month',
     ],
     studioScoped: true,
   },
@@ -135,70 +169,15 @@ export const PURCHASABLE_CAPABILITIES: CapabilityMetadata[] = [
     id: 'MARKETPLACE',
     name: 'Studio Marketplace',
     category: 'STUDIO_MARKETPLACE',
-    price: 499,
-    description: 'Public studio profile, packages directory, and incoming booking inquiries.',
-    valueProp: 'Get discovered and receive direct client booking requests.',
+    price: 999,
+    description: 'Public studio showcase profile, service packages, and direct booking inquiries.',
+    valueProp: 'Get discovered by new clients in your city and receive direct booking inquiries.',
     features: [
-      'Public studio profile page with services, pricing, and availability',
-      'Studio-configured packages and negotiable pricing settings',
-      'Booking inquiries and inquiry history management',
-      'Optional negotiation flow and agreed amount confirmation',
-      'Direct confirmed order creation from bookings',
-      'Confirmed events automatically sync to studio availability',
-    ],
-    studioScoped: true,
-  },
-  {
-    id: 'DRIVE_CLIENT_REVIEW',
-    name: 'OMS Advanced (Google Drive Preview & Photo Selection)',
-    category: 'DRIVE_CLIENT_REVIEW',
-    price: 299,
-    description: 'In-app Google Drive photo previews, client commenting, and review status.',
-    valueProp: 'In-app Google Drive preview, photo selection, and client comments without leaving your studio workflow.',
-    features: [
-      'Google Drive integration with order-linked Drive references',
-      'Photo and file references linked to orders',
-      'In-app client review interface',
-      'Client photo selection & comments',
-      'Review status tracking in production workflow',
-    ],
-    studioScoped: true,
-  },
-  {
-    id: 'WHATSAPP_NOTIFICATIONS',
-    name: 'WhatsApp Notifications',
-    category: 'WHATSAPP',
-    price: 199,
-    description: 'Automated lifecycle event notifications for clients and crew.',
-    valueProp: 'Keep clients and crew informed automatically at key milestones.',
-    features: [
-      'Fixed operational notification set across order lifecycle',
-      'Booking / order confirmation alerts',
-      'Crew dispatch and event shoot reminders',
-      'Selection gallery ready notifications',
-      'Important production milestone updates',
-      'Delivery and dispatch notifications',
-    ],
-    studioScoped: true,
-  },
-  {
-    id: 'WHATSAPP_OPERATIONS',
-    name: 'WhatsApp Operations',
-    category: 'WHATSAPP',
-    price: 499,
-    description: 'Interactive WhatsApp Operations Bot for Studio Owners.',
-    valueProp: 'Manage and query your studio operations directly via WhatsApp.',
-    includedCapabilities: ['WHATSAPP_NOTIFICATIONS'],
-    features: [
-      'Includes all WhatsApp Notifications capabilities',
-      'WhatsApp Operations Bot for Studio Owner',
-      'Check orders, upcoming events, and pending tasks via WhatsApp',
-      'Supported operational status updates via chat',
-      'Crew reminders and event call-time lookup',
-    ],
-    limitations: [
-      'Studio Owner access only (restricted from customers and general crew)',
-      'Operational usage safeguard: 499 bot messages/interactions per studio per month',
+      'Public studio showcase page on a unique web URL with portfolio photos',
+      'Publish customizable service packages, pricing, and deliverables',
+      'Receive direct booking inquiries from prospective clients in your city',
+      'Optional price negotiation and custom quote confirmation flow',
+      'Strict operational privacy: internal CRM, notes, and finances remain 100% private',
     ],
     studioScoped: true,
   },
@@ -210,41 +189,64 @@ export const WHATSAPP_OPERATIONS_BOT_MONTHLY_LIMIT = 499;
 
 /**
  * Calculates the combined monthly price for a set of selected capabilities.
- * Handles dependencies (e.g., Advanced includes Basic) so customers are never double-charged.
+ * Handles dependencies (e.g., WhatsApp Bot includes Notifications) so customers are never double-charged.
  */
 export function calculateMonthlyTotal(selectedCapabilities: CapabilityId[]): number {
   const selectedSet = new Set(selectedCapabilities);
   let total = 0;
 
-  // Customer Management Category
-  if (selectedSet.has('CUSTOMER_ADVANCED')) {
-    total += 299;
-  } else if (selectedSet.has('CUSTOMER_BASIC') || selectedSet.has('CUSTOMER_CRM')) {
-    total += 199;
-  }
-
-  // Crew Management Category
-  if (selectedSet.has('CREW_ADVANCED') || selectedSet.has('ERP_SMART_RESOURCE_AUTOMATION')) {
-    total += 299;
-  } else if (selectedSet.has('CREW_BASIC') || selectedSet.has('TEAM_MANAGEMENT') || selectedSet.has('ERP_BASIC')) {
-    total += 199;
-  }
-
-  // Studio Marketplace
-  if (selectedSet.has('MARKETPLACE') || selectedSet.has('MARKETPLACE_PUBLIC')) {
-    total += 499;
-  }
-
-  // Google Drive + Client Review
-  if (selectedSet.has('DRIVE_CLIENT_REVIEW') || selectedSet.has('GOOGLE_DRIVE')) {
+  // Customer Relations (CRM) - ₹299
+  if (
+    selectedSet.has('CUSTOMER_CRM') ||
+    selectedSet.has('CUSTOMER_ADVANCED') ||
+    selectedSet.has('CUSTOMER_BASIC')
+  ) {
     total += 299;
   }
 
-  // WhatsApp Category
+  // Studio Operations - ERP - ₹299
+  if (
+    selectedSet.has('STUDIO_ERP') ||
+    selectedSet.has('CREW_ADVANCED') ||
+    selectedSet.has('CREW_BASIC') ||
+    selectedSet.has('TEAM_MANAGEMENT') ||
+    selectedSet.has('ERP_BASIC')
+  ) {
+    total += 299;
+  }
+
+  // Business Reports & Analytics - ₹299
+  if (
+    selectedSet.has('BUSINESS_REPORTS') ||
+    selectedSet.has('ANALYTICS_BASIC') ||
+    selectedSet.has('ANALYTICS_ADVANCED')
+  ) {
+    total += 299;
+  }
+
+  // OMS Advanced (Google Drive Preview & Review) - ₹299
+  if (
+    selectedSet.has('DRIVE_CLIENT_REVIEW') ||
+    selectedSet.has('OMS_ADVANCED') ||
+    selectedSet.has('GOOGLE_DRIVE')
+  ) {
+    total += 299;
+  }
+
+  // WhatsApp Category: Bot (₹999) includes Alerts (₹499)
   if (selectedSet.has('WHATSAPP_OPERATIONS') || selectedSet.has('WHATSAPP_BOT')) {
+    total += 999;
+  } else if (selectedSet.has('WHATSAPP_NOTIFICATIONS') || selectedSet.has('WHATSAPP_ALERTS')) {
     total += 499;
-  } else if (selectedSet.has('WHATSAPP_NOTIFICATIONS')) {
-    total += 199;
+  }
+
+  // Studio Marketplace - ₹999
+  if (
+    selectedSet.has('MARKETPLACE') ||
+    selectedSet.has('STUDIO_MARKETPLACE') ||
+    selectedSet.has('MARKETPLACE_PUBLIC')
+  ) {
+    total += 999;
   }
 
   return total;
@@ -264,17 +266,16 @@ export function getEffectiveCapabilities(selectedCapabilities: CapabilityId[] = 
   for (const capId of selectedCapabilities) {
     effective.add(capId);
 
-    if (capId === 'CUSTOMER_ADVANCED') {
-      effective.add('CUSTOMER_BASIC');
+    if (capId === 'CUSTOMER_CRM' || capId === 'CUSTOMER_ADVANCED' || capId === 'CUSTOMER_BASIC') {
       effective.add('CUSTOMER_CRM');
-    }
-    if (capId === 'CUSTOMER_BASIC' || capId === 'CUSTOMER_CRM') {
       effective.add('CUSTOMER_BASIC');
-      effective.add('CUSTOMER_CRM');
+      effective.add('CUSTOMER_ADVANCED');
     }
 
-    if (capId === 'CREW_ADVANCED') {
+    if (capId === 'STUDIO_ERP' || capId === 'CREW_ADVANCED' || capId === 'CREW_BASIC') {
+      effective.add('STUDIO_ERP');
       effective.add('CREW_BASIC');
+      effective.add('CREW_ADVANCED');
       effective.add('TEAM_MANAGEMENT');
       effective.add('MANUAL_ASSIGNMENT');
       effective.add('ERP_BASIC');
@@ -284,24 +285,25 @@ export function getEffectiveCapabilities(selectedCapabilities: CapabilityId[] = 
       effective.add('ERP_RESOURCE_SUGGESTION');
       effective.add('ERP_SMART_RESOURCE_AUTOMATION');
     }
-    if (capId === 'CREW_BASIC') {
-      effective.add('TEAM_MANAGEMENT');
-      effective.add('MANUAL_ASSIGNMENT');
-      effective.add('ERP_BASIC');
-      effective.add('ERP_AVAILABILITY');
-      effective.add('ERP_RESOURCE_SUGGESTION');
+
+    if (capId === 'BUSINESS_REPORTS' || capId === 'ANALYTICS_BASIC' || capId === 'ANALYTICS_ADVANCED') {
+      effective.add('BUSINESS_REPORTS');
+      effective.add('ANALYTICS_BASIC');
+      effective.add('ANALYTICS_ADVANCED');
     }
 
-    if (capId === 'MARKETPLACE' || capId === 'MARKETPLACE_PUBLIC') {
+    if (capId === 'MARKETPLACE' || capId === 'STUDIO_MARKETPLACE' || capId === 'MARKETPLACE_PUBLIC') {
       effective.add('MARKETPLACE');
+      effective.add('STUDIO_MARKETPLACE');
       effective.add('MARKETPLACE_CONFIGURATION');
       effective.add('MARKETPLACE_PUBLIC');
       effective.add('BOOKING_REQUESTS');
       effective.add('NEGOTIATION');
     }
 
-    if (capId === 'DRIVE_CLIENT_REVIEW' || capId === 'GOOGLE_DRIVE') {
+    if (capId === 'DRIVE_CLIENT_REVIEW' || capId === 'OMS_ADVANCED' || capId === 'GOOGLE_DRIVE') {
       effective.add('DRIVE_CLIENT_REVIEW');
+      effective.add('OMS_ADVANCED');
       effective.add('GOOGLE_DRIVE');
     }
 
@@ -309,9 +311,11 @@ export function getEffectiveCapabilities(selectedCapabilities: CapabilityId[] = 
       effective.add('WHATSAPP_OPERATIONS');
       effective.add('WHATSAPP_NOTIFICATIONS');
       effective.add('WHATSAPP_BOT');
+      effective.add('WHATSAPP_ALERTS');
     }
-    if (capId === 'WHATSAPP_NOTIFICATIONS') {
+    if (capId === 'WHATSAPP_NOTIFICATIONS' || capId === 'WHATSAPP_ALERTS') {
       effective.add('WHATSAPP_NOTIFICATIONS');
+      effective.add('WHATSAPP_ALERTS');
     }
   }
 

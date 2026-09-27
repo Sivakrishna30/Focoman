@@ -15,25 +15,25 @@ const MODULES: ModuleData[] = [
   {
     number: "01",
     name: "Order Management System - OMS",
-    shortDesc: "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and client payments.",
+    shortDesc: "Track and manage orders and their status across every milestone, from lead and inquiry through booking, event, production, and final delivery.",
     tag: "Core Engine",
     tagColor: "bg-brand-blue-background text-brand-blue-primary border-brand-blue-light/50",
     cards: [
       {
         title: "Confirmed Order",
-        desc: "Create and manage confirmed orders and the complete post-event workflow from RAW backup and photo selection through editing, album design, client review, printing, final delivery, and payment completion.",
+        desc: "Create and manage confirmed orders with customer details, event information, package details, pricing, payments, and the complete post-event workflow through final delivery.",
       },
       {
-        title: "Studio Marketplace Complete Workflow",
-        desc: "Manage Studio Marketplace bookings through a pre-event workflow covering leads and inquiries, advance payment, booking confirmation, and event planning, in addition to the post-event workflow through to final delivery and payment completion.",
+        title: "Studio Marketplace Orders",
+        desc: "Manage leads and bookings from Studio Marketplace packages, including customer details, selected packages, advance payment, booking confirmation, event planning, and the post-event workflow.",
+      },
+      {
+        title: "Order Status Tracking",
+        desc: "View pending, active, and completed orders in one place and check the current status of each order throughout the booking and production workflow.",
       },
       {
         title: "Client Passkey Tracking",
-        desc: "Give clients a secure, private link to track their event progress and access their gallery, photos, and delivery links without creating an account.",
-      },
-      {
-        title: "Order Lifecycle & Recovery",
-        desc: "Manage active, cancelled, and completed orders separately, with a 14-day recovery window for deleted orders.",
+        desc: "Give clients a password-protected private link to check their event progress and access their gallery, photos, and delivery links without creating an account.",
       },
     ],
   },
@@ -65,25 +65,25 @@ const MODULES: ModuleData[] = [
   {
     number: "03",
     name: "Studio Operations - ERP",
-    shortDesc: "Assign shoot tasks, check crew calendar availability, track equipment, and manage crew payroll, travel claims, and audit-ready accounting summaries.",
-    tag: "Operations & People",
+    shortDesc: "Manage your studio team, assign shoots and production tasks, check crew availability, and keep track of crew expenses and payments.",
+    tag: "Operations & Team",
     tagColor: "bg-brand-purple-background text-brand-purple-primary border-brand-purple-light/50",
     cards: [
       {
-        title: "Crew Profiles & Roles",
-        desc: "Create crew member profiles and assign their roles and skills, such as videographers, editors, drone pilots, and other studio crew.",
+        title: "Team Directory & Roles",
+        desc: "Add photographers, videographers, drone pilots, and editors with their roles, skills, and contact details so your studio team is organized in one place.",
       },
       {
-        title: "Manual Crew Assignment",
-        desc: "Manually assign crew members to confirmed events based on their availability and current workload.",
+        title: "Shoot & Task Assignment",
+        desc: "Assign team members to confirmed shoots and production tasks, and keep track of the work assigned to each crew member across active projects.",
       },
       {
-        title: "Crew Workload Tracker",
-        desc: "Give studio owners a clear view of each crew member’s assigned projects, pending work, and current project status.",
+        title: "Crew Availability",
+        desc: "Check crew availability before assigning shoots and tasks, and view the current availability of team members when planning upcoming studio work.",
       },
       {
-        title: "Smart Resource Suggestions",
-        desc: "Suggest suitable crew members based on event date, location, required roles and skills, availability, and workload. The studio owner reviews and confirms the suggested assignment.",
+        title: "Expenses & Crew Payments",
+        desc: "Record shoot day-rates, travel expenses, and crew payments to keep track of production costs and understand the expenses related to each studio project.",
       },
     ],
   },
@@ -139,26 +139,26 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "06",
-    name: "Automations & Smart Engine",
-    shortDesc: "Eliminate repetitive manual busywork with smart automation that configures package deliverables, suggests crew assignments based on availability and workload, calculates payment breakdowns, and advances production pipelines automatically.",
-    tag: "Automations",
+    name: "Business Reports & Analytics",
+    shortDesc: "Track your studio income with monthly and yearly revenue charts, monitor pending client balances, see your most profitable shoot categories, and review on-time delivery track records.",
+    tag: "Business & Growth",
     tagColor: "bg-amber-50 text-amber-800 border-amber-200",
     cards: [
       {
-        title: "Automatic Payment Calculations",
-        desc: "Automatically calculate advance payments, event-day installments, remaining balances, crew day rates, and configured travel expenses.",
+        title: "Monthly & Yearly Revenue Reports",
+        desc: "See your total studio earnings by month and year. Track growth over time and compare peak wedding season vs off-season revenue.",
       },
       {
-        title: "Automated Workflow Progression",
-        desc: "Automatically start the required post-event production workflow when an event is completed, and notify the relevant crew about their pending production tasks.",
+        title: "Pending Balances & Cash Flow",
+        desc: "Get an instant list of all pending client dues, advance deposits received, and balance payments to collect before album delivery.",
       },
       {
-        title: "Pre-Flight Conflict Detection",
-        desc: "Check event dates, crew availability, workload, and required skills before booking confirmation to identify potential scheduling and resource conflicts.",
+        title: "Most Profitable Shoot Categories",
+        desc: "Know exactly which photoshoot packages earn you the most profit—Weddings, Engagements, Receptions, Baby Shoots, or Corporate Events.",
       },
       {
-        title: "Native Studio Integrations",
-        desc: "Synchronize crew shoot schedules directly with Google Calendar, and manage Google Drive folders with in-app preview and client comments options.",
+        title: "On-Time Delivery & Speed",
+        desc: "Review your average turnaround time from shoot day to final album hand-off to maintain high client satisfaction and earn 5-star reviews.",
       },
     ],
   },

@@ -20,13 +20,13 @@ export default function PricingCheckoutPage() {
             </Link>
           </div>
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-4 py-1 text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
-            Modular Capability Checkout
+            Modular Modules Checkout
           </span>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-text-primary sm:text-4xl">
-            Configure Your Studio Capabilities
+            Configure Your Studio Modules
           </h1>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-text-secondary">
-            Select or adjust your add-on capabilities. Pay only for what your studio uses with flat monthly rates.
+            Select or adjust your add-on modules. Pay only for what your studio uses with flat monthly rates.
           </p>
         </div>
       </section>

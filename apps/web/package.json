@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "NODE_ENV=production next build && node -e \"try{require('fs').rmSync('.next/cache',{recursive:true,force:true})}catch(e){}\"",
+    "dev": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev -p 3000 -H 0.0.0.0",
+    "build": "NODE_ENV=production next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint"
   },

@@ -18,7 +18,7 @@ export default function PricingPage() {
             Simple &amp; Flexible Studio Pricing
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-text-secondary">
-            Basic Order Management is always 100% Free. Selectively add only the CRM, Crew, Marketplace, or WhatsApp capabilities your studio needs—no rigid plans, no hidden fees.
+            Basic Order Management is always 100% Free. Selectively add Customer Relations, Studio Operations - ERP, Business Reports, Marketplace, or WhatsApp capabilities as your studio grows.
           </p>
         </div>
       </section>

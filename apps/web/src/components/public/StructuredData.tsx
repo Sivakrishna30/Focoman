@@ -9,7 +9,7 @@ export function StructuredData() {
         "name": "Focoman",
         "url": `${baseUrl}`,
         "logo": `${baseUrl}/brand/focoman-logo.png`,
-        "description": "Business operating system for photography and cinematography studios.",
+        "description": "Business operating system for photography studios.",
       },
       {
         "@type": "WebSite",

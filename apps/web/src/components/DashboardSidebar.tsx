@@ -22,6 +22,7 @@ export interface DashboardSidebarProps {
     erp: boolean;
     whatsapp: boolean;
     marketplace: boolean;
+    reports?: boolean;
   };
   appEnv?: string;
 }
@@ -32,6 +33,7 @@ const MODULE_ACTIVE_CLASSES: Record<string, string> = {
   erp: "bg-brand-purple-primary text-white shadow-xs",
   whatsapp: "bg-brand-blue-primary text-white shadow-xs",
   marketplace: "bg-brand-purple-primary text-white shadow-xs",
+  reports: "bg-amber-600 text-white shadow-xs",
   default: "bg-brand-blue-primary text-white shadow-xs",
 };
 
@@ -114,6 +116,18 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
         </svg>
       ),
     },
+    {
+      label: t("dash.reports", "Business Reports"),
+      sublabel: "Analytics",
+      key: "reports",
+      href: (slug: string) => `/${slug}/dashboard/reports`,
+      module: "reports" as const,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
   ];
 
   const handleSignOut = async () => {
@@ -170,7 +184,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
             {plan === "complete" || plan === "professional" ? "PRO" : "FREE"}
           </span>
           <Link
-            href={`/pricing/checkout?studio=${studioSlug}`}
+            href={`/checkout?studio=${studioSlug}`}
             className="text-[10px] font-bold text-brand-orange-primary hover:underline"
           >
             Manage Capabilities →
@@ -208,7 +222,7 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
             return (
               <Link
                 key={item.key}
-                href={`/pricing/checkout?studio=${studioSlug}&upgrade=${item.module || ""}`}
+                href={`/checkout?studio=${studioSlug}&upgrade=${item.module || ""}`}
                 onClick={onLinkClick}
                 title={isDevPortal ? "Only visible in testing mode" : `Unlock ${item.label} in your studio configuration`}
                 className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition text-text-tertiary hover:bg-orange-50/70 hover:text-brand-orange-primary"
@@ -252,15 +266,8 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
         })}
       </nav>
 
-      {/* Bottom: Language, Theme Switcher & Sign Out */}
+      {/* Bottom: Sign Out */}
       <div className="border-t border-border-divider px-3 py-3 flex flex-col gap-2">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-semibold text-text-tertiary">{t("nav.theme", "Theme")}</span>
-          <div className="flex items-center gap-1.5">
-            <LanguageSwitcher />
-            <ThemeSwitcher />
-          </div>
-        </div>
         <button
           onClick={() => {
             if (onLinkClick) onLinkClick();
@@ -294,8 +301,6 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
           <FocomanLogo className="h-6 sm:h-7 w-auto shrink-0" showStudiosSuffix={false} />
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <LanguageSwitcher />
-          <ThemeSwitcher />
           <span className="text-[11px] sm:text-xs font-bold text-text-primary max-w-[70px] sm:max-w-[120px] truncate" title={studioName}>
             {studioName}
           </span>

@@ -185,7 +185,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
             </span>
           </div>
           <Link
-            href={`/pricing/checkout?studio=${studioSlug}&upgrade=crm`}
+            href={`/checkout?studio=${studioSlug}&upgrade=crm`}
             className="text-xs font-bold text-white bg-brand-orange-primary px-3 py-1 rounded-lg hover:bg-orange-600 transition shrink-0"
           >
             Upgrade &amp; Checkout →
