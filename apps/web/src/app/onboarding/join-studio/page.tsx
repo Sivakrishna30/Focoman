@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState, signInWithGoogle, getCurrentUserIdToken } from "@/lib/firebaseAuth";
-import { acceptInvitationAction } from "@/actions/memberActions";
+import { acceptInvitationAction, getInvitationClaimStatusAction } from "@/actions/memberActions";
 import { User } from "firebase/auth";
 
 function JoinStudioContent() {
@@ -16,8 +16,19 @@ function JoinStudioContent() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [inviteCode, setInviteCode] = useState(initialCode.toUpperCase());
+  const [claimCode, setClaimCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<{
+    status: "PENDING" | "CLAIMED_BY_YOU" | "CLAIMED" | "REVOKED" | "LOCKED" | "UNAVAILABLE" | "EMAIL_MISMATCH" | "NOT_FOUND" | "CHECKING" | "OWNER_VIEW";
+    studioId?: string;
+    studioName?: string;
+    requiresPasscode?: boolean;
+    inviteeName?: string;
+    inviteeEmail?: string;
+    invitationStatus?: "PENDING" | "ACCEPTED" | "REVOKED";
+    acceptedAt?: string;
+  } | null>(null);
   const [feedback, setFeedback] = useState<{ type: "error" | "success" | "info"; message: string } | null>(null);
 
   useEffect(() => {
@@ -26,6 +37,40 @@ function JoinStudioContent() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!currentUser || !inviteCode.trim()) {
+      setClaimStatus(null);
+      return;
+    }
+
+    setClaimStatus({ status: "CHECKING" });
+    void (async () => {
+      try {
+        const idToken = await getCurrentUserIdToken(true);
+        if (!idToken) return;
+        const result = await getInvitationClaimStatusAction(inviteCode, idToken);
+        if (!active) return;
+        setClaimStatus(result);
+        if (result.status === "CLAIMED_BY_YOU" && result.studioId) {
+          router.replace(`/${result.studioId}/dashboard`);
+        }
+      } catch (error: unknown) {
+        if (active) {
+          setClaimStatus(null);
+          setFeedback({
+            type: "error",
+            message: error instanceof Error ? error.message : "Could not check invitation status.",
+          });
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [currentUser, inviteCode, router]);
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
@@ -73,6 +118,7 @@ function JoinStudioContent() {
 
       const res = await acceptInvitationAction({
         inviteCode: inviteCode.trim(),
+        claimCode: claimCode || undefined,
         idToken,
       });
 
@@ -81,6 +127,7 @@ function JoinStudioContent() {
           type: "error",
           message: res.error || "Failed to activate studio invitation.",
         });
+        setClaimStatus(await getInvitationClaimStatusAction(inviteCode, idToken));
         return;
       }
 
@@ -89,9 +136,7 @@ function JoinStudioContent() {
         message: `Welcome aboard! You have joined "${res.studioName || res.studioId}". Redirecting to your dashboard...`,
       });
 
-      setTimeout(() => {
-        router.push(`/${res.studioId}/dashboard`);
-      }, 1500);
+      router.replace(`/${res.studioId}/dashboard`);
     } catch (err: any) {
       console.error("[JoinStudioPage] Error:", err);
       setFeedback({
@@ -131,6 +176,85 @@ function JoinStudioContent() {
         </div>
       )}
 
+      {/* ── OWNER VIEW ── */}
+      {claimStatus?.status === "OWNER_VIEW" && (
+        <div role="status" className="mt-6 rounded-xl border border-brand-purple-light bg-brand-purple-background p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center rounded-full bg-brand-purple-primary/10 p-1.5">
+              <svg className="h-4 w-4 text-brand-purple-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            <span className="text-sm font-bold text-brand-purple-primary">This is your studio&apos;s invitation link</span>
+          </div>
+          <div className="rounded-lg bg-white/70 border border-brand-purple-light px-4 py-3 space-y-1.5 text-xs">
+            {claimStatus.inviteeName && (
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary font-medium">Invited</span>
+                <span className="font-bold text-text-primary">{claimStatus.inviteeName}</span>
+              </div>
+            )}
+            {claimStatus.inviteeEmail && (
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary font-medium">Email</span>
+                <span className="font-mono text-text-primary">{claimStatus.inviteeEmail}</span>
+              </div>
+            )}
+            {!claimStatus.inviteeEmail && (
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary font-medium">Type</span>
+                <span className="text-text-primary">Passcode-protected link</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-1 border-t border-brand-purple-light">
+              <span className="text-text-secondary font-medium">Status</span>
+              {claimStatus.invitationStatus === "ACCEPTED" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  ✓ Accepted{claimStatus.acceptedAt ? ` · ${new Date(claimStatus.acceptedAt).toLocaleDateString()}` : ""}
+                </span>
+              ) : claimStatus.invitationStatus === "REVOKED" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">Revoked</span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">⏳ Awaiting acceptance</span>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-text-secondary">You are viewing this as the studio owner. Share this link with the invitee to let them join.</p>
+        </div>
+      )}
+
+      {/* ── CLAIMED (by someone else) ── */}
+      {claimStatus?.status === "CLAIMED" && (
+        <div role="status" className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <span className="font-bold">Invitation used.</span> This invitation has already been accepted and is no longer available.
+        </div>
+      )}
+      {claimStatus?.status === "REVOKED" && (
+        <div role="status" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          This invitation was revoked by the studio owner and can no longer be used.
+        </div>
+      )}
+      {claimStatus?.status === "LOCKED" && (
+        <div role="status" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          This invitation is locked after too many incorrect passcode attempts. Contact the studio owner to get a new invite.
+        </div>
+      )}
+      {claimStatus?.status === "NOT_FOUND" && (
+        <div role="status" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <span className="font-bold">Invalid or expired link.</span> This invitation code does not exist or has been removed.
+        </div>
+      )}
+      {claimStatus?.status === "EMAIL_MISMATCH" && (
+        <div role="status" className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          This invitation was sent to a specific email address. Please sign in with the correct Google account that was invited by the studio owner.
+        </div>
+      )}
+      {claimStatus?.status === "UNAVAILABLE" && (
+        <div role="status" className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          This invitation is no longer available. Please ask the studio owner to create a new invitation for you.
+        </div>
+      )}
+
       {!currentUser && (
         <div className="mt-6 rounded-2xl border border-dashed border-border-default bg-surface-app p-5 text-center">
           <p className="text-xs text-text-secondary">
@@ -165,7 +289,7 @@ function JoinStudioContent() {
         </div>
       )}
 
-      {currentUser && (
+      {currentUser && claimStatus?.status !== "OWNER_VIEW" && claimStatus?.status !== "CLAIMED" && claimStatus?.status !== "REVOKED" && claimStatus?.status !== "LOCKED" && claimStatus?.status !== "UNAVAILABLE" && claimStatus?.status !== "EMAIL_MISMATCH" && claimStatus?.status !== "NOT_FOUND" && (
         <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-xs text-text-secondary border border-border-default">
           <span>
             Signed in as: <strong className="text-text-primary">{currentUser.email}</strong>
@@ -176,24 +300,45 @@ function JoinStudioContent() {
         </div>
       )}
 
+      {claimStatus?.status !== "OWNER_VIEW" && claimStatus?.status !== "CLAIMED" && claimStatus?.status !== "REVOKED" && claimStatus?.status !== "LOCKED" && claimStatus?.status !== "UNAVAILABLE" && claimStatus?.status !== "EMAIL_MISMATCH" && claimStatus?.status !== "NOT_FOUND" && (
       <form onSubmit={handleVerify} className="mt-6 space-y-5" suppressHydrationWarning>
         <div>
           <label htmlFor="invite-code" className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-            Invitation Code / Token *
+            Invitation Code *
           </label>
           <input
             id="invite-code"
             type="text"
             required
-            placeholder="e.g. INV-A92B-4F8C"
+            placeholder="e.g. INV-FOC-RAH-1234"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
             className="mt-1.5 w-full rounded-xl border border-border-default px-4 py-2.5 font-mono text-sm uppercase outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
           />
           <p className="mt-1.5 text-xs text-text-tertiary">
-            Your studio owner generated this invitation code when adding you to their studio team.
+            Your studio owner shared this single-use invitation link with you.
           </p>
         </div>
+
+        {claimStatus?.status === "PENDING" && claimStatus.requiresPasscode && (
+          <div>
+            <label htmlFor="claim-passcode" className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
+              Six-digit passcode *
+            </label>
+            <input
+              id="claim-passcode"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={claimCode}
+              onChange={(event) => setClaimCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="mt-1.5 w-full rounded-xl border border-border-default px-4 py-2.5 font-mono text-sm outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+            />
+          </div>
+        )}
 
         <div className="pt-4 flex items-center justify-between border-t border-border-divider">
           <Link href="/workspaces" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
@@ -201,13 +346,14 @@ function JoinStudioContent() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting || !currentUser}
+            disabled={isSubmitting || !currentUser || claimStatus?.status === "CHECKING" || (claimStatus?.status === "PENDING" && claimStatus.requiresPasscode && claimCode.length !== 6)}
             className="rounded-xl bg-brand-purple-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-purple-700 disabled:opacity-50"
           >
-            {isSubmitting ? "Activating Membership..." : "Verify & Join Studio"}
+            {isSubmitting ? "Joining Studio..." : claimStatus?.status === "CHECKING" ? "Checking invitation..." : "Verify & Join Studio"}
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

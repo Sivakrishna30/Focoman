@@ -244,6 +244,53 @@ export interface CustomerOrderView {
   updatedAt: string;
 }
 
+export interface CustomerTrackingView {
+  order: {
+    orderNumber: string;
+    studioName: string;
+    customerName: string;
+    eventType: string;
+    eventDate: string;
+    eventLocation?: string;
+    services: string[];
+    totalAmount: number;
+    advanceAmount: number;
+    remainingAmount: number;
+    paymentStatus: PaymentStatus;
+    orderStatus: OrderStatus;
+  };
+  tasks: Array<{
+    title: string;
+    serviceCategory: string;
+    status: TaskStatus;
+    sequenceOrder: number;
+  }>;
+}
+
+export interface MemberOrderSummary {
+  id: string;
+  orderNumber: string;
+  eventType: string;
+  eventDate: string;
+  eventLocation?: string;
+  services: string[];
+  orderStatus: OrderStatus;
+}
+
+export interface MemberTaskSummary {
+  id: string;
+  orderId: string;
+  title: string;
+  serviceCategory: Task['serviceCategory'];
+  status: TaskStatus;
+  sequenceOrder: number;
+}
+
+export interface MemberWorkView {
+  orders: MemberOrderSummary[];
+  tasks: MemberTaskSummary[];
+}
+
 export interface Studio extends SoftDeletable {
   id: string;
   name: string;
@@ -291,9 +338,11 @@ export interface StudioMember extends SoftDeletable {
   id: string;
   studioId: string;
   name: string;
+  ownerAssignedName?: string; // Original nickname / name provided by owner at invite creation
   email: string;
   phone?: string;
   skills: string[]; // e.g. ['PHOTOGRAPHY', 'VIDEOGRAPHY', 'PHOTO_EDITING', 'ALBUM_DESIGN']
+  role?: 'STUDIO_OWNER' | 'STUDIO_MEMBER';
   status?: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
   updatedAt: string;
@@ -312,18 +361,40 @@ export interface StudioMembership extends SoftDeletable {
 }
 
 export interface StudioInvitation extends SoftDeletable {
-  id: string; // unique single-use invite code / token, e.g. INV-A92B-4F8C
+  id: string; // unique single-use invite code, e.g. INV-FOC-RAH-1234
   studioId: string;
   studioName: string;
-  email: string;
+  email?: string;
+  phone?: string;
   name?: string;
   skills: string[];
+  claimCodeSalt?: string;
+  claimCodeHash?: string;
+  failedClaimAttempts?: number;
+  claimLocked?: boolean;
+  claimLinkTokenHash?: string;
   role: 'STUDIO_MEMBER';
-  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+  status: 'PENDING' | 'ACCEPTED' | 'REVOKED';
   invitedByUid: string;
   createdAt: string;
   acceptedAt?: string;
   acceptedByUid?: string;
+}
+
+export interface StudioInvitationSummary {
+  id: string;
+  studioId: string;
+  studioName: string;
+  email?: string;
+  phone?: string;
+  name?: string;
+  skills: string[];
+  role: 'STUDIO_MEMBER';
+  status: StudioInvitation['status'];
+  requiresPasscode: boolean;
+  claimLocked?: boolean;
+  createdAt: string;
+  acceptedAt?: string;
 }
 
 export interface Customer extends SoftDeletable {
@@ -393,6 +464,7 @@ export interface Order extends SoftDeletable {
   preflightReport?: PreflightConflictReport;
   cancellationInfo?: CancellationInfo;
   trackingPasskey: string;
+  notifyWhatsApp?: boolean;
   createdAt: string;
   updatedAt: string;
 }

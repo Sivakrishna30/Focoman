@@ -24,12 +24,11 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ pas
   const { passkey } = await params;
   
   const res = await getOrderByPasskeyAction(passkey);
-  if (!res.success || !res.order) {
+  if (!res.success || !res.view) {
     notFound();
   }
 
-  const order = res.order;
-  const tasks = res.tasks || [];
+  const { order, tasks } = res.view;
 
   const isCompleted = order.orderStatus === "COMPLETED";
 
@@ -69,7 +68,7 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ pas
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-text-secondary">Customer</dt>
-                    <dd className="font-semibold">{order.customer.name}</dd>
+                    <dd className="font-semibold">{order.customerName}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-text-secondary">Date</dt>
@@ -96,16 +95,16 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ pas
                   <dl className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-text-secondary">Total Value</dt>
-                      <dd className="font-semibold text-text-primary">₹{order.pricing.finalConfirmedPrice}</dd>
+                      <dd className="font-semibold text-text-primary">₹{order.totalAmount}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-text-secondary">Advance Paid</dt>
-                      <dd className="font-semibold text-emerald-600">₹{order.pricing.advanceAmount}</dd>
+                      <dd className="font-semibold text-emerald-600">₹{order.advanceAmount}</dd>
                     </div>
                     <div className="my-2 border-t border-border-divider pt-2 flex justify-between font-bold">
                       <dt className="text-text-primary">Remaining Balance</dt>
-                      <dd className={order.pricing.remainingAmount > 0 ? "text-brand-orange-primary" : "text-emerald-600"}>
-                        ₹{order.pricing.remainingAmount}
+                      <dd className={order.remainingAmount > 0 ? "text-brand-orange-primary" : "text-emerald-600"}>
+                        ₹{order.remainingAmount}
                       </dd>
                     </div>
                   </dl>
@@ -118,7 +117,7 @@ export default async function TrackOrderPage({ params }: { params: Promise<{ pas
               {tasks.length > 0 ? (
                 <div className="space-y-3">
                   {tasks.map(task => (
-                    <div key={task.id} className="flex items-center justify-between rounded-xl border border-border-default p-4">
+                    <div key={`${task.sequenceOrder}-${task.title}`} className="flex items-center justify-between rounded-xl border border-border-default p-4">
                       <div>
                         <p className="text-sm font-semibold text-text-primary">{task.title}</p>
                         <p className="text-xs text-text-secondary mt-0.5">{task.serviceCategory}</p>

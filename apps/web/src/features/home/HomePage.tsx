@@ -16,7 +16,7 @@ export function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-border-divider bg-gradient-to-b from-white via-brand-blue-background/20 to-surface-app px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-1/2 h-[540px] w-[540px] -translate-x-1/2 -translate-y-1/2 opacity-25" />
+        <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[42%] h-[460px] w-[460px] sm:h-[500px] sm:w-[500px] -translate-x-1/2 -translate-y-1/2 opacity-25" />
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-5 py-2 text-sm font-extrabold uppercase tracking-widest text-brand-orange-primary shadow-xs">
@@ -40,13 +40,6 @@ export function HomePage() {
               className="w-full sm:w-64 text-center rounded-xl bg-brand-blue-primary px-8 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-sky-600 flex items-center justify-center"
             >
               {t("hero.cta_get_started", "Get Started with Focoman")}
-            </Link>
-            <Link
-              href="/demo-studio/dashboard"
-              className="w-full sm:w-64 text-center rounded-xl bg-brand-orange-primary px-8 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 flex items-center justify-center gap-2"
-            >
-              <span>{t("hero.cta_view_demo", "Explore Demo Workspace")}</span>
-              <span className="text-white/80">→</span>
             </Link>
           </div>
         </div>

@@ -5,13 +5,14 @@ import {
   getCustomersByStudio,
   getDeletedCustomersByStudio,
   getCustomerById,
+  getCustomerByIdIncludeDeleted,
   saveCustomer,
   updateCustomer,
   softDeleteCustomer,
   restoreCustomer,
 } from "@focoman/db";
 import { Customer } from "@focoman/types";
-import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { requireVerifiedUser, requireStudioOwner } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Customer Management (CRM)
@@ -24,7 +25,7 @@ export async function getStudioCustomersAction(
   idToken: string
 ): Promise<Customer[]> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   return await getCustomersByStudio(studioSlug);
 }
 
@@ -33,7 +34,7 @@ export async function getDeletedStudioCustomersAction(
   idToken: string
 ): Promise<Customer[]> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   return await getDeletedCustomersByStudio(studioSlug);
 }
 
@@ -43,7 +44,7 @@ export async function getCustomerAction(
   idToken: string
 ): Promise<Customer | null> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   
   const customer = await getCustomerById(customerId);
   if (!customer) return null;
@@ -64,7 +65,7 @@ export async function createCustomerAction(input: {
 }): Promise<{ success: boolean; customer?: Customer; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     if (!input.name || input.name.trim().length === 0) {
       return { success: false, error: "Customer name is required." };
@@ -109,7 +110,7 @@ export async function updateCustomerAction(input: {
 }): Promise<{ success: boolean; customer?: Customer; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const existing = await getCustomerById(input.customerId);
     if (!existing) {
@@ -141,7 +142,7 @@ export async function deleteCustomerAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const existing = await getCustomerById(input.customerId);
     if (!existing) {
@@ -166,7 +167,12 @@ export async function restoreCustomerAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
+
+    const customer = await getCustomerByIdIncludeDeleted(input.customerId);
+    if (!customer || customer.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Customer not found in the authorized studio." };
+    }
 
     await restoreCustomer(input.customerId);
     return { success: true };

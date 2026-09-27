@@ -21,7 +21,7 @@
 - `createMemberAction`: Generates invite with collision-safe token `INV-...`.
 - `getStudioInvitationsAction`: List pending invitations.
 - `revokeInvitationAction`: Marks invitation `REVOKED` or soft-deletes invite to prevent unauthorized redemption.
-- `restoreInvitationAction`: Re-opens a revoked invitation if not expired.
+- `restoreInvitationAction`: Restores a soft-deleted invitation within the standard recovery window; invitations have no automatic expiry.
 - `acceptInvitationAction`: Atomic transaction redeeming invitation code and provisioning membership.
 
 ### Operations Required: `StudioMembership`

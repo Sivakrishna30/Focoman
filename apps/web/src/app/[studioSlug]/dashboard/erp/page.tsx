@@ -2,9 +2,15 @@
 
 import { useState, useEffect, useCallback, use, useMemo } from "react";
 import { StudioMember, Order, OrderStatus } from "@focoman/types";
-import { getStudioMembersAction, createMemberAction } from "@/actions/memberActions";
+import {
+  getStudioMembersAction,
+  getStudioInvitationsAction,
+  createMemberAction,
+  revokeInvitationAction,
+} from "@/actions/memberActions";
 import { getStudioOrdersAction, confirmResourceAvailabilityAction } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import { StudioInvitationSummary } from "@focoman/types";
 import {
   isDemoStudio,
   getDemoMembers,
@@ -32,8 +38,9 @@ const ALL_SKILLS = ["PHOTOGRAPHY", "VIDEOGRAPHY", "PHOTO_EDITING", "ALBUM_DESIGN
 
 export default function ErpPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = use(params);
-  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
+  const { idToken: workspaceToken, authLoading, getIdToken, user: workspaceUser, studio } = useStudioWorkspace();
   const [crewList, setCrewList] = useState<StudioMember[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<StudioInvitationSummary[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<StudioMember | null>(null);
   const [skillFilter, setSkillFilter] = useState("ALL");
@@ -50,9 +57,10 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     name: "",
     email: "",
     phone: "",
+    claimCode: "",
     skills: ["PHOTOGRAPHY"],
   });
-  const [createdInvite, setCreatedInvite] = useState<{ code: string; email: string; name: string } | null>(null);
+  const [createdInvite, setCreatedInvite] = useState<{ code: string; email?: string; name: string; claimCode?: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async (tokenOverride?: string | null) => {
@@ -60,6 +68,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
       setLoading(true);
       if (isDemo) {
         setCrewList(getDemoMembers());
+        setPendingInvitations([]);
         setOrders(getDemoOrders());
         setLoading(false);
         return;
@@ -69,12 +78,14 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
         setLoading(false);
         return;
       }
-      const [membersData, ordersData] = await Promise.all([
+      const [membersData, ordersData, invitationData] = await Promise.all([
         getStudioMembersAction(studioSlug, token),
-        getStudioOrdersAction(studioSlug, token)
+        getStudioOrdersAction(studioSlug, token),
+        getStudioInvitationsAction(studioSlug, token),
       ]);
       setCrewList(membersData);
       setOrders(ordersData);
+      setPendingInvitations(invitationData.filter((invitation) => invitation.status === "PENDING"));
     } catch (err) {
       console.error("[ErpPage] Failed to load data:", err);
     } finally {
@@ -103,6 +114,70 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     }));
   };
 
+  /**
+   * Real-time UI validation — computed on every keystroke.
+   * Backend retains checks as a safety net; UI shows friendly inline hints.
+   */
+  const fieldHints = useMemo(() => {
+    const trimmedName = form.name.trim().toLowerCase();
+    const trimmedEmail = form.email.trim().toLowerCase();
+    const ownerEmail = (workspaceUser?.email ?? studio?.ownerEmail ?? "").trim().toLowerCase();
+    const ownerName = studio?.ownerName?.trim().toLowerCase() ?? "";
+
+    let nameHint: { type: "error" | "warn"; text: string } | null = null;
+    let emailHint: { type: "error" | "warn" | "info"; text: string } | null = null;
+
+    // ── Name duplicate check ──────────────────────────────────────────────
+    if (trimmedName.length > 0) {
+      if (ownerName && trimmedName === ownerName) {
+        nameHint = { type: "error", text: `"${studio?.ownerName}" is the studio owner and already active in the crew.` };
+      } else {
+        const nameExistsInMembers = crewList.some(
+          (m) =>
+            m.name.trim().toLowerCase() === trimmedName ||
+            (m.ownerAssignedName && m.ownerAssignedName.trim().toLowerCase() === trimmedName)
+        );
+        const nameExistsInPending = pendingInvitations.some(
+          (inv) => inv.status === "PENDING" && inv.name?.trim().toLowerCase() === trimmedName
+        );
+        if (nameExistsInMembers) {
+          nameHint = { type: "error", text: `"${form.name.trim()}" is already an active crew member. Use a unique name.` };
+        } else if (nameExistsInPending) {
+          nameHint = { type: "warn", text: `A pending invite for "${form.name.trim()}" already exists.` };
+        }
+      }
+    }
+
+    // ── Email duplicate & self-invite check ───────────────────────────────
+    if (trimmedEmail.length > 0) {
+      const isSelf = ownerEmail && trimmedEmail === ownerEmail;
+
+      if (isSelf) {
+        emailHint = { type: "error", text: "Self-invites are not allowed. As studio owner, you are automatically the first crew member." };
+      } else {
+        const emailExistsInMembers = crewList.some(
+          (m) => m.email?.trim().toLowerCase() === trimmedEmail
+        );
+        const emailExistsInPending = pendingInvitations.some(
+          (inv) => inv.status === "PENDING" && inv.email?.trim().toLowerCase() === trimmedEmail
+        );
+
+        if (emailExistsInMembers) {
+          emailHint = { type: "error", text: `This email is already linked to an active crew member.` };
+        } else if (emailExistsInPending) {
+          emailHint = { type: "warn", text: `A pending invite for this email already exists. Revoke it first or send the existing code.` };
+        }
+      }
+    }
+
+    const hasBlockingError =
+      (nameHint?.type === "error") ||
+      (emailHint?.type === "error") ||
+      (emailHint?.type === "warn");
+
+    return { nameHint, emailHint, hasBlockingError };
+  }, [form.name, form.email, crewList, pendingInvitations, workspaceUser, studio]);
+
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -111,18 +186,18 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     if (isDemo) {
       const res = createDemoMember({
         name: form.name,
-        email: form.email,
+        email: form.email || `${form.name.toLowerCase().replace(/\s+/g, ".")}@demo.invalid`,
         phone: form.phone || undefined,
         skills: form.skills,
       });
       setIsSubmitting(false);
       if (res.success && res.member) {
         setShowModal(false);
-        setForm({ name: "", email: "", phone: "", skills: ["PHOTOGRAPHY"] });
+        setForm({ name: "", email: "", phone: "", claimCode: "", skills: ["PHOTOGRAPHY"] });
         setCrewList(getDemoMembers());
         setSelected(res.member);
       } else {
-        setModalError("Failed to add crew member in demo mode");
+        setModalError(res.error || "Failed to add crew member in demo mode");
       }
       return;
     }
@@ -138,25 +213,26 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
       idToken: token,
       studioId: studioSlug,
       name: form.name,
-      email: form.email,
+      email: form.email || undefined,
       phone: form.phone || undefined,
+      claimCode: form.email ? undefined : form.claimCode,
       skills: form.skills,
     });
 
     setIsSubmitting(false);
 
-    if (res.success && res.member) {
+    if (res.success && res.invitation) {
       setShowModal(false);
       const memberName = form.name;
       const memberEmail = form.email;
-      setForm({ name: "", email: "", phone: "", skills: ["PHOTOGRAPHY"] });
+      setForm({ name: "", email: "", phone: "", claimCode: "", skills: ["PHOTOGRAPHY"] });
       await loadData();
-      setSelected(res.member);
       if (res.invitationCode) {
         setCreatedInvite({
           code: res.invitationCode,
           name: memberName,
-          email: memberEmail,
+          ...(memberEmail ? { email: memberEmail } : {}),
+          claimCode: res.claimCode,
         });
       }
     } else {
@@ -164,15 +240,39 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     }
   };
 
-  const filtered = crewList.filter((m) => {
-    const matchSkill = skillFilter === "ALL" || m.skills.includes(skillFilter);
-    const matchSearch =
-      !search ||
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.email.toLowerCase().includes(search.toLowerCase()) ||
-      (m.phone && m.phone.includes(search));
-    return matchSkill && matchSearch;
-  });
+  // Studio owner will automatically be the first member of the erp or crew with owner status
+  const ownerMember: StudioMember | null = useMemo(() => {
+    if (!studio) return null;
+    return {
+      id: `owner-${studio.id || studioSlug}`,
+      studioId: studioSlug.toLowerCase(),
+      name: studio.ownerName || "Studio Owner",
+      email: studio.ownerEmail || "",
+      phone: studio.ownerPhone || "",
+      role: "STUDIO_OWNER",
+      skills: [], // empty by default
+      status: "ACTIVE",
+      createdAt: studio.createdAt || new Date().toISOString(),
+      updatedAt: studio.updatedAt || new Date().toISOString(),
+    };
+  }, [studio, studioSlug]);
+
+  const allCrew = useMemo(() => {
+    return ownerMember ? [ownerMember, ...crewList] : crewList;
+  }, [ownerMember, crewList]);
+
+  const filtered = useMemo(() => {
+    return allCrew.filter((m) => {
+      const matchSkill = skillFilter === "ALL" || m.skills.includes(skillFilter);
+      const matchSearch =
+        !search ||
+        m.name.toLowerCase().includes(search.toLowerCase()) ||
+        (m.ownerAssignedName && m.ownerAssignedName.toLowerCase().includes(search.toLowerCase())) ||
+        m.email.toLowerCase().includes(search.toLowerCase()) ||
+        (m.phone && m.phone.includes(search));
+      return matchSkill && matchSearch;
+    });
+  }, [allCrew, skillFilter, search]);
 
   return (
     <div className="flex h-full bg-surface-app">
@@ -195,7 +295,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 Studio Enterprise Resource Planning
               </h1>
               <p className="text-xs text-text-secondary mt-0.5">
-                Crew assignments, certified skills, and event availability tracking · {crewList.length} Active Crew Members
+                Crew assignments, certified skills, and event availability tracking · {allCrew.length} Active Crew Members
               </p>
             </div>
             <button
@@ -241,48 +341,143 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
         {/* Crew Member List */}
         <div className="flex-1 overflow-y-auto p-5 space-y-2.5">
-          {loading && crewList.length === 0 ? (
-            <div className="py-16 text-center text-xs text-text-tertiary">Loading crew members...</div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border-default bg-white p-8 text-center text-xs text-text-tertiary">
-              {search || skillFilter !== "ALL"
-                ? "No crew members match the selected filters."
-                : "No crew members added yet. Add photographers, videographers, and editors to assign them to orders."}
-            </div>
-          ) : (
-            filtered.map((emp) => (
-              <div
-                key={emp.id}
-                onClick={() => setSelected(emp)}
-                className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
-                  selected?.id === emp.id
-                    ? "card-brand-purple"
-                    : "border-border-default bg-white hover:border-brand-purple-light hover:shadow-xs"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-purple-background font-extrabold text-brand-purple-primary text-sm shadow-2xs border border-brand-purple-soft">
-                    {emp.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-text-primary">{emp.name}</h3>
-                    <p className="text-xs text-text-secondary">
-                      {emp.email} {emp.phone ? `· ${emp.phone}` : ""}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {emp.skills.map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className={SKILL_COLORS[skill] || "badge-status-neutral"}
-                        >
-                          {SKILL_LABELS[skill] || skill}
+          {pendingInvitations.length > 0 && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-amber-950">Pending Invitations</h2>
+                  <p className="mt-1 text-xs text-amber-900">Members become active only after claiming an invitation.</p>
+                </div>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-900">
+                  {pendingInvitations.length}
+                </span>
+              </div>
+              <ul className="mt-3 divide-y divide-amber-200">
+                {pendingInvitations.map((invitation) => (
+                  <li key={invitation.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-text-primary">{invitation.name || "Crew invitation"}</p>
+                        <span className="rounded-md border border-amber-300 bg-amber-100/70 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-900">
+                          {invitation.id}
                         </span>
-                      ))}
+                      </div>
+                      <p className="mt-0.5 text-xs text-text-secondary">
+                        {invitation.email || "No email bound; recipient signs in with their own Google account"}
+                        {invitation.phone ? ` · ${invitation.phone}` : ""}
+                      </p>
+                      {invitation.claimLocked ? (
+                        <p className="mt-1 text-[10px] font-semibold text-red-800">Passcode attempts exceeded. Revoke and create a replacement invitation.</p>
+                      ) : invitation.requiresPasscode && (
+                        <p className="mt-1 text-[10px] text-amber-900">Passcode is shown only when created. If lost, revoke this invitation and create a replacement.</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const link = `${window.location.origin}/onboarding/join-studio?code=${encodeURIComponent(invitation.id)}`;
+                          void navigator.clipboard.writeText(link);
+                        }}
+                        className="rounded-lg border border-border-default bg-white px-3 py-2 text-[11px] font-semibold text-text-primary hover:bg-surface-app"
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm("Revoke this invitation? The recipient will no longer be able to claim it.")) return;
+                          const token = await getIdToken(true);
+                          if (token) {
+                            await revokeInvitationAction({ inviteCode: invitation.id, studioId: studioSlug, idToken: token });
+                            await loadData(token);
+                          }
+                        }}
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-semibold text-red-700 hover:bg-red-50"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {loading && allCrew.length === 0 ? (
+            <div className="py-16 text-center text-xs text-text-tertiary">Loading crew members...</div>
+          ) : (
+            <>
+              {filtered.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-border-default bg-white p-8 text-center text-xs text-text-tertiary">
+                  {search || skillFilter !== "ALL"
+                    ? "No crew members match the selected filters."
+                    : "No crew members added yet. Add photographers, videographers, and editors to assign them to orders."}
+                </div>
+              )}
+              {filtered.map((emp) => {
+                const isOwner = emp.role === "STUDIO_OWNER";
+                return (
+                  <div
+                    key={emp.id}
+                    onClick={() => setSelected(emp)}
+                    className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                      selected?.id === emp.id
+                        ? "card-brand-purple"
+                        : isOwner
+                        ? "border-brand-purple-soft bg-brand-purple-background/30 hover:border-brand-purple-light hover:shadow-xs"
+                        : "border-border-default bg-white hover:border-brand-purple-light hover:shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-sm shadow-xs ${
+                          isOwner
+                            ? "bg-brand-purple-primary text-white"
+                            : "bg-brand-purple-background text-brand-purple-primary border border-brand-purple-soft"
+                        }`}
+                      >
+                        {emp.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-text-primary">
+                            {emp.name}
+                            {emp.ownerAssignedName && emp.ownerAssignedName.toLowerCase() !== emp.name.toLowerCase() && (
+                              <span className="ml-1.5 font-normal text-text-secondary text-xs">
+                                ({emp.ownerAssignedName})
+                              </span>
+                            )}
+                          </h3>
+                          {isOwner && (
+                            <span className="rounded-full bg-brand-purple-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                              Owner
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-secondary">
+                          {emp.email} {emp.phone ? `· ${emp.phone}` : ""}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {emp.skills && emp.skills.length > 0 ? (
+                            emp.skills.map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className={SKILL_COLORS[skill] || "badge-status-neutral"}
+                              >
+                                {SKILL_LABELS[skill] || skill}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-text-tertiary italic">No skills assigned</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))
+                );
+              })}
+            </>
           )}
         </div>
       </div>
@@ -305,14 +500,43 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
           <div className="p-6 space-y-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-purple-background font-extrabold text-brand-purple-primary text-xl shadow-2xs border border-brand-purple-soft">
-                {selected.name.charAt(0)}
+              <div
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl font-extrabold text-xl shadow-2xs ${
+                  selected.role === "STUDIO_OWNER"
+                    ? "bg-brand-purple-primary text-white"
+                    : "bg-brand-purple-background text-brand-purple-primary border border-brand-purple-soft"
+                }`}
+              >
+                {selected.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h2 className="text-lg font-bold text-text-primary">{selected.name}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-text-primary">
+                    {selected.name}
+                    {selected.ownerAssignedName && selected.ownerAssignedName.toLowerCase() !== selected.name.toLowerCase() && (
+                      <span className="ml-2 text-sm font-normal text-text-secondary">
+                        ({selected.ownerAssignedName})
+                      </span>
+                    )}
+                  </h2>
+                  {selected.role === "STUDIO_OWNER" && (
+                    <span className="rounded-full bg-brand-purple-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                      Owner
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-text-secondary">{selected.email}</p>
               </div>
             </div>
+
+            {selected.role === "STUDIO_OWNER" && (
+              <div className="rounded-2xl border border-brand-purple-soft bg-brand-purple-background/30 p-4">
+                <p className="text-xs font-semibold text-brand-purple-primary">Studio Administrator & Owner</p>
+                <p className="mt-0.5 text-xs text-text-secondary">
+                  The studio owner is automatically the primary crew member with owner status.
+                </p>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-border-default p-4 space-y-3 bg-surface-app/40">
               <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Contact Details</h3>
@@ -325,14 +549,18 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
             <div className="rounded-2xl border border-border-default p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary mb-3">Certified Skills</h3>
               <div className="flex flex-wrap gap-2">
-                {selected.skills.map((skill, idx) => (
-                  <span
-                    key={idx}
-                    className={SKILL_COLORS[skill] || "badge-status-neutral"}
-                  >
-                    {SKILL_LABELS[skill] || skill}
-                  </span>
-                ))}
+                {selected.skills && selected.skills.length > 0 ? (
+                  selected.skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className={SKILL_COLORS[skill] || "badge-status-neutral"}
+                    >
+                      {SKILL_LABELS[skill] || skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-text-tertiary italic">No certified skills assigned yet</span>
+                )}
               </div>
             </div>
 
@@ -444,20 +672,80 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                   placeholder="e.g. Rahul Sharma"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                  className={`mt-1 w-full rounded-xl border px-3.5 py-2 text-xs outline-none focus:ring-1 ${
+                    fieldHints.nameHint?.type === "error"
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-300"
+                      : fieldHints.nameHint?.type === "warn"
+                      ? "border-amber-400 focus:border-amber-500 focus:ring-amber-300"
+                      : "border-border-default focus:border-brand-purple-primary focus:ring-brand-purple-primary"
+                  }`}
                 />
+                {fieldHints.nameHint && (
+                  <p className={`mt-1.5 text-[11px] font-medium ${
+                    fieldHints.nameHint.type === "error" ? "text-red-600" : "text-amber-700"
+                  }`}>
+                    {fieldHints.nameHint.type === "error" ? "⊘ " : "⚠ "}{fieldHints.nameHint.text}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block font-bold text-text-primary">Email *</label>
+                <label className="block font-bold text-text-primary">Email</label>
                 <input
                   type="email"
-                  required
                   placeholder="crew@studio.com"
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                  onChange={(e) => setForm({ ...form, email: e.target.value, claimCode: e.target.value ? "" : form.claimCode })}
+                  className={`mt-1 w-full rounded-xl border px-3.5 py-2 text-xs outline-none focus:ring-1 ${
+                    fieldHints.emailHint?.type === "error"
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-300"
+                      : fieldHints.emailHint?.type === "warn"
+                      ? "border-amber-400 focus:border-amber-500 focus:ring-amber-300"
+                      : "border-border-default focus:border-brand-purple-primary focus:ring-brand-purple-primary"
+                  }`}
                 />
+                {fieldHints.emailHint ? (
+                  <p className={`mt-1.5 text-[11px] font-medium leading-relaxed ${
+                    fieldHints.emailHint.type === "error" ? "text-red-600"
+                    : fieldHints.emailHint.type === "warn" ? "text-amber-700"
+                    : "text-brand-purple-primary"
+                  }`}>
+                    {fieldHints.emailHint.type === "error" ? "⊘ "
+                      : fieldHints.emailHint.type === "warn" ? "⚠ "
+                      : "ℹ "}{fieldHints.emailHint.text}
+                  </p>
+                ) : (
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">
+                    {form.email.trim()
+                      ? "✓ Member will authenticate directly using this Google email address."
+                      : "Provide email for Google sign-in auth, or leave blank and set a 6-digit passcode instead."}
+                  </p>
+                )}
               </div>
+              {!form.email.trim() && (
+                <div className="rounded-xl border border-brand-purple-soft/60 bg-brand-purple-background/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-brand-purple-primary">
+                      6-Digit Passcode *
+                    </label>
+                    <span className="text-[10px] font-semibold text-brand-purple-primary/80">Required without email</span>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    required
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    placeholder="Enter a 6-digit passcode (e.g. 123456)"
+                    value={form.claimCode}
+                    onChange={(e) => setForm({ ...form, claimCode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                    className="mt-1.5 w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-xs tracking-wider outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                  />
+                  <p className="mt-1.5 text-[11px] text-text-secondary">
+                    The member will enter this 6-digit passcode alongside their invite code to authenticate and join.
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block font-bold text-text-primary">Phone</label>
                 <input
@@ -501,8 +789,8 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="btn-brand-purple"
+                  disabled={isSubmitting || fieldHints.hasBlockingError}
+                  className="btn-brand-purple disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Saving..." : "Save Member"}
                 </button>
@@ -535,17 +823,25 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
             </div>
 
             <p className="mt-4 text-xs leading-relaxed text-text-secondary">
-              Share this single-use code with <strong>{createdInvite.name}</strong> ({createdInvite.email}). When they sign in with their Google account, their workspace access will be automatically linked to this studio.
+              Share this single-use invitation with <strong>{createdInvite.name}</strong>{createdInvite.email ? ` (${createdInvite.email})` : ""}. {createdInvite.email ? "They must sign in with this Google email." : "They can use their own Google account, but must enter the 6-digit passcode you set."}
             </p>
 
             <div className="mt-4 rounded-2xl border border-brand-purple-soft bg-brand-purple-background/40 p-4 text-center">
               <span className="text-[10px] font-bold uppercase tracking-wider text-brand-purple-primary">
-                Single-Use Invite Code
+                Single-Use Invitation Code
               </span>
               <div className="mt-1 font-mono text-xl font-extrabold tracking-widest text-brand-purple-primary">
                 {createdInvite.code}
               </div>
             </div>
+
+            {createdInvite.claimCode && (
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Share this passcode separately</span>
+                <div className="mt-1 font-mono text-xl font-extrabold tracking-widest text-amber-900">{createdInvite.claimCode}</div>
+                <p className="mt-1 text-[10px] text-amber-900">This passcode is shown once and is not stored in readable form.</p>
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-text-tertiary">

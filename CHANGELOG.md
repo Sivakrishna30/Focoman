@@ -4,6 +4,49 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-040 — Safe Single-Use Studio Invitations Without Automatic Expiry
+
+- **Task:** Make accepted invites repeat-safe and add Owner-generated email-free passcode invitations
+- **Date:** 2026-09-27
+- **Area:** `apps/web/src/actions/memberActions.ts`, Owner ERP invite UI, Workspaces, Join Studio, Firestore invitation transaction, invitation types/validation, identity docs, manual QA checklist
+- **Change:** Email-bound invitations preserve the existing verified-Google-email matching behavior. Generic invites can omit email and use an Owner-set six-digit passcode, stored as a salted hash, plus a separate high-entropy single-use link token. Generic invites have no automatic expiry; five incorrect passcodes lock the invitation until the Owner revokes and recreates it. Pending invitations do not create active member records until claim. The Owner can copy pending links and revoke pending invitations; a signed-in invitee can recover email-bound invitations from Workspaces. Reopening an accepted link routes the same UID to the studio and tells other UIDs that the invite is already claimed.
+- **Change log notes:** Firestore acceptance remains transactional and now reads all transaction data before writes. The identity specification no longer lists automatic invitation expiry.
+- **Verification:** `npm test` passed 23/23; `npm run lint` passed with no warnings/errors; `npx tsc --noEmit -p apps/web/tsconfig.json` passed; `npm run build` passed. Fresh local dev probes returned HTTP 200 for `/onboarding/join-studio?code=INV-TEST` and `/workspaces`. Automated tests cover optional-email schema and salted PIN hashing/verification. Real Google-account, Firestore transaction, replay/claimed-user, pending-invite recovery, and PIN lockout flows still require browser/Firebase verification.
+
+---
+
+## CHG-039 — Separate Owner and Member Workspaces; Isolate Developer Demo
+
+- **Task:** Keep demo access direct-only, fix optional crew phone persistence, and provide role-scoped Member workspaces
+- **Date:** 2026-09-27
+- **Area:** Workspace routing, dashboard authorization/navigation, member task actions, marketplace profile URLs, demo entry points, QA checklist
+- **Change:** Removed demo links from the homepage and Workspaces while retaining `/demo-studio/dashboard` as a direct developer/demo route; limited demo routing to the canonical slug. Fixed optional phone create/update persistence. Made `/dashboard` select a single active membership directly and send zero/multiple memberships to Workspaces. Added a Member “My Orders & Tasks” dashboard showing only assigned event/task summaries, hid Owner modules/capabilities, and added server layouts restricting CRM/ERP/OMS/WhatsApp/dev-portal pages to Owners. Added a member-data allowlist projection and regression test; corrected task-status validation to retain studio ID and Firebase token. Marketplace profiles now use `/studios/{publicSlug}`; `/studio/{slug}` redirects to the new canonical URL.
+- **Verification:** `npm test` passed 22/22; `npm run lint` passed with no warnings/errors; `npx tsc --noEmit -p apps/web/tsconfig.json` passed; `npm run build` passed and registered `/studios/[slug]` plus the legacy `/studio/[slug]` route. Live probes: home HTTP 200 with no demo CTA; `/demo-studio/dashboard` HTTP 200 with Demo Mode banner; `/studios` HTTP 200 (no currently visible public profiles in local data); `/studio/teststudio` HTTP 307 to `/studios/teststudio`; unauthenticated CRM route HTTP 307 to `/sign-in`. Manual browser retests for AUTH-003, optional phone creation, Workspaces demo absence, and a published profile URL remain pending.
+
+---
+
+## CHG-038 — Enforce Server Session and Studio Role Boundaries
+
+- **Task:** Close unauthenticated dashboard access, enforce studio role boundaries, and address the reported UX issues
+- **Date:** 2026-09-27
+- **Area:** Firebase server auth, dashboard routes, Server Actions, customer tracking, studio onboarding, landing feature accordion, manual QA checklist, Firestore rules guidance
+- **Change:** Added Firebase Admin session cookies on sign-in/sign-out and membership guards before private dashboard reads. Restricted full studio order, customer, member, marketplace package, booking, and payment reads/writes to Owners; scoped Member task updates and resource availability to the linked assigned crew record. Replaced raw passkey order/task responses with an allowlisted customer tracking DTO, removed order-ID fallback, and increased newly issued tracking-passkey entropy. Bound public inquiries to visible marketplace profiles and published package prices. Updated the manual checklist with reported AUTH-002 failure and retest cases. Centered the feature cards in a 2-column desktop grid and automated the studio identifier availability check.
+- **Firestore Rules:** Keep direct client reads/writes denied. Firebase Admin SDK bypasses Firestore Rules; role permissions are enforced in server code. The Console rules must match `firestore.rules`.
+- **Verification:** `npm test` passed 21/21; `npm run lint` passed with no warnings/errors; TypeScript check and `npm run build` passed. Local probes returned HTTP 200 for `/`, HTTP 307 to `/sign-in` for an unauthenticated dashboard request, HTTP 400 for same-origin session creation without an ID token, and HTTP 403 for a cross-origin session request. User manually retested AUTH-002 successfully with sign-out and a different account. AUTH-001 still needs a browser retest of the new cookie-backed flow; Firebase Console rules must be published separately.
+
+---
+
+## CHG-037 — Route Marketplace Navigation Through Landing Page Showcase
+
+- **Task:** Route Studio Marketplace navigation to the landing-page showcase before opening studio listings
+- **Date:** 2026-09-27
+- **Area:** `apps/web/src/components/Navbar.tsx`, `apps/web/src/app/page.tsx`, `docs/FOCOMAN_MASTER_MANUAL_TEST_CHECKLIST.md`
+- **Change:** The shared Marketplace navigation now targets `/#studios`; the landing-page showcase uses the `studios` anchor and retains its onward link to `/studios`. Recorded the user's reported successful multi-account sign-in/sign-out result for AUTH-001.
+- **Reason:** The Marketplace navigation previously opened `/studios` directly, bypassing the landing-page showcase requested as the entry point.
+- **Verification:** Local landing page returned HTTP 200; rendered HTML contains the `/#studios` navigation link, `id="studios"` target, and onward `/studios` link.
+
+---
+
 ## CHG-036 — Fix React Hydration Mismatches (Errors #418 & #423) and Webpack Chunk Invalidation
 
 - **Task:** CHG-036 — Resolve React Hydration Errors #418 & #423 and Invalidate Stale Webpack Chunks

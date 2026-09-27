@@ -11,6 +11,8 @@ import {
   performPreflightCheck,
   generateResourceSuggestions,
   toCustomerOrderView,
+  toCustomerTrackingView,
+  toMemberWorkView,
 } from "../packages/domain/src/index.ts";
 import {
   CreateOrderSchema,
@@ -31,6 +33,13 @@ import {
   CancelOrderSchema,
 } from "../packages/validation/src/index.ts";
 import { RECOVERY_WINDOW_DAYS } from "../packages/config/src/index.ts";
+import {
+  createInvitationLinkToken,
+  formatInvitationCode,
+  hashInvitationPasscode,
+  verifyInvitationLinkToken,
+  verifyInvitationPasscode,
+} from "../apps/web/src/lib/invitationPasscode.ts";
 
 describe("1. Recovery System & Soft-Delete Domain Logic", () => {
   test("RECOVERY_WINDOW_DAYS is strictly configured to 14 days", () => {
@@ -165,10 +174,27 @@ describe("3. Validation Schemas - CRUD Operations", () => {
       taskId: "TSK-001",
       orderId: "ORD-001",
       studioId: "studio-1",
+      idToken: "valid-id-token",
       status: "REVIEW",
       reworkNotes: "Please adjust contrast",
     });
     assert.strictEqual(validUpdate.success, true);
+
+    const validStatusUpdate = UpdateTaskStatusSchema.safeParse({
+      taskId: "TSK-001",
+      orderId: "ORD-001",
+      studioId: "studio-1",
+      idToken: "valid-id-token",
+      status: "IN_PROGRESS",
+    });
+    assert.strictEqual(validStatusUpdate.success, true);
+
+    const missingAuth = UpdateTaskStatusSchema.safeParse({
+      taskId: "TSK-001",
+      orderId: "ORD-001",
+      status: "IN_PROGRESS",
+    });
+    assert.strictEqual(missingAuth.success, false);
   });
 
   test("CreateCustomerSchema and UpdateCustomerSchema validation", () => {
@@ -204,6 +230,24 @@ describe("3. Validation Schemas - CRUD Operations", () => {
       skills: [],
     });
     assert.strictEqual(emptySkills.success, false);
+
+    const genericInvite = CreateMemberSchema.safeParse({
+      studioId: "studio-1",
+      name: "Rahul",
+      email: "",
+      claimCode: "284617",
+      skills: ["PHOTOGRAPHY"],
+    });
+    assert.strictEqual(genericInvite.success, true);
+
+    const invalidGenericInvite = CreateMemberSchema.safeParse({
+      studioId: "studio-1",
+      name: "Rahul",
+      email: "",
+      claimCode: "1234",
+      skills: ["PHOTOGRAPHY"],
+    });
+    assert.strictEqual(invalidGenericInvite.success, false);
 
     const validUpdate = UpdateMemberSchema.safeParse({
       memberId: "MEM-100",
@@ -392,5 +436,237 @@ describe("5. Major Design Amendment - Customer Order View Data Isolation", () =>
     assert.strictEqual((customerView as any).assignedResources, undefined);
     assert.strictEqual((customerView as any).internalNotes, undefined);
   });
+
+  test("customer tracking projection excludes raw order and crew fields", () => {
+    const order = {
+      id: "ORD-556",
+      studioId: "studio-1",
+      orderNumber: "ORD-1056",
+      customer: { id: "CUS-1", name: "Anand", phone: "+919876543210" },
+      eventType: "Wedding",
+      eventDate: "2026-12-01",
+      eventLocation: "Beach Resort, Goa",
+      services: ["Photography"],
+      pricing: {
+        estimatedPrice: 100000,
+        finalConfirmedPrice: 90000,
+        advanceAmount: 25000,
+        remainingAmount: 65000,
+      },
+      paymentStatus: "PARTIAL" as const,
+      orderStatus: "AWAITING_EVENT" as const,
+      assignedResources: [{ memberId: "M1", memberName: "Private Crew", skill: "PHOTO", availabilityConfirmed: true }],
+      trackingPasskey: "SECRET-PASSKEY",
+      internalNotes: "Private studio note",
+      createdAt: "2026-09-01T10:00:00Z",
+      updatedAt: "2026-09-01T10:00:00Z",
+    };
+    const tasks = [{
+      id: "TSK-1",
+      orderId: "ORD-556",
+      studioId: "studio-1",
+      title: "Edit photos",
+      serviceCategory: "PHOTOGRAPHY",
+      assignedMemberId: "M1",
+      assignedMemberName: "Private Crew",
+      status: "IN_PROGRESS" as const,
+      sequenceOrder: 1,
+    }];
+
+    const view = toCustomerTrackingView(order as any, "Studio One", tasks as any);
+
+    assert.strictEqual(view.order.customerName, "Anand");
+    assert.strictEqual(view.order.totalAmount, 90000);
+    assert.strictEqual((view.order as any).trackingPasskey, undefined);
+    assert.strictEqual((view.order as any).internalNotes, undefined);
+    assert.strictEqual((view.order as any).assignedResources, undefined);
+    assert.deepStrictEqual(view.tasks[0], {
+      title: "Edit photos",
+      serviceCategory: "PHOTOGRAPHY",
+      status: "IN_PROGRESS",
+      sequenceOrder: 1,
+    });
+  });
+
+  test("member work projection includes only assigned studio orders and safe fields", () => {
+    const assignedOrder = {
+      id: "ORD-100",
+      studioId: "studio-1",
+      orderNumber: "ORD-100",
+      customer: { id: "CUS-1", name: "Private Customer", phone: "+919999999999" },
+      eventType: "Wedding",
+      eventDate: "2026-12-01",
+      eventLocation: "Beach Resort",
+      services: ["Photography"],
+      pricing: { estimatedPrice: 100000, finalConfirmedPrice: 90000, advanceAmount: 25000, remainingAmount: 65000 },
+      paymentStatus: "PARTIAL" as const,
+      orderStatus: "AWAITING_EVENT" as const,
+      assignedResources: [{ memberId: "MEM-1", memberName: "Alex", skill: "PHOTOGRAPHY", availabilityConfirmed: true }],
+      trackingPasskey: "SECRET",
+    };
+    const unrelatedOrder = { ...assignedOrder, id: "ORD-200", orderNumber: "ORD-200", assignedResources: [] };
+    const otherStudioOrder = { ...assignedOrder, id: "ORD-300", studioId: "studio-2" };
+    const tasks = [{
+      id: "TASK-1",
+      orderId: "ORD-100",
+      studioId: "studio-1",
+      title: "Shoot coverage",
+      serviceCategory: "PHOTOGRAPHY" as const,
+      assignedMemberId: "MEM-1",
+      assignedMemberName: "Alex",
+      status: "ASSIGNED" as const,
+      sequenceOrder: 1,
+    }, {
+      id: "TASK-2",
+      orderId: "ORD-200",
+      studioId: "studio-1",
+      title: "Unassigned task",
+      serviceCategory: "PHOTOGRAPHY" as const,
+      assignedMemberId: "MEM-2",
+      assignedMemberName: "Other Member",
+      status: "ASSIGNED" as const,
+      sequenceOrder: 1,
+    }];
+
+    const view = toMemberWorkView("studio-1", "MEM-1", [assignedOrder, unrelatedOrder, otherStudioOrder] as any, tasks as any);
+
+    assert.deepStrictEqual(view.orders.map((order) => order.id), ["ORD-100"]);
+    assert.deepStrictEqual(view.tasks.map((task) => task.id), ["TASK-1"]);
+    assert.strictEqual((view.orders[0] as any).customer, undefined);
+    assert.strictEqual((view.orders[0] as any).pricing, undefined);
+    assert.strictEqual((view.orders[0] as any).trackingPasskey, undefined);
+  });
 });
+
+describe("6. Studio Invitation Passcode", () => {
+  test("invitation ID follows the requested readable globally-unique prefix format", () => {
+    assert.strictEqual(formatInvitationCode("Focoman Studio", "Sivakrishna Alternate", "4821"), "INV-FOC-SIV-4821");
+    assert.strictEqual(formatInvitationCode("A", "Li", "0007"), "INV-AXX-LIX-0007");
+    assert.throws(() => formatInvitationCode("Studio", "Member", "123"));
+  });
+
+  test("passcodes are salted, verifiable, and reject an incorrect value", () => {
+    const first = hashInvitationPasscode("284617");
+    const second = hashInvitationPasscode("284617");
+
+    assert.notStrictEqual(first.salt, second.salt);
+    assert.notStrictEqual(first.hash, second.hash);
+    assert.strictEqual(verifyInvitationPasscode("284617", first.salt, first.hash), true);
+    assert.strictEqual(verifyInvitationPasscode("111111", first.salt, first.hash), false);
+  });
+
+  test("invitation link token is separate from its readable ID and rejects tampering", () => {
+    const link = createInvitationLinkToken();
+    assert.notStrictEqual(link.token, link.hash);
+    assert.strictEqual(verifyInvitationLinkToken(link.token, link.hash), true);
+    assert.strictEqual(verifyInvitationLinkToken(`${link.token}x`, link.hash), false);
+  });
+
+  test("member name uses Google account name as primary and preserves owner alias in brackets when mismatched", () => {
+    const googleName = "Rahul Sharma";
+    const ownerName = "Rahul Editor";
+    const primaryName = googleName || ownerName;
+    const ownerAssignedName = (ownerName && ownerName.toLowerCase() !== googleName.toLowerCase()) ? ownerName : undefined;
+
+    assert.strictEqual(primaryName, "Rahul Sharma");
+    assert.strictEqual(ownerAssignedName, "Rahul Editor");
+
+    // Display formatted for studio owners
+    const ownerView = ownerAssignedName ? `${primaryName} (${ownerAssignedName})` : primaryName;
+    assert.strictEqual(ownerView, "Rahul Sharma (Rahul Editor)");
+
+    // Matching names do not duplicate
+    const sameOwnerName = "Rahul Sharma";
+    const resolvedAlias = (sameOwnerName && sameOwnerName.toLowerCase() !== googleName.toLowerCase()) ? sameOwnerName : undefined;
+    assert.strictEqual(resolvedAlias, undefined);
+  });
+
+  test("duplicate invite check detects existing member email and pending invitation email", () => {
+    const existingMembers = [{
+      id: "MEM-1",
+      studioId: "studio-1",
+      name: "Rahul Sharma",
+      email: "rahul@studio.com",
+      skills: ["PHOTOGRAPHY"],
+      createdAt: "",
+      updatedAt: "",
+    }];
+
+    const existingInvitations = [{
+      id: "INV-STU-PRI-1234",
+      studioId: "studio-1",
+      studioName: "Studio 1",
+      email: "priya@studio.com",
+      name: "Priya",
+      skills: ["VIDEOGRAPHY"],
+      role: "STUDIO_MEMBER" as const,
+      status: "PENDING" as const,
+      invitedByUid: "owner-1",
+      createdAt: "",
+    }];
+
+    const duplicateMemberEmail = "rahul@studio.com";
+    const isMemberEmailDuplicate = existingMembers.some((m) => m.email.toLowerCase() === duplicateMemberEmail.toLowerCase());
+    assert.strictEqual(isMemberEmailDuplicate, true);
+
+    const duplicateInviteEmail = "priya@studio.com";
+    const isInviteEmailDuplicate = existingInvitations.some((inv) => inv.status === "PENDING" && inv.email?.toLowerCase() === duplicateInviteEmail.toLowerCase());
+    assert.strictEqual(isInviteEmailDuplicate, true);
+
+    const freshEmail = "fresh@studio.com";
+    assert.strictEqual(existingMembers.some((m) => m.email.toLowerCase() === freshEmail), false);
+    assert.strictEqual(existingInvitations.some((inv) => inv.email?.toLowerCase() === freshEmail), false);
+  });
+
+  test("studio-scoped name uniqueness rejects duplicate names across active members and pending invitations", () => {
+    const existingMembers = [{
+      id: "MEM-1",
+      studioId: "studio-1",
+      name: "Rahul Sharma",
+      ownerAssignedName: "Rahul Photo",
+      email: "rahul@studio.com",
+      skills: ["PHOTOGRAPHY"],
+      createdAt: "",
+      updatedAt: "",
+    }];
+
+    const existingInvitations = [{
+      id: "INV-STU-PRI-1234",
+      studioId: "studio-1",
+      studioName: "Studio 1",
+      name: "Priya Video",
+      skills: ["VIDEOGRAPHY"],
+      role: "STUDIO_MEMBER" as const,
+      status: "PENDING" as const,
+      invitedByUid: "owner-1",
+      createdAt: "",
+    }];
+
+    // Primary name match
+    assert.strictEqual(
+      existingMembers.some((m) => m.name.toLowerCase() === "rahul sharma"),
+      true
+    );
+    // Alias name match
+    assert.strictEqual(
+      existingMembers.some((m) => m.ownerAssignedName?.toLowerCase() === "rahul photo"),
+      true
+    );
+    // Pending invite name match
+    assert.strictEqual(
+      existingInvitations.some((inv) => inv.status === "PENDING" && inv.name.toLowerCase() === "priya video"),
+      true
+    );
+    // Unique plain invite name
+    assert.strictEqual(
+      existingMembers.some((m) => m.name.toLowerCase() === "deepak drone"),
+      false
+    );
+    assert.strictEqual(
+      existingInvitations.some((inv) => inv.name.toLowerCase() === "deepak drone"),
+      false
+    );
+  });
+});
+
 

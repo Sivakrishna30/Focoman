@@ -131,7 +131,7 @@ This document audits the complete backend data model, storage layer, server exec
 #### Entity: `StudioInvitation`
 - **Firestore Collection:** `invitations`
 - **Document ID Strategy:** Collision-safe invite code `INV-[A-Z0-9]{4}-[A-Z0-9]{4}`
-- **Required Fields:** `id`, `studioId`, `studioName`, `email`, `skills`, `role`, `status` (`PENDING` | `ACCEPTED` | `EXPIRED`), `invitedByUid`, `createdAt`
+- **Required Fields:** `id`, `studioId`, `studioName`, optional `email`, optional `phone`, `skills`, `role`, `status` (`PENDING` | `ACCEPTED` | `REVOKED`), `invitedByUid`, `createdAt`; generic invites also store a salted claim-code hash and failed-attempt lock state. Invitations do not expire automatically.
 - **Optional Fields:** `name`, `acceptedAt`, `acceptedByUid`, `isDeleted`, `deletedAt`, `deletedBy`
 - **Current Backend Implementation:**
   - `createMemberAction`: Generates invite.
@@ -139,7 +139,7 @@ This document audits the complete backend data model, storage layer, server exec
   - `acceptInvitationAction`: Transactionally verifies code, checks user email, updates status to `ACCEPTED`, and writes `membership` and `member` records.
 - **Missing Operations:**
   - `revokeInvitationAction` (Delete / Revoke pending invitation).
-  - `restoreInvitationAction` (Reactivate revoked invitation if not expired).
+  - `restoreInvitationAction` (Restore a soft-deleted invitation within the standard record-recovery window).
 
 #### Unimplemented ERP Modules (Per SRS/Discovery Audit)
 - Payroll / Compensation records: Not yet implemented in schema; placeholder for future phase.

@@ -26,8 +26,7 @@ const STORAGE_KEYS = {
 
 export function isDemoStudio(slug?: string | null): boolean {
   if (!slug) return false;
-  const s = slug.toLowerCase();
-  return s === "lumina-studios" || s === "demo" || s === "demo-studio";
+  return slug.toLowerCase() === "demo-studio" || slug.toLowerCase() === DEMO_STUDIO_SLUG;
 }
 
 // Event listeners for intra-page synchronization
@@ -543,8 +542,16 @@ export function createDemoMember(input: {
   email: string;
   phone?: string;
   skills: string[];
-}): { success: boolean; member: StudioMember } {
+}): { success: boolean; member?: StudioMember; error?: string } {
   const currentMembers = getDemoMembers();
+  const normalizedName = input.name.trim().toLowerCase();
+  if (currentMembers.some((m) => m.name.toLowerCase() === normalizedName || (m.ownerAssignedName && m.ownerAssignedName.toLowerCase() === normalizedName))) {
+    return { success: false, error: `A crew member named "${input.name.trim()}" already exists in your studio. Please use a unique name or initial.` };
+  }
+  if (input.email && !input.email.includes("@demo.invalid") && currentMembers.some((m) => m.email.toLowerCase() === input.email.trim().toLowerCase())) {
+    return { success: false, error: `A crew member with email "${input.email.trim()}" is already a member of your studio.` };
+  }
+
   const id = `demo-user-${input.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10)}`;
   const now = new Date().toISOString();
 

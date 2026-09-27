@@ -3,6 +3,13 @@ import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { getMembershipByUidAndStudio } from '@focoman/db';
 import { StudioMembership } from '@focoman/types';
+import { cookies } from 'next/headers';
+
+export const SESSION_COOKIE_NAME = '__session';
+export const SESSION_COOKIE_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000;
+
+export class UnauthenticatedSessionError extends Error {}
+export class StudioMembershipRequiredError extends Error {}
 
 /**
  * Server-Side Authorization Utilities — CHG-010
@@ -77,6 +84,43 @@ export async function requireVerifiedUser(idToken: string | undefined): Promise<
   }
 }
 
+export async function createSessionCookieFromIdToken(idToken: string): Promise<string> {
+  const adminAuth = getAdminAuthInstance();
+  const decoded = await adminAuth.verifyIdToken(idToken);
+  const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 5 * 60;
+  if (decoded.auth_time < fiveMinutesAgo) {
+    throw new Error('Recent authentication is required to establish a server session.');
+  }
+  return adminAuth.createSessionCookie(idToken, { expiresIn: SESSION_COOKIE_MAX_AGE_MS });
+}
+
+export async function requireVerifiedSession(): Promise<DecodedIdToken> {
+  const sessionCookie = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionCookie) {
+    throw new UnauthenticatedSessionError('Authentication required.');
+  }
+
+  try {
+    return await getAdminAuthInstance().verifySessionCookie(sessionCookie, true);
+  } catch {
+    throw new UnauthenticatedSessionError('Authentication required.');
+  }
+}
+
+export async function requireStudioSessionMember(studioId: string): Promise<{
+  decoded: DecodedIdToken;
+  membership: StudioMembership;
+}> {
+  const decoded = await requireVerifiedSession();
+  const membership = await getMembershipByUidAndStudio(decoded.uid, studioId);
+  if (!membership) {
+    throw new StudioMembershipRequiredError(
+      `Authorization denied: You are not an active member of studio "${studioId}".`
+    );
+  }
+  return { decoded, membership };
+}
+
 /**
  * Verifies that the authenticated user (by UID) is an ACTIVE member or owner
  * of the specified studio. Throws if no active membership record exists.
@@ -106,4 +150,8 @@ export async function requireStudioMember(
   }
 
   return membership;
+}
+
+export async function requireStudioOwner(uid: string, studioId: string): Promise<StudioMembership> {
+  return requireStudioMember(uid, studioId, 'STUDIO_OWNER');
 }

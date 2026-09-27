@@ -1,23 +1,36 @@
 "use server";
 
-import { randomBytes, randomUUID } from "crypto";
 import {
   getMembersByStudio,
   getDeletedMembersByStudio,
   getMemberById,
+  getMemberByIdIncludeDeleted,
   saveMember,
   updateMember,
   softDeleteMember,
   restoreMember,
   saveInvitation,
   getStudioBySlug,
+  getInvitationByCode,
   getInvitationsByStudio,
+  getPendingInvitationsByEmail,
+  getInvitationByCodeIncludeDeleted,
+  recordInvitationPasscodeFailure,
   revokeInvitation,
   restoreInvitation,
   acceptInvitationTransaction,
 } from "@focoman/db";
-import { StudioMember, StudioInvitation } from "@focoman/types";
-import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { StudioMember, StudioInvitation, StudioInvitationSummary } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember, requireStudioOwner } from "@/lib/serverAuth";
+import {
+  createInvitationLinkToken,
+  formatInvitationCode,
+  generateTimestampDigits,
+  hashInvitationPasscode,
+  verifyInvitationLinkToken,
+  verifyInvitationPasscode,
+} from "@/lib/invitationPasscode";
+import { updatePendingInvitationLinkTokenHash } from "@focoman/db";
 
 /**
  * Server Actions for Studio Crew & Resource Management (ERP)
@@ -30,7 +43,7 @@ export async function getStudioMembersAction(
   idToken: string
 ): Promise<StudioMember[]> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   return await getMembersByStudio(studioSlug);
 }
 
@@ -49,7 +62,7 @@ export async function getMemberAction(
   idToken: string
 ): Promise<StudioMember | null> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
 
   const member = await getMemberById(memberId);
   if (!member) return null;
@@ -62,23 +75,160 @@ export async function getMemberAction(
 export async function getStudioInvitationsAction(
   studioSlug: string,
   idToken: string
-): Promise<StudioInvitation[]> {
+): Promise<StudioInvitationSummary[]> {
   const decoded = await requireVerifiedUser(idToken);
   await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
-  return await getInvitationsByStudio(studioSlug);
+  const invitations = await getInvitationsByStudio(studioSlug);
+  return invitations.map(toInvitationSummary);
+}
+
+function toInvitationSummary(invitation: StudioInvitation): StudioInvitationSummary {
+  return {
+    id: invitation.id,
+    studioId: invitation.studioId,
+    studioName: invitation.studioName,
+    email: invitation.email,
+    phone: invitation.phone,
+    name: invitation.name,
+    skills: invitation.skills,
+    role: invitation.role,
+    status: invitation.status,
+    requiresPasscode: !invitation.email,
+    claimLocked: invitation.claimLocked,
+    createdAt: invitation.createdAt,
+    acceptedAt: invitation.acceptedAt,
+  };
+}
+
+export async function getMyPendingInvitationsAction(idToken: string): Promise<StudioInvitationSummary[]> {
+  const decoded = await requireVerifiedUser(idToken);
+  if (!decoded.email) return [];
+  const invitations = await getPendingInvitationsByEmail(decoded.email);
+  return invitations.map(toInvitationSummary);
+}
+
+export async function getInvitationClaimStatusAction(
+  inviteCode: string,
+  idToken: string,
+  linkToken?: string
+): Promise<{
+  status: "PENDING" | "CLAIMED_BY_YOU" | "CLAIMED" | "REVOKED" | "LOCKED" | "UNAVAILABLE" | "EMAIL_MISMATCH" | "NOT_FOUND" | "OWNER_VIEW";
+  studioId?: string;
+  studioName?: string;
+  inviteeName?: string;
+  inviteeEmail?: string;
+  invitationStatus?: "PENDING" | "ACCEPTED" | "REVOKED";
+  requiresPasscode?: boolean;
+  acceptedAt?: string;
+}> {
+  const decoded = await requireVerifiedUser(idToken);
+  const cleanCode = inviteCode?.trim().toUpperCase();
+  if (!cleanCode) return { status: "NOT_FOUND" };
+
+  const invitation = await getInvitationByCodeIncludeDeleted(cleanCode);
+  if (!invitation) return { status: "NOT_FOUND" };
+
+  // Check if current user is the studio owner who issued this invite
+  const studio = await getStudioBySlug(invitation.studioId);
+  const isOwner = Boolean(
+    (studio && (studio.ownerId === decoded.uid || studio.ownerEmail?.toLowerCase() === decoded.email?.toLowerCase())) ||
+    invitation.invitedByUid === decoded.uid
+  );
+
+  if (isOwner) {
+    return {
+      status: "OWNER_VIEW",
+      studioId: invitation.studioId,
+      studioName: invitation.studioName,
+      inviteeName: invitation.name,
+      inviteeEmail: invitation.email,
+      invitationStatus: invitation.status as "PENDING" | "ACCEPTED" | "REVOKED",
+      requiresPasscode: !invitation.email,
+      acceptedAt: invitation.acceptedAt,
+    };
+  }
+
+  if (invitation.isDeleted || invitation.status === "REVOKED") {
+    return { status: "REVOKED", studioId: invitation.studioId, studioName: invitation.studioName };
+  }
+
+  if (invitation.status === "ACCEPTED") {
+    return {
+      status: invitation.acceptedByUid === decoded.uid ? "CLAIMED_BY_YOU" : "CLAIMED",
+      studioId: invitation.studioId,
+      studioName: invitation.studioName,
+    };
+  }
+
+  if (invitation.status !== "PENDING") {
+    return { status: "UNAVAILABLE", studioId: invitation.studioId, studioName: invitation.studioName };
+  }
+
+  if (invitation.claimLocked) {
+    return { status: "LOCKED", studioId: invitation.studioId, studioName: invitation.studioName };
+  }
+
+  if (invitation.email) {
+    const emailMatches = Boolean(
+      decoded.email && invitation.email.trim().toLowerCase() === decoded.email.trim().toLowerCase()
+    );
+    if (!emailMatches) {
+      return {
+        status: "EMAIL_MISMATCH",
+        studioId: invitation.studioId,
+        studioName: invitation.studioName,
+        inviteeEmail: invitation.email,
+        inviteeName: invitation.name,
+      };
+    }
+  }
+
+  return {
+    status: "PENDING",
+    studioId: invitation.studioId,
+    studioName: invitation.studioName,
+    inviteeName: invitation.name,
+    requiresPasscode: !invitation.email,
+  };
+}
+
+export async function createInvitationShareLinkAction(input: {
+  studioId: string;
+  inviteCode: string;
+  idToken: string;
+}): Promise<{ success: boolean; linkToken?: string; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioOwner(decoded.uid, input.studioId);
+    const invitation = await getInvitationByCodeIncludeDeleted(input.inviteCode);
+    if (!invitation || invitation.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Invitation not found in the authorized studio." };
+    }
+    if (invitation.status !== "PENDING" || invitation.isDeleted || invitation.claimLocked) {
+      return { success: false, error: "This invitation cannot issue a new link. Revoke it and create a replacement." };
+    }
+    const newLink = createInvitationLinkToken();
+    await updatePendingInvitationLinkTokenHash(invitation.id, newLink.hash);
+    return { success: true, linkToken: newLink.token };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "Could not create invitation link." };
+  }
 }
 
 export async function createMemberAction(input: {
   studioId: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
+  claimCode?: string;
   skills: string[];
   idToken: string;
 }): Promise<{
   success: boolean;
-  member?: StudioMember;
+  invitation?: StudioInvitationSummary;
   invitationCode?: string;
+  invitationLinkToken?: string;
+  claimCode?: string;
   error?: string;
 }> {
   try {
@@ -88,8 +238,15 @@ export async function createMemberAction(input: {
     if (!input.name || input.name.trim().length === 0) {
       return { success: false, error: "Member name is required." };
     }
-    if (!input.email || !input.email.includes("@")) {
+    const email = input.email?.trim().toLowerCase() || "";
+    if (email && !email.includes("@")) {
       return { success: false, error: "Valid email address is required." };
+    }
+    if (!email && !/^\d{6}$/.test(input.claimCode || "")) {
+      return { success: false, error: "A six-digit passcode is required when no email is provided." };
+    }
+    if (email && input.claimCode) {
+      return { success: false, error: "Passcodes are only used for email-free invitations." };
     }
     if (!input.skills || input.skills.length === 0) {
       return { success: false, error: "At least one certified skill must be selected." };
@@ -98,43 +255,117 @@ export async function createMemberAction(input: {
     const studio = await getStudioBySlug(input.studioId);
     const studioName = studio?.name || input.studioId;
 
-    const memberId = `MEM-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-    const inviteCode = `INV-${randomBytes(3).toString('hex').toUpperCase()}-${randomBytes(2).toString('hex').toUpperCase()}`;
-    const now = new Date().toISOString();
-
-    const member: StudioMember = {
-      id: memberId,
-      studioId: input.studioId.toLowerCase(),
-      name: input.name.trim(),
-      email: input.email.trim().toLowerCase(),
-      phone: input.phone?.trim() || undefined,
-      skills: input.skills,
-      status: 'ACTIVE',
-      isDeleted: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const invitation: StudioInvitation = {
-      id: inviteCode,
-      studioId: input.studioId.toLowerCase(),
-      studioName,
-      email: input.email.trim().toLowerCase(),
-      name: input.name.trim(),
-      skills: input.skills,
-      role: 'STUDIO_MEMBER',
-      status: 'PENDING',
-      isDeleted: false,
-      invitedByUid: decoded.uid,
-      createdAt: now,
-    };
-
-    await Promise.all([
-      saveMember(member),
-      saveInvitation(invitation),
+    const [existingMembers, existingInvitations] = await Promise.all([
+      getMembersByStudio(input.studioId),
+      getInvitationsByStudio(input.studioId),
     ]);
 
-    return { success: true, member, invitationCode: inviteCode };
+    const normalizedName = input.name.trim().toLowerCase();
+
+    // 0. Check if the name matches the studio owner
+    if (studio?.ownerName && studio.ownerName.trim().toLowerCase() === normalizedName) {
+      return {
+        success: false,
+        error: `"${input.name.trim()}" is the studio owner and is already active as the first crew member.`,
+      };
+    }
+
+    // 1. Check uniqueness of the entered name within this studio (active members)
+    const memberNameExists = existingMembers.some(
+      (m) =>
+        m.name.trim().toLowerCase() === normalizedName ||
+        (m.ownerAssignedName && m.ownerAssignedName.trim().toLowerCase() === normalizedName)
+    );
+    if (memberNameExists) {
+      return {
+        success: false,
+        error: `A crew member named "${input.name.trim()}" already exists in your studio. Please use a unique name or initial.`,
+      };
+    }
+
+    // 2. Check uniqueness of the entered name within this studio (pending invitations)
+    const pendingInviteNameExists = existingInvitations.some(
+      (inv) => inv.status === "PENDING" && inv.name?.trim().toLowerCase() === normalizedName
+    );
+    if (pendingInviteNameExists) {
+      return {
+        success: false,
+        error: `A pending invitation for "${input.name.trim()}" already exists in your studio.`,
+      };
+    }
+
+    // 3. Disallow self-invites & duplicate member emails
+    if (email) {
+      const callerEmail = decoded.email?.trim().toLowerCase() ?? "";
+      const ownerEmail = studio?.ownerEmail?.trim().toLowerCase() ?? "";
+      const isSelfInvite = (callerEmail && email === callerEmail) || (ownerEmail && email === ownerEmail);
+
+      if (isSelfInvite) {
+        return {
+          success: false,
+          error: "You cannot invite yourself. The studio owner is automatically the first crew member with owner status.",
+        };
+      }
+
+      const memberEmailExists = existingMembers.some(
+        (m) => m.email?.trim().toLowerCase() === email
+      );
+      if (memberEmailExists) {
+        return {
+          success: false,
+          error: `A crew member with email "${email}" is already a member of your studio.`,
+        };
+      }
+
+      const pendingInviteEmailExists = existingInvitations.some(
+        (inv) => inv.status === "PENDING" && inv.email?.trim().toLowerCase() === email
+      );
+      if (pendingInviteEmailExists) {
+        return {
+          success: false,
+          error: `A pending invitation has already been sent to "${email}". You can copy or revoke the existing invitation from the Pending Invitations list.`,
+        };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const passcodeHash = email ? undefined : hashInvitationPasscode(input.claimCode!);
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { dateStamp, timeStamp } = generateTimestampDigits();
+      const inviteCode = formatInvitationCode(studio?.name || input.studioId, input.name, `${dateStamp}-${timeStamp}`);
+      const linkToken = createInvitationLinkToken();
+      const invitation: StudioInvitation = {
+        id: inviteCode,
+        studioId: input.studioId.toLowerCase(),
+        studioName,
+        ...(email ? { email } : {}),
+        ...(input.phone?.trim() ? { phone: input.phone.trim() } : {}),
+        name: input.name.trim(),
+        skills: input.skills,
+        ...(passcodeHash ? { claimCodeSalt: passcodeHash.salt, claimCodeHash: passcodeHash.hash } : {}),
+        claimLinkTokenHash: linkToken.hash,
+        role: 'STUDIO_MEMBER',
+        status: 'PENDING',
+        isDeleted: false,
+        invitedByUid: decoded.uid,
+        createdAt: now,
+      };
+
+      try {
+        await saveInvitation(invitation);
+        return {
+          success: true,
+          invitation: toInvitationSummary(invitation),
+          invitationCode: inviteCode,
+          invitationLinkToken: linkToken.token,
+          ...(email ? {} : { claimCode: input.claimCode }),
+        };
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Invitation code collision')) continue;
+        throw error;
+      }
+    }
+    throw new Error('Could not reserve a unique invitation code. Please try again.');
   } catch (err: unknown) {
     console.error("[createMemberAction] Error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Failed to create studio member" };
@@ -166,7 +397,7 @@ export async function updateMemberAction(input: {
 
     const updated = await updateMember(input.memberId, {
       ...(input.updates.name ? { name: input.updates.name.trim() } : {}),
-      ...(input.updates.phone !== undefined ? { phone: input.updates.phone.trim() || undefined } : {}),
+      ...(input.updates.phone !== undefined ? { phone: input.updates.phone.trim() } : {}),
       ...(input.updates.skills ? { skills: input.updates.skills } : {}),
       ...(input.updates.status ? { status: input.updates.status } : {}),
     });
@@ -212,6 +443,11 @@ export async function restoreMemberAction(input: {
     const decoded = await requireVerifiedUser(input.idToken);
     await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
 
+    const member = await getMemberByIdIncludeDeleted(input.memberId);
+    if (!member || member.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Crew member not found in the authorized studio." };
+    }
+
     await restoreMember(input.memberId);
     return { success: true };
   } catch (err: unknown) {
@@ -229,6 +465,11 @@ export async function revokeInvitationAction(input: {
     const decoded = await requireVerifiedUser(input.idToken);
     await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
 
+    const invitation = await getInvitationByCode(input.inviteCode);
+    if (!invitation || invitation.studioId !== input.studioId.toLowerCase() || invitation.status !== "PENDING") {
+      return { success: false, error: "Invitation not found in the authorized studio." };
+    }
+
     await revokeInvitation(input.inviteCode, decoded.uid);
     return { success: true };
   } catch (err: unknown) {
@@ -239,6 +480,8 @@ export async function revokeInvitationAction(input: {
 
 export async function acceptInvitationAction(input: {
   inviteCode: string;
+  linkToken?: string;
+  claimCode?: string;
   idToken: string;
 }): Promise<{
   success: boolean;
@@ -260,11 +503,58 @@ export async function acceptInvitationAction(input: {
       return { success: false, error: "Authenticated account does not have an email address." };
     }
 
+    const invitation = await getInvitationByCodeIncludeDeleted(cleanCode);
+    if (!invitation || invitation.isDeleted || invitation.status === "REVOKED") {
+      return { success: false, error: "This invitation is no longer available." };
+    }
+    if (invitation.status === "ACCEPTED") {
+      if (
+        !invitation.email?.trim()
+        && (!input.linkToken || !invitation.claimLinkTokenHash
+          || !verifyInvitationLinkToken(input.linkToken, invitation.claimLinkTokenHash))
+      ) {
+        return { success: false, error: "This invitation link is not valid." };
+      }
+      if (invitation.acceptedByUid === uid) {
+        return { success: true, studioId: invitation.studioId, studioName: invitation.studioName };
+      }
+      return { success: false, error: "This invitation has already been claimed." };
+    }
+    if (invitation.status !== "PENDING") {
+      return { success: false, error: "This invitation is no longer available." };
+    }
+
+    let claimCodeVerified = false;
+    if (!invitation.email?.trim()) {
+      if (!input.linkToken || !invitation.claimLinkTokenHash
+        || !verifyInvitationLinkToken(input.linkToken, invitation.claimLinkTokenHash)) {
+        return { success: false, error: "This invitation link is not valid." };
+      }
+      if (invitation.claimLocked) {
+        return { success: false, error: "This invitation is locked after too many incorrect passcode attempts. Ask the studio owner to create a new invitation." };
+      }
+      if (!/^\d{6}$/.test(input.claimCode || "")) {
+        return { success: false, error: "Enter the six-digit passcode provided by the studio owner." };
+      }
+      if (!invitation.claimCodeSalt || !invitation.claimCodeHash
+        || !verifyInvitationPasscode(input.claimCode!, invitation.claimCodeSalt, invitation.claimCodeHash)) {
+        const failure = await recordInvitationPasscodeFailure(cleanCode);
+        return {
+          success: false,
+          error: failure.locked
+            ? "Too many incorrect passcode attempts. Ask the studio owner to create a new invitation."
+            : `Incorrect passcode. ${failure.attemptsRemaining} attempts remain.`,
+        };
+      }
+      claimCodeVerified = true;
+    }
+
     const res = await acceptInvitationTransaction({
       code: cleanCode,
       uid,
       userEmail,
       userName: decoded.name || decoded.email,
+      claimCodeVerified,
     });
 
     if (!res.success) {
@@ -290,6 +580,11 @@ export async function restoreInvitationAction(input: {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
     await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+
+    const invitation = await getInvitationByCodeIncludeDeleted(input.inviteCode);
+    if (!invitation || invitation.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Invitation not found in the authorized studio." };
+    }
 
     await restoreInvitation(input.inviteCode);
     return { success: true };

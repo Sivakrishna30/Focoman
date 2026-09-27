@@ -13,6 +13,7 @@ export type Plan = "basic" | "professional" | "complete";
 
 export interface DashboardSidebarProps {
   studioSlug: string;
+  role: "STUDIO_OWNER" | "STUDIO_MEMBER";
   plan: Plan;
   studioName: string;
   ownerName: string;
@@ -37,7 +38,7 @@ const MODULE_ACTIVE_CLASSES: Record<string, string> = {
   default: "bg-brand-blue-primary text-white shadow-xs",
 };
 
-export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, features, appEnv }: DashboardSidebarProps) {
+export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName, features, appEnv }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -130,6 +131,12 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
     },
   ];
 
+  const visibleNavItems = role === "STUDIO_MEMBER"
+    ? navItems
+        .filter((item) => item.key === "dashboard")
+        .map((item) => ({ ...item, label: "My Orders & Tasks", sublabel: "Assigned Work" }))
+    : navItems;
+
   const handleSignOut = async () => {
     try {
       await signOutUser();
@@ -143,7 +150,9 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
     <div className="flex h-full flex-col bg-white">
       {/* Logo */}
       <div className="flex items-center justify-between border-b border-border-divider px-5 py-4">
-        <FocomanLogo className="h-9 w-auto" showStudiosSuffix={false} />
+        <Link href="/" className="flex items-center shrink-0" title="Focoman Home">
+          <FocomanLogo className="h-8 sm:h-9 w-auto" showStudiosSuffix={true} />
+        </Link>
         {onLinkClick && (
           <button
             onClick={onLinkClick}
@@ -172,8 +181,8 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
             {t("nav.switch", "Switch")}
           </Link>
         </div>
-        <p className="text-xs text-text-tertiary truncate">{ownerName}</p>
-        <div className="mt-1.5 flex items-center justify-between">
+        {role === "STUDIO_OWNER" && <p className="text-xs text-text-tertiary truncate">{ownerName}</p>}
+        {role === "STUDIO_OWNER" && <div className="mt-1.5 flex items-center justify-between">
           <span
             className={`inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider ${
               plan === "complete" || plan === "professional"
@@ -189,12 +198,12 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
           >
             Manage Capabilities →
           </Link>
-        </div>
+        </div>}
       </div>
 
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isDevPortal = (item.module as string | null) === "dev";
           const isTestingMode = appEnv === "testing";
           
@@ -298,7 +307,9 @@ export function DashboardSidebar({ studioSlug, plan, studioName, ownerName, feat
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <FocomanLogo className="h-6 sm:h-7 w-auto shrink-0" showStudiosSuffix={false} />
+          <Link href="/" className="flex items-center shrink-0" title="Focoman Home">
+            <FocomanLogo className="h-6 sm:h-7 w-auto shrink-0" showStudiosSuffix={true} />
+          </Link>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <span className="text-[11px] sm:text-xs font-bold text-text-primary max-w-[70px] sm:max-w-[120px] truncate" title={studioName}>

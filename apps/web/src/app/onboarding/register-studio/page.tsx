@@ -39,22 +39,49 @@ export default function RegisterStudioPage() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    let isCurrent = true;
+
+    if (!slugPreview) {
+      setIsChecking(false);
+      setAvailability({ checked: false, available: true });
+      return;
+    }
+
+    if (slugPreview.length < 3) {
+      setIsChecking(false);
+      setAvailability({ checked: true, available: false, message: "Name must be at least 3 characters." });
+      return;
+    }
+
+    setAvailability({ checked: false, available: true });
+    setIsChecking(true);
+    const timeout = window.setTimeout(async () => {
+      try {
+        const result = await checkStudioSlugAvailabilityAction(slugPreview);
+        if (isCurrent) {
+          setAvailability({ checked: true, available: result.available, message: result.message });
+        }
+      } catch {
+        if (isCurrent) {
+          setAvailability({ checked: false, available: true, message: "Could not verify availability. You can still submit; registration will recheck the name." });
+        }
+      } finally {
+        if (isCurrent) setIsChecking(false);
+      }
+    }, 450);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeout);
+    };
+  }, [slugPreview]);
+
   const handleNameChange = (name: string) => {
     setForm((prev) => ({ ...prev, name }));
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     setSlugPreview(slug);
     setAvailability({ checked: false, available: true });
-  };
-
-  const handleCheckAvailability = async () => {
-    if (!slugPreview || slugPreview.length < 3) {
-      setAvailability({ checked: true, available: false, message: "Name must be at least 3 characters." });
-      return;
-    }
-    setIsChecking(true);
-    const res = await checkStudioSlugAvailabilityAction(slugPreview);
-    setIsChecking(false);
-    setAvailability({ checked: true, available: res.available, message: res.message });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,23 +166,18 @@ export default function RegisterStudioPage() {
                 className="mt-1.5 w-full rounded-xl border border-border-default px-4 py-2.5 text-sm outline-none focus:border-brand-orange-primary focus:ring-1 focus:ring-brand-orange-primary"
               />
               {slugPreview && (
-                <div className="mt-2 flex items-center justify-between text-xs">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs" aria-live="polite">
                   <span className="text-text-tertiary">
                     Studio Identifier: <code className="font-mono text-brand-orange-primary font-semibold">/{slugPreview}</code>
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleCheckAvailability}
-                    disabled={isChecking}
-                    className="font-semibold text-brand-blue-primary hover:underline"
-                  >
-                    {isChecking ? "Checking database..." : "Check availability"}
-                  </button>
+                  <span className="font-semibold text-text-secondary">
+                    {isChecking ? "Checking availability..." : availability.checked && availability.available ? "Identifier is available." : ""}
+                  </span>
                 </div>
               )}
-              {availability.checked && (
-                <p className={`mt-1 text-xs font-semibold ${availability.available ? "text-emerald-600" : "text-red-600"}`}>
-                  {availability.available ? "✓ Identifier is available!" : availability.message || "Identifier already in use."}
+              {(availability.checked && !availability.available || availability.message && !isChecking) && (
+                <p className={`mt-1 text-xs font-semibold ${!availability.checked ? "text-amber-600" : availability.available ? "text-emerald-600" : "text-red-600"}`}>
+                  {availability.available ? availability.message : availability.message || "Identifier already in use."}
                 </p>
               )}
             </div>
@@ -209,7 +231,7 @@ export default function RegisterStudioPage() {
               </Link>
               <button
                 type="submit"
-                disabled={isSubmitting || (availability.checked && !availability.available)}
+                disabled={isSubmitting || isChecking || (availability.checked && !availability.available)}
                 className="rounded-xl bg-brand-orange-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
               >
                 {isSubmitting ? "Creating Workspace..." : "Complete Registration"}

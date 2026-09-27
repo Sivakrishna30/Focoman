@@ -1,8 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // By default, direct client mutations are denied.
-    // Privileged business mutations execute via Next.js Server Actions using Firebase Admin SDK.
+    // All application data access is mediated by the server-only Admin SDK.
+    // Admin SDK requests bypass these rules; role checks must be enforced by server code.
+    // Keep direct browser SDK reads and writes denied for every collection.
     match /{document=**} {
       allow read, write: if false;
     }

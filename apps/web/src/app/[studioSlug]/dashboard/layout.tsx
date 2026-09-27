@@ -6,12 +6,12 @@ import { getStudioBySlug } from "@focoman/db";
 import { Studio } from "@focoman/types";
 import { DEMO_STUDIO } from "@/lib/demoData";
 import { DemoBanner } from "@/components/DemoBanner";
+import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
 const APP_ENV = process.env.NEXT_PUBLIC_APP_ENV || "local";
 
 function isDemoSlug(slug: string): boolean {
-  const s = slug.toLowerCase();
-  return s === "lumina-studios" || s === "demo" || s === "demo-studio";
+  return slug.toLowerCase() === "demo-studio";
 }
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,8 @@ export default async function DashboardLayout({
 }) {
   const { studioSlug } = await params;
   const isDemo = isDemoSlug(studioSlug);
+
+  const access = isDemo ? null : await requireDashboardStudioAccess(studioSlug);
 
   let studio: Studio | null = null;
   if (isDemo) {
@@ -43,8 +45,8 @@ export default async function DashboardLayout({
     name: studio.name,
     city: studio.city || "",
     ownerId: studio.ownerId,
-    ownerName: studio.ownerName,
-    ownerEmail: studio.ownerEmail,
+    ownerName: access?.membership.role === "STUDIO_OWNER" ? studio.ownerName : "Studio Owner",
+    ownerEmail: access?.membership.role === "STUDIO_OWNER" ? studio.ownerEmail : "",
     ownerPhone: studio.ownerPhone || undefined,
     features: studio.features,
     createdAt: studio.createdAt || new Date().toISOString(),
@@ -56,6 +58,7 @@ export default async function DashboardLayout({
       <div className="flex h-screen overflow-hidden bg-surface-app flex-col md:flex-row">
         <DashboardSidebar
           studioSlug={studioSlug}
+          role={access?.membership.role || "STUDIO_OWNER"}
           plan="complete"
           studioName={serializedStudio.name}
           ownerName={serializedStudio.ownerName}
@@ -63,7 +66,7 @@ export default async function DashboardLayout({
           appEnv={APP_ENV}
         />
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">
-          <DashboardTopNav />
+          <DashboardTopNav role={access?.membership.role || "STUDIO_OWNER"} />
           {isDemo && <DemoBanner studioSlug={studioSlug} />}
           <div id="dashboard-main-content" className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>

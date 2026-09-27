@@ -11,7 +11,7 @@ import { StructuredData } from "@/components/public/StructuredData";
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://focoman.web.app";
 
 export const metadata: Metadata = {
-  title: "Focoman — Complete Business Operating System for Photography Studios",
+  title: "Focoman",
   description:
     "Eliminate scattered WhatsApp chats, spreadsheets, and paper notebooks. Focoman brings orders, shoot schedules, dynamic service workflows, crew planning, offline payments, and client deliveries into one unified system.",
   alternates: {
@@ -49,7 +49,7 @@ export default function HomePage() {
           id="home"
           className="relative overflow-hidden border-b border-border-divider bg-gradient-to-b from-white via-brand-blue-background/25 to-surface-app px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
         >
-          <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
+          <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[42%] h-[480px] w-[480px] sm:h-[520px] sm:w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
 
           <div className="relative z-10 mx-auto max-w-4xl text-center">
             <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-5 py-2 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-brand-orange-primary shadow-2xs">
@@ -191,7 +191,7 @@ export default function HomePage() {
         </section>
 
         {/* 6. Studio Marketplace Showcase Section */}
-        <section id="marketplace" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
+        <section id="studios" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider">
           <div className="relative overflow-hidden rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-amber-50/50 to-orange-100/40 p-8 sm:p-12 lg:p-14 text-center shadow-xs dark:from-orange-950/20 dark:via-amber-950/15 dark:to-orange-900/10 dark:border-orange-900/40">
             {/* Subtle background glow */}
             <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-orange-300/20 blur-3xl pointer-events-none dark:bg-orange-600/10" />

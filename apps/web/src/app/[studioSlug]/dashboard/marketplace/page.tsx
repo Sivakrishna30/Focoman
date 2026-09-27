@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { getStudioBySlug } from "@focoman/db";
 import { MarketplaceSettingsClient } from "@/features/marketplace/MarketplaceSettingsClient";
+import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
 export default async function MarketplaceSettingsPage(props: { params: Promise<{ studioSlug: string }> }) {
   const params = await props.params;
+  await requireDashboardStudioAccess(params.studioSlug, "STUDIO_OWNER");
   const studio = await getStudioBySlug(params.studioSlug);
   if (!studio) {
     redirect("/workspaces");

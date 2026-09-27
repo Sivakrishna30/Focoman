@@ -235,7 +235,7 @@ export function ModuleAccordion() {
                 isExpanded ? "block p-5 sm:p-6 bg-slate-50/50" : "hidden"
               }`}
             >
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 sm:gap-4">
                 {mod.cards.map((card, cIdx) => (
                   <div
                     key={cIdx}

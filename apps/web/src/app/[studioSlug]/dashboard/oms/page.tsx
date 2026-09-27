@@ -51,13 +51,19 @@ export default function OmsPage({
   params: Promise<{ studioSlug: string }>;
 }) {
   const { studioSlug } = use(params);
-  const { idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
+  const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Order | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const hasWhatsappPlan = Boolean(
+    studio?.features?.whatsapp ||
+    studio?.planInfo?.selectedCapabilities?.some((c) => c.startsWith("WHATSAPP")) ||
+    (studio as any)?.capabilities?.some((c: string) => c.startsWith("WHATSAPP"))
+  );
 
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -67,6 +73,7 @@ export default function OmsPage({
     customerName: "",
     customerPhone: "",
     customerEmail: "",
+    notifyWhatsApp: true,
     eventType: "Wedding Reception",
     eventDate: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0],
     eventLocation: "City Hall",
@@ -126,12 +133,12 @@ export default function OmsPage({
       if (isDemo) {
         setSelectedTasks(getDemoTasksByOrder(selected.id));
       } else if (workspaceToken) {
-        void getOrderTasksAction(selected.id, workspaceToken).then(setSelectedTasks);
+        void getOrderTasksAction(selected.id, studioSlug, workspaceToken).then(setSelectedTasks);
       }
     } else {
       setSelectedTasks([]);
     }
-  }, [selected, isDemo, workspaceToken]);
+  }, [selected, isDemo, studioSlug, workspaceToken]);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +184,7 @@ export default function OmsPage({
       customerName: newOrderForm.customerName,
       customerPhone: newOrderForm.customerPhone || undefined,
       customerEmail: newOrderForm.customerEmail || undefined,
+      notifyWhatsApp: hasWhatsappPlan ? newOrderForm.notifyWhatsApp : false,
       eventType: newOrderForm.eventType,
       eventDate: newOrderForm.eventDate,
       eventLocation: newOrderForm.eventLocation,
@@ -796,6 +804,34 @@ export default function OmsPage({
                   />
                 </div>
               </div>
+
+              {/* WhatsApp Notification Note & Opt-in */}
+              {hasWhatsappPlan ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={newOrderForm.notifyWhatsApp}
+                      onChange={(e) =>
+                        setNewOrderForm({ ...newOrderForm, notifyWhatsApp: e.target.checked })
+                      }
+                      className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-emerald-900 block">
+                        Send order updates via WhatsApp
+                      </span>
+                      <span className="text-[11px] text-emerald-700 block">
+                        Enter phone number to receive updates related to the order in WhatsApp. Studio owner can uncheck if preferred not to send automated updates.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <p className="text-[11px] text-text-tertiary">
+                  Phone number is optional. Enter phone number to receive updates related to the order in WhatsApp (available when WhatsApp plan is active).
+                </p>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

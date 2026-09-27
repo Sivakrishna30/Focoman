@@ -7,6 +7,8 @@ import type {
   PreflightConflictReport,
   ResourceSuggestion,
   CustomerOrderView,
+  CustomerTrackingView,
+  MemberWorkView,
   PaymentVerificationStatus
 } from '@focoman/types';
 import { RECOVERY_WINDOW_DAYS } from '@focoman/config';
@@ -181,6 +183,79 @@ export function toCustomerOrderView(order: Order, studioName: string): CustomerO
     trackingPasskey: order.trackingPasskey,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
+  };
+}
+
+export function toCustomerTrackingView(
+  order: Order,
+  studioName: string,
+  tasks: Task[]
+): CustomerTrackingView {
+  return {
+    order: {
+      orderNumber: order.orderNumber,
+      studioName,
+      customerName: order.customer.name,
+      eventType: order.eventType,
+      eventDate: order.eventDate,
+      eventLocation: order.eventLocation || order.locationInfo?.address,
+      services: order.services,
+      totalAmount: order.pricing.finalConfirmedPrice || order.pricing.estimatedPrice,
+      advanceAmount: order.pricing.advanceAmount,
+      remainingAmount: order.pricing.remainingAmount,
+      paymentStatus: order.paymentStatus,
+      orderStatus: order.orderStatus,
+    },
+    tasks: tasks.map((task) => ({
+      title: task.title,
+      serviceCategory: task.serviceCategory,
+      status: task.status,
+      sequenceOrder: task.sequenceOrder,
+    })),
+  };
+}
+
+export function toMemberWorkView(
+  studioId: string,
+  memberId: string,
+  orders: Order[],
+  tasks: Task[]
+): MemberWorkView {
+  const normalizedStudioId = studioId.toLowerCase();
+  const memberTasks = tasks.filter((task) =>
+    task.studioId === normalizedStudioId
+    && !task.isDeleted
+    && task.assignedMemberId === memberId
+  );
+  const taskOrderIds = new Set(memberTasks.map((task) => task.orderId));
+  const assignedOrders = orders.filter((order) =>
+    order.studioId === normalizedStudioId
+    && !order.isDeleted
+    && (taskOrderIds.has(order.id)
+      || order.assignedResources?.some((resource) => resource.memberId === memberId))
+  );
+  const assignedOrderIds = new Set(assignedOrders.map((order) => order.id));
+
+  return {
+    orders: assignedOrders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      eventType: order.eventType,
+      eventDate: order.eventDate,
+      eventLocation: order.eventLocation || order.locationInfo?.address,
+      services: order.services,
+      orderStatus: order.orderStatus,
+    })),
+    tasks: memberTasks
+      .filter((task) => assignedOrderIds.has(task.orderId))
+      .map((task) => ({
+        id: task.id,
+        orderId: task.orderId,
+        title: task.title,
+        serviceCategory: task.serviceCategory,
+        status: task.status,
+        sequenceOrder: task.sequenceOrder,
+      })),
   };
 }
 

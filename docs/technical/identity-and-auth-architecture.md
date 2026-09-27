@@ -156,13 +156,13 @@ A member account is established exclusively via an owner-initiated invitation:
 ```text
 Studio Owner
      ↓
-Sends Invitation (Email / Invite Code / Link with assigned skills)
+Creates email-bound invitation or generic link + six-digit passcode
      ↓
 Invited Person opens invitation link
      ↓
 Authenticates with Google Sign-in
      ↓
-System verifies pending invitation token
+System verifies email match or generic passcode
      ↓
 Links Firebase UID to Studio Membership
      ↓
@@ -171,7 +171,11 @@ Activates Studio Member record (marks invitation ACCEPTED)
 Redirects to Studio Member Dashboard
 ```
 
-- The invitation token is single-use and serves as an onboarding bridge, **not** a permanent password.
+- Email-bound invitations remain restricted to the specified Google account's verified email.
+- If the Owner does not know the member's email, the Owner may create a generic invitation with a random single-use link token and a separate six-digit passcode. The recipient may claim it using their own Google account.
+- Generic passcodes are stored as salted hashes, allow at most five failed attempts, and are not shown again after creation. A locked invite can be revoked and replaced.
+- Invitations do not expire automatically. Owners can revoke pending invitations; successful claims are single-use and record the accepting Firebase UID.
+- An already-accepted link routes its accepting account to that studio; other accounts see that the invitation has already been claimed.
 - Studio Owners never generate or store passwords for their crew members.
 
 ---
@@ -229,14 +233,20 @@ To enforce this architecture, Firestore entities are structured into normalized 
 
 /invitations/{invitationId}
   ├── studioId: string
-  ├── email: string (invited Google email)
+     ├── email?: string (verified Google email restriction when provided)
+     ├── phone?: string (contact metadata only; not an authentication factor)
   ├── role: "STUDIO_MEMBER"
   ├── skills: string[]
-  ├── token: string (secure cryptographic token)
-  ├── status: "PENDING" | "ACCEPTED" | "EXPIRED"
-  ├── expiresAt: ISOString
+     ├── claimCodeSalt?: string
+     ├── claimCodeHash?: string (generic invites only; never store the passcode in plaintext)
+     ├── failedClaimAttempts?: number
+     ├── claimLocked?: boolean
+     ├── status: "PENDING" | "ACCEPTED" | "REVOKED"
+     ├── acceptedByUid?: string
   └── createdAt: ISOString
 ```
+
+The invitation document ID is a high-entropy, single-use URL token. Generic invites additionally require the separately shared six-digit passcode. Invitation validity has no automatic time-based expiry; Owner revocation and one-time acceptance control use.
 
 ### Authorization Query Rule:
 A user's accessible workspaces are discovered by querying `/memberships` where `uid == currentUser.uid` and `status == "ACTIVE"`.

@@ -7,7 +7,8 @@ import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState, signInWithGoogle, signOutUser } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction } from "@/actions/studioActions";
-import { StudioMembership } from "@focoman/types";
+import { getMyPendingInvitationsAction } from "@/actions/memberActions";
+import { StudioInvitationSummary, StudioMembership } from "@focoman/types";
 import { User } from "firebase/auth";
 
 export default function WorkspacesPage() {
@@ -15,6 +16,7 @@ export default function WorkspacesPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [workspaces, setWorkspaces] = useState<StudioMembership[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<StudioInvitationSummary[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
 
   const [authError, setAuthError] = useState<string | null>(null);
@@ -27,11 +29,16 @@ export default function WorkspacesPage() {
         setLoadingWorkspaces(true);
         // CHG-011: Pass the Firebase ID token (JWT), not the UID — identity is verified server-side.
         const idToken = await user.getIdToken();
-        const data = await getUserWorkspacesAction(idToken);
+        const [data, invitations] = await Promise.all([
+          getUserWorkspacesAction(idToken),
+          getMyPendingInvitationsAction(idToken),
+        ]);
         setWorkspaces(data);
+        setPendingInvitations(invitations);
         setLoadingWorkspaces(false);
       } else {
         setWorkspaces([]);
+        setPendingInvitations([]);
       }
     });
     return () => unsubscribe();
@@ -103,6 +110,36 @@ export default function WorkspacesPage() {
               </div>
             </div>
 
+            {!loadingWorkspaces && pendingInvitations.length > 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-amber-950">Invitations to Join</h2>
+                    <p className="mt-1 text-xs text-amber-900">These invitations were sent to your signed-in Google email.</p>
+                  </div>
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-900">{pendingInvitations.length}</span>
+                </div>
+                <ul className="mt-3 divide-y divide-amber-200">
+                  {pendingInvitations.map((invitation) => (
+                    <li key={invitation.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">{invitation.studioName}</p>
+                        <p className="mt-0.5 text-xs text-text-secondary">
+                          Invited as {invitation.name || "Crew Member"} · {invitation.skills.join(", ")}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/onboarding/join-studio?code=${encodeURIComponent(invitation.id)}`}
+                        className="inline-flex items-center justify-center rounded-lg bg-brand-purple-primary px-4 py-2 text-xs font-bold text-white hover:bg-purple-700"
+                      >
+                        Review &amp; Join
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {loadingWorkspaces ? (
               <div className="py-12 text-center text-xs text-text-tertiary">
                 Fetching accessible studio workspaces...
@@ -146,24 +183,6 @@ export default function WorkspacesPage() {
                   </Link>
                 </div>
 
-                {/* Sample Demo Workspace Launch for new users */}
-                <div className="mt-8 pt-6 border-t border-slate-100 max-w-lg mx-auto">
-                  <div className="rounded-2xl border border-dashed border-brand-orange-soft bg-orange-50/50 p-4 text-center">
-                    <span className="rounded-full bg-brand-orange-primary px-2 py-0.5 text-[10px] font-extrabold uppercase text-white tracking-wide">
-                      Instant Sample Tour
-                    </span>
-                    <h4 className="mt-1 text-sm font-bold text-slate-900">Want to test drive Focoman first?</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Explore Lumina Studios with preloaded mock orders, workflow tasks, and local browser memory.
-                    </p>
-                    <Link
-                      href="/demo-studio/dashboard"
-                      className="mt-3 inline-block rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs"
-                    >
-                      Explore Demo Workspace →
-                    </Link>
-                  </div>
-                </div>
               </div>
             ) : (
               /* State B: Has Memberships */
@@ -217,34 +236,6 @@ export default function WorkspacesPage() {
                     </div>
                   ))}
 
-                  {/* Sample Demo Workspace Card */}
-                  <div className="rounded-2xl border border-dashed border-brand-orange-soft bg-brand-orange-background/20 p-6 shadow-xs transition hover:shadow-md flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-semibold text-brand-orange-primary">
-                          /demo-studio
-                        </span>
-                        <span className="rounded-full bg-brand-orange-primary px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
-                          Demo Sandbox
-                        </span>
-                      </div>
-                      <h3 className="mt-3 text-lg font-bold text-text-primary">
-                        Lumina Studios (Demo)
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Explore mock orders, team ERP, CRM clients, and guided tour with browser memory.
-                      </p>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-brand-orange-soft/50">
-                      <Link
-                        href="/demo-studio/dashboard"
-                        className="block text-center rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs"
-                      >
-                        Explore Demo Workspace →
-                      </Link>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Additional Actions */}

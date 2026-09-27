@@ -1,39 +1,72 @@
 "use server";
 
-import { randomBytes, randomUUID } from "crypto";
+import { generateOrderIdentifiers, generateTimestampDigits, prefixLetters } from "@/lib/invitationPasscode";
 import {
   CreateOrderSchema,
   AssignResourceSchema,
   UpdateTaskStatusSchema,
   UpdatePaymentSchema,
 } from "@focoman/validation";
-import { canCompleteOrder, generateWorkflowTasks } from "@focoman/domain";
+import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView } from "@focoman/domain";
 import {
   getOrdersByStudio,
   getDeletedOrdersByStudio,
   getOrderById,
+  getOrderByIdIncludeDeleted,
   getOrderByPasskey,
+  getStudioBySlug,
   saveOrder,
   updateOrder,
   softDeleteOrder,
   restoreOrder,
   getTasksByOrder,
+  getTasksByMember,
   saveTasks,
   saveTask,
   updateTask,
   softDeleteTask,
   restoreTask,
   getTaskById,
+  getTaskByIdIncludeDeleted,
+  getMembersByStudio,
   saveCustomer,
 } from "@focoman/db";
-import { Order, Task, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
-import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember, requireStudioOwner } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Order Lifecycle, Tasks & Post-Event Production Pipeline (OMS)
  * Full CRUD, soft-delete, and restoration for both Orders and Tasks.
  * Enforces authenticated identity, authorized studio, and resource ownership.
  */
+
+async function findActiveMemberRecord(studioId: string, email?: string): Promise<StudioMember | null> {
+  if (!email) return null;
+  const normalizedEmail = email.trim().toLowerCase();
+  const members = await getMembersByStudio(studioId);
+  return members.find((member) =>
+    member.status === "ACTIVE" && member.email.trim().toLowerCase() === normalizedEmail
+  ) || null;
+}
+
+async function requireAssignedOrderAccess(
+  membership: Awaited<ReturnType<typeof requireStudioMember>>,
+  email: string | undefined,
+  studioId: string,
+  order: Order
+): Promise<StudioMember | null> {
+  if (membership.role === "STUDIO_OWNER") {
+    return null;
+  }
+  const member = await findActiveMemberRecord(studioId, email);
+  if (!member) throw new Error("No active crew profile is linked to this account.");
+
+  const tasks = await getTasksByMember(studioId, member.id);
+  const isAssigned = order.assignedResources?.some((resource) => resource.memberId === member.id)
+    || tasks.some((task) => task.orderId === order.id);
+  if (!isAssigned) throw new Error("Access denied: This order is not assigned to your crew profile.");
+  return member;
+}
 
 export async function createOrderAction(rawInput: unknown): Promise<{
   success: boolean;
@@ -44,13 +77,12 @@ export async function createOrderAction(rawInput: unknown): Promise<{
   try {
     const validated = CreateOrderSchema.parse(rawInput);
 
-    const decoded = await requireVerifiedUser((validated as any).idToken);
-    await requireStudioMember(decoded.uid, validated.studioId);
+    const decoded = await requireVerifiedUser(validated.idToken);
+    await requireStudioOwner(decoded.uid, validated.studioId);
 
-    const orderId = `ORD-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-    const passkey = `FOC-${randomBytes(4).toString('hex').toUpperCase()}`;
-    const customerId = `CUS-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-    const now = new Date().toISOString();
+    const now = new Date();
+    const { orderId, passkey, customerId } = generateOrderIdentifiers(validated.studioId, now);
+    const nowIso = now.toISOString();
 
     const remainingAmount = Math.max(0, validated.finalConfirmedPrice - validated.advanceAmount);
     const initialPaymentStatus: PaymentStatus =
@@ -60,6 +92,9 @@ export async function createOrderAction(rawInput: unknown): Promise<{
         ? "PARTIAL"
         : "PENDING";
 
+    const customerPhone = validated.customerPhone?.trim() || undefined;
+    const customerEmail = validated.customerEmail?.trim() || undefined;
+
     const newOrder: Order = {
       id: orderId,
       studioId: validated.studioId.toLowerCase(),
@@ -67,11 +102,11 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       customer: {
         id: customerId,
         name: validated.customerName,
-        phone: validated.customerPhone,
+        ...(customerPhone ? { phone: customerPhone } : {}),
       },
       eventType: validated.eventType,
       eventDate: validated.eventDate,
-      eventLocation: validated.eventLocation,
+      ...(validated.eventLocation ? { eventLocation: validated.eventLocation } : {}),
       services: validated.services,
       packages: validated.packages || [],
       pricing: {
@@ -84,18 +119,23 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       orderStatus: "AWAITING_EVENT",
       assignedResources: [],
       trackingPasskey: passkey,
+      ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
       isDeleted: false,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
-    const workflowTasks = generateWorkflowTasks(orderId, validated.studioId, validated.services).map(t => ({
-      ...t,
-      id: `TSK-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`,
-      createdAt: now,
-      updatedAt: now,
-      isDeleted: false,
-    }));
+    const studioPrefix = prefixLetters(validated.studioId);
+    const workflowTasks = generateWorkflowTasks(orderId, validated.studioId, validated.services).map((t, idx) => {
+      const { dateStamp, timeStamp } = generateTimestampDigits(new Date(now.getTime() + idx));
+      return {
+        ...t,
+        id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}`,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        isDeleted: false,
+      };
+    });
 
     await Promise.all([
       saveOrder(newOrder),
@@ -104,10 +144,11 @@ export async function createOrderAction(rawInput: unknown): Promise<{
         id: customerId,
         studioId: validated.studioId.toLowerCase(),
         name: validated.customerName,
-        phone: validated.customerPhone,
+        ...(customerPhone ? { phone: customerPhone } : {}),
+        ...(customerEmail ? { email: customerEmail } : {}),
         isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: nowIso,
+        updatedAt: nowIso,
       }),
     ]);
 
@@ -126,7 +167,7 @@ export async function getStudioOrdersAction(
   idToken: string
 ): Promise<Order[]> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   return await getOrdersByStudio(studioSlug);
 }
 
@@ -135,7 +176,7 @@ export async function getDeletedStudioOrdersAction(
   idToken: string
 ): Promise<Order[]> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
   return await getDeletedOrdersByStudio(studioSlug);
 }
 
@@ -145,7 +186,7 @@ export async function getOrderAction(
   idToken: string
 ): Promise<{ order: Order | null; tasks: Task[] }> {
   const decoded = await requireVerifiedUser(idToken);
-  await requireStudioMember(decoded.uid, studioSlug);
+  await requireStudioOwner(decoded.uid, studioSlug);
 
   const order = await getOrderById(orderId);
   if (!order) return { order: null, tasks: [] };
@@ -158,14 +199,18 @@ export async function getOrderAction(
 
 export async function getOrderTasksAction(
   orderId: string,
-  studioSlug?: string,
-  idToken?: string
+  studioSlug: string,
+  idToken: string
 ): Promise<Task[]> {
-  if (idToken && studioSlug) {
-    const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioSlug);
+  const decoded = await requireVerifiedUser(idToken);
+  const membership = await requireStudioMember(decoded.uid, studioSlug);
+  const order = await getOrderById(orderId);
+  if (!order || order.studioId !== studioSlug.toLowerCase()) {
+    throw new Error("Order not found in authorized studio.");
   }
-  return await getTasksByOrder(orderId);
+  const member = await requireAssignedOrderAccess(membership, decoded.email, studioSlug, order);
+  const tasks = await getTasksByOrder(orderId);
+  return member ? tasks.filter((task) => task.assignedMemberId === member.id) : tasks;
 }
 
 export async function updateOrderAction(input: {
@@ -176,7 +221,7 @@ export async function updateOrderAction(input: {
 }): Promise<{ success: boolean; order?: Order; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const existing = await getOrderById(input.orderId);
     if (!existing) {
@@ -201,7 +246,7 @@ export async function deleteOrderAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const existing = await getOrderById(input.orderId);
     if (!existing) {
@@ -226,7 +271,12 @@ export async function restoreOrderAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
+
+    const order = await getOrderByIdIncludeDeleted(input.orderId);
+    if (!order || order.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Order not found in the authorized studio." };
+    }
 
     await restoreOrder(input.orderId);
     return { success: true };
@@ -238,8 +288,7 @@ export async function restoreOrderAction(input: {
 
 export async function getOrderByPasskeyAction(passkey: string): Promise<{
   success: boolean;
-  order?: Order;
-  tasks?: Task[];
+  view?: CustomerTrackingView;
   error?: string;
 }> {
   try {
@@ -249,19 +298,16 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
 
     const order = await getOrderByPasskey(passkey.trim().toUpperCase());
     if (!order) {
-      const byId = await getOrderById(passkey.trim());
-      if (byId && !byId.isDeleted) {
-        const tasks = await getTasksByOrder(byId.id);
-        return { success: true, order: byId, tasks };
-      }
       return {
         success: false,
-        error: `No confirmed order found matching "${passkey}". Please double check your passkey.`,
+        error: "No order was found for this tracking link.",
       };
     }
 
     const tasks = await getTasksByOrder(order.id);
-    return { success: true, order, tasks };
+    const studio = await getStudioBySlug(order.studioId);
+    const view = toCustomerTrackingView(order, studio?.name || "Studio", tasks);
+    return { success: true, view };
   } catch (err: unknown) {
     console.error("[getOrderByPasskeyAction] Error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Failed to retrieve order." };
@@ -283,7 +329,7 @@ export async function createTaskAction(input: {
 }): Promise<{ success: boolean; task?: Task; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const order = await getOrderById(input.orderId);
     if (!order || order.studioId !== input.studioId.toLowerCase()) {
@@ -291,7 +337,8 @@ export async function createTaskAction(input: {
     }
 
     const existingTasks = await getTasksByOrder(input.orderId);
-    const taskId = `TSK-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const { dateStamp, timeStamp } = generateTimestampDigits();
+    const taskId = `TSK-${prefixLetters(input.studioId)}-${dateStamp}-${timeStamp}`;
     const now = new Date().toISOString();
 
     const task: Task = {
@@ -326,12 +373,24 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
   try {
     const validated = UpdateTaskStatusSchema.parse(rawInput);
 
-    const decoded = await requireVerifiedUser((validated as any).idToken);
-    await requireStudioMember(decoded.uid, (validated as any).studioId);
+    const decoded = await requireVerifiedUser(validated.idToken);
+    const studioId = validated.studioId;
+    const membership = await requireStudioMember(decoded.uid, studioId);
 
     const existingTask = await getTaskById(validated.taskId);
-    if (!existingTask || existingTask.studioId !== (validated as any).studioId.toLowerCase()) {
+    if (!existingTask || existingTask.studioId !== studioId.toLowerCase() || existingTask.orderId !== validated.orderId) {
       return { success: false, error: "Task not found in authorized studio." };
+    }
+
+    const linkedOrder = await getOrderById(validated.orderId);
+    if (!linkedOrder || linkedOrder.studioId !== studioId.toLowerCase()) {
+      return { success: false, error: "Order not found in authorized studio." };
+    }
+    if (membership.role !== "STUDIO_OWNER") {
+      const member = await findActiveMemberRecord(studioId, decoded.email);
+      if (!member || existingTask.assignedMemberId !== member.id) {
+        return { success: false, error: "Access denied: This task is not assigned to your crew profile." };
+      }
     }
 
     const updatedTask = await updateTask(validated.taskId, {
@@ -343,7 +402,7 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
       return { success: false, error: "Task not found" };
     }
 
-    const order = await getOrderById(validated.orderId);
+    const order = linkedOrder;
     let newOrderStatus: OrderStatus | undefined = undefined;
 
     if (order) {
@@ -380,7 +439,7 @@ export async function updateTaskAction(input: {
 }): Promise<{ success: boolean; task?: Task; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const task = await getTaskById(input.taskId);
     if (!task || task.studioId !== input.studioId.toLowerCase()) {
@@ -402,7 +461,7 @@ export async function deleteTaskAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const task = await getTaskById(input.taskId);
     if (!task || task.studioId !== input.studioId.toLowerCase()) {
@@ -424,7 +483,12 @@ export async function restoreTaskAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId);
+    await requireStudioOwner(decoded.uid, input.studioId);
+
+    const task = await getTaskByIdIncludeDeleted(input.taskId);
+    if (!task || task.studioId !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Task not found in the authorized studio." };
+    }
 
     await restoreTask(input.taskId);
     return { success: true };
@@ -443,7 +507,7 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
     const validated = UpdatePaymentSchema.parse(rawInput);
 
     const decoded = await requireVerifiedUser((validated as any).idToken);
-    await requireStudioMember(decoded.uid, (validated as any).studioId);
+    await requireStudioOwner(decoded.uid, (validated as any).studioId);
 
     const existingOrder = await getOrderById(validated.orderId);
     if (!existingOrder) {
@@ -504,7 +568,7 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
     const validated = AssignResourceSchema.parse(rawInput);
 
     const decoded = await requireVerifiedUser((validated as any).idToken);
-    await requireStudioMember(decoded.uid, (validated as any).studioId);
+    await requireStudioOwner(decoded.uid, (validated as any).studioId);
 
     const existingOrder = await getOrderById(validated.orderId);
     if (!existingOrder) {
@@ -586,10 +650,18 @@ export async function confirmResourceAvailabilityAction(
       return { success: false, error: "Order not found" };
     }
     const targetStudioId = studioId || existingOrder.studioId;
-    await requireStudioMember(decoded.uid, targetStudioId);
+    const membership = await requireStudioMember(decoded.uid, targetStudioId);
 
     if (existingOrder.studioId !== targetStudioId.toLowerCase()) {
       return { success: false, error: "Unauthorized: Order belongs to another studio." };
+    }
+
+    if (membership.role !== "STUDIO_OWNER") {
+      const member = await findActiveMemberRecord(targetStudioId, decoded.email);
+      const isAssigned = member && existingOrder.assignedResources?.some((resource) => resource.memberId === member.id);
+      if (!isAssigned || member?.id !== memberId) {
+        return { success: false, error: "Access denied: You can only confirm your own assigned availability." };
+      }
     }
 
     const currentAssignments = existingOrder.assignedResources || [];
@@ -620,7 +692,7 @@ export async function cancelOrderAction(input: {
 }): Promise<{ success: boolean; order?: Order; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioMember(decoded.uid, input.studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, input.studioId);
 
     const existingOrder = await getOrderById(input.orderId);
     if (!existingOrder) {

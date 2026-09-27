@@ -6,13 +6,15 @@ import { z } from 'zod';
  */
 
 export const CreateOrderSchema = z.object({
+  idToken: z.string().min(1, 'Authentication required. No identity token provided.'),
   studioId: z.string().min(1, 'Studio ID is required'),
   customerName: z.string().min(1, 'Customer name is required'),
-  customerPhone: z.string().optional(),
+  customerPhone: z.string().optional().or(z.literal('')),
   customerEmail: z.string().email().optional().or(z.literal('')),
+  notifyWhatsApp: z.boolean().optional(),
   eventType: z.string().min(1, 'Event type is required'),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Event date must be YYYY-MM-DD'),
-  eventLocation: z.string().optional(),
+  eventLocation: z.string().optional().or(z.literal('')),
   services: z.array(z.string()).min(1, 'At least one service must be selected'),
   packages: z.array(z.string()).optional(),
   estimatedPrice: z.number().nonnegative(),
@@ -34,6 +36,8 @@ export type AssignResourceInput = z.infer<typeof AssignResourceSchema>;
 export const UpdateTaskStatusSchema = z.object({
   taskId: z.string().min(1, 'Task ID is required'),
   orderId: z.string().min(1, 'Order ID is required'),
+  studioId: z.string().min(1, 'Studio ID is required'),
+  idToken: z.string().min(1, 'Identity token is required'),
   status: z.enum(['ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'REWORK', 'COMPLETED']),
   reworkNotes: z.string().optional()
 });
@@ -116,8 +120,9 @@ export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
 export const CreateMemberSchema = z.object({
   studioId: z.string().min(1, 'Studio ID is required'),
   name: z.string().min(1, 'Member name is required'),
-  email: z.string().email('Valid email is required'),
+  email: z.string().email('Valid email is required').optional().or(z.literal('')),
   phone: z.string().optional(),
+  claimCode: z.string().regex(/^\d{6}$/, 'Passcode must be exactly 6 digits').optional(),
   skills: z.array(z.string()).min(1, 'At least one skill is required')
 });
 
@@ -127,6 +132,7 @@ export const UpdateMemberSchema = z.object({
   memberId: z.string().min(1, 'Member ID is required'),
   studioId: z.string().min(1, 'Studio ID is required'),
   name: z.string().min(1).optional(),
+  ownerAssignedName: z.string().optional(),
   phone: z.string().optional(),
   skills: z.array(z.string()).min(1).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional()

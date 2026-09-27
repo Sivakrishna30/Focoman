@@ -2,10 +2,10 @@ import { Order } from "@focoman/types";
 import { getOrdersByStudio } from "@focoman/db";
 import { DEMO_ORDERS } from "@/lib/demoData";
 import { BusinessReportsView } from "@/features/dashboard/BusinessReportsView";
+import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
 function isDemoSlug(slug: string): boolean {
-  const s = slug.toLowerCase();
-  return s === "lumina-studios" || s === "demo" || s === "demo-studio";
+  return slug.toLowerCase() === "demo-studio";
 }
 
 export default async function ReportsPage({
@@ -15,6 +15,10 @@ export default async function ReportsPage({
 }) {
   const { studioSlug } = await params;
   const isDemo = isDemoSlug(studioSlug);
+
+  if (!isDemo) {
+    await requireDashboardStudioAccess(studioSlug, "STUDIO_OWNER");
+  }
 
   let orders: Order[] = [];
   if (isDemo) {

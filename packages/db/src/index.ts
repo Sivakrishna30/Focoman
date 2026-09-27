@@ -74,6 +74,11 @@ export function getFirestoreServerInstance(): Firestore {
   }
 
   firestoreDbInstance = getFirestore(firebaseAppInstance);
+  try {
+    firestoreDbInstance.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // ignore if already set
+  }
   return firestoreDbInstance;
 }
 
@@ -542,6 +547,18 @@ export async function getTasksByOrder(orderId: string): Promise<Task[]> {
     .filter((t) => !t.isDeleted);
 }
 
+export async function getTasksByMember(studioId: string, memberId: string): Promise<Task[]> {
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore
+    .collection('tasks')
+    .where('studioId', '==', studioId.toLowerCase())
+    .where('assignedMemberId', '==', memberId)
+    .get();
+  return snap.docs
+    .map((d) => d.data() as Task)
+    .filter((task) => !task.isDeleted);
+}
+
 export async function getTaskById(taskId: string): Promise<Task | null> {
   const firestore = getFirestoreServerInstance();
   const doc = await firestore.collection('tasks').doc(taskId).get();
@@ -622,8 +639,32 @@ export async function restoreTask(taskId: string): Promise<boolean> {
 
 export async function saveInvitation(invitation: StudioInvitation): Promise<StudioInvitation> {
   const firestore = getFirestoreServerInstance();
-  await firestore.collection('invitations').doc(invitation.id).set(invitation, { merge: true });
+  const invitationRef = firestore.collection('invitations').doc(invitation.id);
+  await firestore.runTransaction(async (transaction) => {
+    const existing = await transaction.get(invitationRef);
+    if (existing.exists) {
+      throw new Error('Invitation code collision. Generate a new code and retry.');
+    }
+    transaction.create(invitationRef, invitation);
+  });
   return invitation;
+}
+
+export async function updatePendingInvitationLinkTokenHash(code: string, tokenHash: string): Promise<void> {
+  const firestore = getFirestoreServerInstance();
+  const invitationRef = firestore.collection('invitations').doc(code.trim().toUpperCase());
+  await firestore.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(invitationRef);
+    if (!snapshot.exists) throw new Error('Invitation not found.');
+    const invitation = snapshot.data() as StudioInvitation;
+    if (invitation.status !== 'PENDING' || invitation.isDeleted || invitation.claimLocked) {
+      throw new Error('This invitation cannot issue a new link. Revoke it and create a replacement.');
+    }
+    transaction.update(invitationRef, {
+      claimLinkTokenHash: tokenHash,
+      updatedAt: new Date().toISOString(),
+    });
+  });
 }
 
 export async function getInvitationByCode(code: string): Promise<StudioInvitation | null> {
@@ -638,6 +679,13 @@ export async function getInvitationByCode(code: string): Promise<StudioInvitatio
   return null;
 }
 
+export async function getInvitationByCodeIncludeDeleted(code: string): Promise<StudioInvitation | null> {
+  const cleanCode = code.trim().toUpperCase();
+  const firestore = getFirestoreServerInstance();
+  const doc = await firestore.collection('invitations').doc(cleanCode).get();
+  return doc.exists ? (doc.data() as StudioInvitation) : null;
+}
+
 export async function getInvitationsByStudio(studioId: string): Promise<StudioInvitation[]> {
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
@@ -647,6 +695,48 @@ export async function getInvitationsByStudio(studioId: string): Promise<StudioIn
   return snap.docs
     .map((d) => d.data() as StudioInvitation)
     .filter((inv) => !inv.isDeleted && inv.status !== 'REVOKED');
+}
+
+export async function getPendingInvitationsByEmail(email: string): Promise<StudioInvitation[]> {
+  const firestore = getFirestoreServerInstance();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return [];
+  const snap = await firestore
+    .collection('invitations')
+    .where('email', '==', normalizedEmail)
+    .where('status', '==', 'PENDING')
+    .get();
+  return snap.docs
+    .map((doc) => doc.data() as StudioInvitation)
+    .filter((invitation) => !invitation.isDeleted && !invitation.claimLocked);
+}
+
+export async function recordInvitationPasscodeFailure(code: string): Promise<{
+  locked: boolean;
+  attemptsRemaining: number;
+}> {
+  const firestore = getFirestoreServerInstance();
+  const cleanCode = code.trim().toUpperCase();
+  const invitationRef = firestore.collection('invitations').doc(cleanCode);
+
+  return firestore.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(invitationRef);
+    if (!snapshot.exists) return { locked: false, attemptsRemaining: 0 };
+
+    const invitation = snapshot.data() as StudioInvitation;
+    if (invitation.status !== 'PENDING' || invitation.isDeleted || invitation.claimLocked) {
+      return { locked: true, attemptsRemaining: 0 };
+    }
+
+    const failedAttempts = (invitation.failedClaimAttempts || 0) + 1;
+    const locked = failedAttempts >= 5;
+    transaction.update(invitationRef, {
+      failedClaimAttempts: failedAttempts,
+      claimLocked: locked,
+      updatedAt: new Date().toISOString(),
+    });
+    return { locked, attemptsRemaining: Math.max(0, 5 - failedAttempts) };
+  });
 }
 
 export async function revokeInvitation(code: string, revokedByUid: string): Promise<boolean> {
@@ -688,6 +778,7 @@ export async function acceptInvitationTransaction(input: {
   uid: string;
   userEmail: string;
   userName?: string;
+  claimCodeVerified?: boolean;
 }): Promise<{
   success: boolean;
   membership?: StudioMembership;
@@ -713,12 +804,34 @@ export async function acceptInvitationTransaction(input: {
         throw new Error('This invitation has been revoked or deleted.');
       }
 
+      const studioId = invitation.studioId.toLowerCase();
+      const membershipId = `${studioId}_${input.uid}`;
+      const membershipRef = firestore.collection('memberships').doc(membershipId);
+
+      if (invitation.status === 'ACCEPTED') {
+        const existingMembershipDoc = await transaction.get(membershipRef);
+        if (
+          invitation.acceptedByUid === input.uid
+          && existingMembershipDoc.exists
+          && (existingMembershipDoc.data() as StudioMembership).status === 'ACTIVE'
+        ) {
+          return {
+            membership: existingMembershipDoc.data() as StudioMembership,
+            studioId,
+            studioName: invitation.studioName,
+          };
+        }
+        throw new Error('This invitation has already been claimed.');
+      }
+
       if (invitation.status !== 'PENDING') {
-        throw new Error(
-          invitation.status === 'ACCEPTED'
-            ? 'This invitation has already been accepted.'
-            : 'This invitation is no longer valid or has expired.'
-        );
+        throw new Error('This invitation is no longer available.');
+      }
+      if (invitation.claimLocked) {
+        throw new Error('This invitation is locked after too many incorrect passcode attempts. Ask the studio owner to create a new invitation.');
+      }
+      if (!invitation.email?.trim() && !input.claimCodeVerified) {
+        throw new Error('The studio owner’s six-digit passcode is required for this invitation.');
       }
 
       if (invitation.email && invitation.email.trim()) {
@@ -731,10 +844,14 @@ export async function acceptInvitationTransaction(input: {
         }
       }
 
+      const normalizedEmail = input.userEmail.trim().toLowerCase();
+      const existingMembersQuery = await transaction.get(
+        firestore.collection('members')
+          .where('studioId', '==', studioId)
+          .where('email', '==', normalizedEmail)
+          .limit(1)
+      );
       const now = new Date().toISOString();
-      const studioId = invitation.studioId.toLowerCase();
-      const membershipId = `${studioId}_${input.uid}`;
-      const membershipRef = firestore.collection('memberships').doc(membershipId);
 
       const membership: StudioMembership = {
         id: membershipId,
@@ -748,28 +865,23 @@ export async function acceptInvitationTransaction(input: {
         updatedAt: now,
       };
 
-      // 1. Mark invitation as accepted
-      transaction.update(inviteRef, {
-        status: 'ACCEPTED',
-        acceptedAt: now,
-        acceptedByUid: input.uid,
-      });
+      const googleName = input.userName?.trim() || "";
+      const ownerName = invitation.name?.trim() || "";
+      const primaryName = googleName || ownerName || normalizedEmail.split('@')[0];
+      const ownerAssignedName = (ownerName && (!googleName || ownerName.toLowerCase() !== googleName.toLowerCase())) ? ownerName : undefined;
 
-      // 2. Set active membership
-      transaction.set(membershipRef, membership, { merge: true });
-
-      // 3. Upsert member record in /members
-      const memberQuery = await firestore
-        .collection('members')
-        .where('studioId', '==', studioId)
-        .where('email', '==', input.userEmail.toLowerCase())
-        .limit(1)
-        .get();
-
-      if (!memberQuery.empty) {
-        const existingMemberRef = memberQuery.docs[0].ref;
+      // All transaction reads complete before any writes.
+      if (!existingMembersQuery.empty) {
+        const existingMemberRef = existingMembersQuery.docs[0].ref;
+        const existingMember = existingMembersQuery.docs[0].data() as StudioMember;
+        const priorOwnerName = ownerName || existingMember.ownerAssignedName || (existingMember.name !== googleName ? existingMember.name : "");
+        const resolvedOwnerAssignedName = (priorOwnerName && priorOwnerName.toLowerCase() !== primaryName.toLowerCase()) ? priorOwnerName : undefined;
         transaction.update(existingMemberRef, {
-          name: input.userName || (memberQuery.docs[0].data() as StudioMember).name,
+          name: primaryName,
+          ...(resolvedOwnerAssignedName ? { ownerAssignedName: resolvedOwnerAssignedName } : {}),
+          email: normalizedEmail,
+          ...(invitation.phone ? { phone: invitation.phone } : {}),
+          skills: invitation.skills || existingMember.skills,
           status: 'ACTIVE',
           isDeleted: false,
           deletedAt: null,
@@ -781,8 +893,10 @@ export async function acceptInvitationTransaction(input: {
         const newMember: StudioMember = {
           id: memberRef.id,
           studioId,
-          name: input.userName || invitation.name || input.userEmail.split('@')[0],
-          email: input.userEmail.toLowerCase(),
+          name: primaryName,
+          ...(ownerAssignedName ? { ownerAssignedName } : {}),
+          email: normalizedEmail,
+          ...(invitation.phone ? { phone: invitation.phone } : {}),
           skills: invitation.skills || [],
           status: 'ACTIVE',
           isDeleted: false,
@@ -791,6 +905,13 @@ export async function acceptInvitationTransaction(input: {
         };
         transaction.set(memberRef, newMember);
       }
+
+      transaction.update(inviteRef, {
+        status: 'ACCEPTED',
+        acceptedAt: now,
+        acceptedByUid: input.uid,
+      });
+      transaction.set(membershipRef, membership, { merge: true });
 
       return { membership, studioId, studioName: invitation.studioName };
     });

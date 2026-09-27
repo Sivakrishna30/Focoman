@@ -19,16 +19,11 @@ export default function GlobalDashboardRedirect() {
           const idToken = await user.getIdToken();
           const workspaces = await getUserWorkspacesAction(idToken);
           
-          if (workspaces.length === 0) {
-            router.replace("/workspaces");
+          const activeWorkspaces = workspaces.filter((workspace) => workspace.status === "ACTIVE");
+          if (activeWorkspaces.length === 1) {
+            router.replace(`/${activeWorkspaces[0].studioId}/dashboard`);
           } else {
-            // Find a default studio (for now just pick the first ACTIVE one, or just the first one)
-            const defaultStudio = workspaces.find(w => w.status === "ACTIVE") || workspaces[0];
-            if (defaultStudio) {
-              router.replace(`/${defaultStudio.studioId}/dashboard`);
-            } else {
-              router.replace("/workspaces");
-            }
+            router.replace("/workspaces");
           }
         } catch (error) {
           console.error("Failed to load workspaces", error);

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="tab-shield-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="tab-f-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <linearGradient id="tab-purple-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA" />
+      <stop offset="50%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#5B21B6" />
+    </linearGradient>
+    <filter id="tab-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <g filter="url(#tab-glow)">
+    <!-- Outer Purple Shield Border -->
+    <path
+      d="M7 6 L41 6 L47 18 L24 45 L1 18 Z"
+      fill="url(#tab-purple-border)"
+      stroke="#4C1D95"
+      stroke-width="1.5"
+      stroke-linejoin="round"
+    />
+    <!-- Inner Orange Shield Fill -->
+    <path
+      d="M9.5 8.5 L38.5 8.5 L43.5 18 L24 41.5 L4.5 18 Z"
+      fill="url(#tab-shield-bg)"
+    />
+
+    <!-- Stylized F Mark Shadow -->
+    <path
+      d="M12 12.5 H35.5 L31 19.5 H20.5 V23.5 H28.5 L25.5 29.5 H20.5 V36 L15 37.5 V12.5 Z"
+      fill="#0369A1"
+      opacity="0.5"
+    />
+    <!-- Stylized F Main Face -->
+    <path
+      d="M11 12 H35 L31 19 H19.5 V23 H27.5 L25 29 H19.5 V36 L14 37 V12 Z"
+      fill="url(#tab-f-cyan)"
+      stroke="#0284C7"
+      stroke-width="0.8"
+    />
+    <!-- White Top Bevel Highlight -->
+    <path
+      d="M11 12 H35 L33 14.5 H13.5 V12 Z"
+      fill="#FFFFFF"
+      opacity="0.9"
+    />
+  </g>
+</svg>

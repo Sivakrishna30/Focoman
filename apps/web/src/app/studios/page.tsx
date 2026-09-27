@@ -98,7 +98,7 @@ export default async function StudiosPage({
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {profiles.map(p => (
                   <Link
-                    href={`/studio/${p.slug}`}
+                    href={`/studios/${p.slug}`}
                     key={p.id}
                     className="group flex flex-col rounded-2xl border border-border-default bg-white p-5 shadow-sm transition hover:border-brand-blue-light hover:shadow-md"
                   >

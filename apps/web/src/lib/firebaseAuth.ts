@@ -17,7 +17,22 @@ import { auth } from "./firebase";
 const googleProvider = new GoogleAuthProvider();
 
 export async function signInWithGoogle(): Promise<UserCredential> {
-  return await signInWithPopup(auth, googleProvider);
+  const credential = await signInWithPopup(auth, googleProvider);
+  try {
+    const idToken = await credential.user.getIdToken(true);
+    const response = await fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!response.ok) {
+      throw new Error('Unable to establish a secure server session. Please try signing in again.');
+    }
+    return credential;
+  } catch (error) {
+    await signOut(auth);
+    throw error;
+  }
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {
@@ -29,7 +44,11 @@ export async function registerWithEmail(email: string, password: string): Promis
 }
 
 export async function signOutUser(): Promise<void> {
-  return await signOut(auth);
+  const response = await fetch('/api/session', { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error('Unable to clear the secure server session. Please try signing out again.');
+  }
+  await signOut(auth);
 }
 
 export function subscribeToAuthState(callback: (user: User | null) => void) {

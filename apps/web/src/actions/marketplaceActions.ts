@@ -1,7 +1,7 @@
 "use server";
 
-import { randomUUID } from "crypto";
-import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { randomBytes, randomUUID } from "crypto";
+import { requireVerifiedUser, requireStudioOwner } from "@/lib/serverAuth";
 import { requireCapability } from "@/lib/entitlementAuth";
 import {
   getMarketplaceProfile,
@@ -53,7 +53,7 @@ import {
 export async function fetchMarketplaceProfile(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId);
+    await requireStudioOwner(decoded.uid, studioId);
     
     const profile = await getMarketplaceProfile(studioId);
     return { success: true, profile };
@@ -69,7 +69,7 @@ export async function saveMarketplaceProfile(
 ) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, studioId);
     
     // Server-side entitlement gate: Publishing requires MARKETPLACE_PUBLIC capability
     if (profileData.isVisible) {
@@ -86,7 +86,7 @@ export async function saveMarketplaceProfile(
 export async function deleteMarketplaceProfileAction(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, studioId);
 
     await softDeleteMarketplaceProfile(studioId, decoded.uid);
     return { success: true };
@@ -98,7 +98,7 @@ export async function deleteMarketplaceProfileAction(studioId: string, idToken: 
 export async function restoreMarketplaceProfileAction(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, studioId);
 
     await restoreMarketplaceProfile(studioId);
     return { success: true };
@@ -133,7 +133,7 @@ export async function getPublicMarketplaceProfile(slug: string) {
 export async function getStudioPackagesAction(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId);
+    await requireStudioOwner(decoded.uid, studioId);
     const packages = await getStudioPackages(studioId);
     return { success: true, packages };
   } catch (error: unknown) {
@@ -154,7 +154,7 @@ export async function createStudioPackageAction(input: unknown, idToken: string)
   try {
     const parsed = CreatePackageSchema.parse(input);
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, parsed.studioId);
 
     const packageId = `PKG-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
     const now = new Date().toISOString();
@@ -183,7 +183,12 @@ export async function updateStudioPackageAction(input: unknown, idToken: string)
   try {
     const parsed = UpdatePackageSchema.parse(input);
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, parsed.studioId);
+
+    const packages = await getStudioPackages(parsed.studioId);
+    if (!packages.some((studioPackage) => studioPackage.id === parsed.packageId)) {
+      throw new Error("Package not found in the authorized studio.");
+    }
 
     const updated = await updateStudioPackage(parsed.packageId, {
       name: parsed.name,
@@ -203,7 +208,12 @@ export async function updateStudioPackageAction(input: unknown, idToken: string)
 export async function deleteStudioPackageAction(packageId: string, studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, studioId);
+
+    const packages = await getStudioPackages(studioId);
+    if (!packages.some((studioPackage) => studioPackage.id === packageId)) {
+      throw new Error("Package not found in the authorized studio.");
+    }
 
     await softDeleteStudioPackage(packageId, decoded.uid);
     return { success: true };
@@ -217,16 +227,31 @@ export async function deleteStudioPackageAction(packageId: string, studioId: str
 export async function createBookingRequestAction(input: unknown, idToken?: string) {
   try {
     const parsed = BookingRequestSchema.parse(input);
+    const profile = await getMarketplaceProfile(parsed.studioId);
+    if (!profile || !profile.isVisible || profile.isDeleted) {
+      throw new Error("This studio is not accepting public booking inquiries.");
+    }
+
+    let selectedPackage: StudioPackage | undefined;
+    if (parsed.packageId) {
+      const publishedPackages = await getPublishedStudioPackages(parsed.studioId);
+      selectedPackage = publishedPackages.find((studioPackage) => studioPackage.id === parsed.packageId);
+      if (!selectedPackage) {
+        throw new Error("The selected package is unavailable.");
+      }
+    }
+
     let customerUid = "GUEST";
     if (idToken) {
       const decoded = await requireVerifiedUser(idToken);
       customerUid = decoded.uid;
     }
 
-    const bookingId = `BKG-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const bookingId = `BKG-${randomBytes(16).toString('hex').toUpperCase()}`;
     const now = new Date().toISOString();
 
-    const isNegotiable = parsed.requestNegotiation ?? false;
+    const price = selectedPackage?.price || 0;
+    const isNegotiable = Boolean(selectedPackage?.isNegotiable && parsed.requestNegotiation);
 
     const req: BookingRequest = {
       id: bookingId,
@@ -236,7 +261,7 @@ export async function createBookingRequestAction(input: unknown, idToken?: strin
       customerEmail: parsed.customerEmail || undefined,
       customerPhone: parsed.customerPhone || undefined,
       packageId: parsed.packageId || undefined,
-      packageName: parsed.packageName || undefined,
+      packageName: selectedPackage?.name,
       eventType: parsed.eventType,
       eventDate: parsed.eventDate,
       location: {
@@ -244,9 +269,9 @@ export async function createBookingRequestAction(input: unknown, idToken?: strin
         mapsUrl: parsed.mapsUrl || undefined,
       },
       notes: parsed.notes || undefined,
-      originalPrice: parsed.price,
-      agreedPrice: parsed.price,
-      advanceRequested: Math.round(parsed.price * 0.3), // default 30% advance request
+      originalPrice: price,
+      agreedPrice: price,
+      advanceRequested: Math.round(price * 0.3),
       isNegotiable,
       bookingStatus: isNegotiable ? 'OPEN_FOR_NEGOTIATION' : 'BOOKING_REQUEST',
       createdAt: now,
@@ -263,7 +288,7 @@ export async function createBookingRequestAction(input: unknown, idToken?: strin
 export async function getStudioBookingRequestsAction(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId);
+    await requireStudioOwner(decoded.uid, studioId);
 
     const requests = await getBookingRequestsByStudio(studioId);
     return { success: true, bookingRequests: requests };
@@ -286,7 +311,15 @@ export async function negotiateBookingRequestAction(input: unknown, idToken: str
   try {
     const parsed = NegotiateBookingSchema.parse(input);
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, parsed.studioId);
+    await requireStudioOwner(decoded.uid, parsed.studioId);
+
+    const existingBooking = await getBookingRequestById(parsed.bookingRequestId);
+    if (!existingBooking || existingBooking.studioId !== parsed.studioId.toLowerCase()) {
+      throw new Error("Booking request not found in the authorized studio.");
+    }
+    if (!existingBooking.isNegotiable || existingBooking.bookingStatus !== "OPEN_FOR_NEGOTIATION") {
+      throw new Error("This booking request is not open for negotiation.");
+    }
 
     const updated = await updateBookingRequest(parsed.bookingRequestId, {
       negotiatedPrice: parsed.agreedPrice,
@@ -306,10 +339,28 @@ export async function negotiateBookingRequestAction(input: unknown, idToken: str
 export async function recordPaymentAction(input: unknown, idToken?: string) {
   try {
     const parsed = RecordPaymentSchema.parse(input);
-    let customerUid = parsed.customerId;
+    if (!parsed.bookingRequestId) {
+      throw new Error("A booking request is required to submit marketplace payment proof.");
+    }
+
+    const booking = await getBookingRequestById(parsed.bookingRequestId);
+    if (!booking || booking.studioId !== parsed.studioId.toLowerCase()) {
+      throw new Error("Booking request not found for this studio.");
+    }
+    if (!["BOOKING_REQUEST", "AWAITING_PAYMENT"].includes(booking.bookingStatus)) {
+      throw new Error("This booking is not accepting payment submissions.");
+    }
+    if (parsed.amount > booking.agreedPrice) {
+      throw new Error("Payment amount cannot exceed the agreed booking amount.");
+    }
+
+    let customerUid = booking.customerId;
     if (idToken) {
       const decoded = await requireVerifiedUser(idToken);
-      customerUid = decoded.uid;
+      if (booking.customerId !== "GUEST" && booking.customerId !== decoded.uid) {
+        throw new Error("This booking request belongs to another customer.");
+      }
+      if (booking.customerId !== "GUEST") customerUid = decoded.uid;
     }
 
     const paymentId = `PAY-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
@@ -319,7 +370,7 @@ export async function recordPaymentAction(input: unknown, idToken?: string) {
       id: paymentId,
       orderId: parsed.orderId,
       bookingRequestId: parsed.bookingRequestId,
-      studioId: parsed.studioId.toLowerCase(),
+      studioId: booking.studioId,
       customerId: customerUid,
       amount: parsed.amount,
       method: parsed.method as PaymentMethod,
@@ -353,7 +404,18 @@ export async function verifyPaymentAction(input: unknown, idToken: string) {
   try {
     const parsed = VerifyPaymentSchema.parse(input);
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, parsed.studioId, "STUDIO_OWNER");
+    await requireStudioOwner(decoded.uid, parsed.studioId);
+
+    const payment = await getPaymentById(parsed.paymentId);
+    if (!payment || payment.studioId !== parsed.studioId.toLowerCase()) {
+      throw new Error("Payment record not found in the authorized studio.");
+    }
+    const booking = payment.bookingRequestId
+      ? await getBookingRequestById(payment.bookingRequestId)
+      : null;
+    if (payment.bookingRequestId && (!booking || booking.studioId !== parsed.studioId.toLowerCase())) {
+      throw new Error("Booking request not found in the authorized studio.");
+    }
 
     const updatedPayment = await updatePaymentVerification(
       parsed.paymentId,
@@ -363,12 +425,11 @@ export async function verifyPaymentAction(input: unknown, idToken: string) {
     );
 
     if (updatedPayment?.bookingRequestId && parsed.verified) {
-      const booking = await getBookingRequestById(updatedPayment.bookingRequestId);
       if (booking) {
         // Convert Booking Request to Confirmed Order
         const orderId = `ORD-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
         const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-        const trackingPasskey = randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase();
+        const trackingPasskey = `FOC-${randomBytes(16).toString('hex').toUpperCase()}`;
         const now = new Date().toISOString();
 
         const studioOrders = await getOrdersByStudio(parsed.studioId);
@@ -441,7 +502,7 @@ export async function verifyPaymentAction(input: unknown, idToken: string) {
 export async function getStudioPaymentsAction(studioId: string, idToken: string) {
   try {
     const decoded = await requireVerifiedUser(idToken);
-    await requireStudioMember(decoded.uid, studioId);
+    await requireStudioOwner(decoded.uid, studioId);
 
     const payments = await getPaymentsByStudio(studioId);
     return { success: true, payments };
