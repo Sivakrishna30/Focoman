@@ -60,7 +60,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     claimCode: "",
     skills: ["PHOTOGRAPHY"],
   });
-  const [createdInvite, setCreatedInvite] = useState<{ code: string; email?: string; name: string; claimCode?: string } | null>(null);
+  const [createdInvite, setCreatedInvite] = useState<{ code: string; email?: string; name: string; claimCode?: string; linkToken?: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async (tokenOverride?: string | null) => {
@@ -233,6 +233,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
           name: memberName,
           ...(memberEmail ? { email: memberEmail } : {}),
           claimCode: res.claimCode,
+          linkToken: res.invitationLinkToken,
         });
       }
     } else {
@@ -876,13 +877,13 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 <input
                   readOnly
                   type="text"
-                  value={typeof window !== "undefined" ? `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}` : `/onboarding/join-studio?code=${createdInvite.code}`}
+                  value={typeof window !== "undefined" ? `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}` : `/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}`}
                   className="w-full rounded-xl border border-border-default bg-surface-app px-3 py-2 font-mono text-xs text-text-primary outline-none select-all"
                 />
                 <button
                   type="button"
                   onClick={() => {
-                    const link = `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}`;
+                    const link = `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}`;
                     navigator.clipboard.writeText(link);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);

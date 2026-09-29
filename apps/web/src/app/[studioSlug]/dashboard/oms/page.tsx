@@ -53,7 +53,11 @@ export default function OmsPage({
   const { studioSlug } = use(params);
   const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selected, setSelected] = useState<Order | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => orders.find((o) => o.id === selectedId) || null,
+    [orders, selectedId]
+  );
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [query, setQuery] = useState("");
@@ -96,14 +100,9 @@ export default function OmsPage({
 
   const loadOrders = useCallback(async (tokenOverride?: string | null) => {
     try {
-      setLoading(true);
       if (isDemo) {
         const data = getDemoOrders();
         setOrders(data);
-        if (selected) {
-          const refreshed = data.find((o) => o.id === selected.id);
-          if (refreshed) setSelected(refreshed);
-        }
         setLoading(false);
         return;
       }
@@ -114,16 +113,12 @@ export default function OmsPage({
       }
       const data = await getStudioOrdersAction(studioSlug, token);
       setOrders(data);
-      if (selected) {
-        const refreshed = data.find((o) => o.id === selected.id);
-        if (refreshed) setSelected(refreshed);
-      }
     } catch (err) {
       console.error("[OmsPage] Failed to load orders:", err);
     } finally {
       setLoading(false);
     }
-  }, [studioSlug, isDemo, workspaceToken, getIdToken, selected]);
+  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
 
   useEffect(() => {
     if (isDemo) {
@@ -139,16 +134,16 @@ export default function OmsPage({
 
   // Load tasks when an order is selected
   useEffect(() => {
-    if (selected) {
+    if (selectedId) {
       if (isDemo) {
-        setSelectedTasks(getDemoTasksByOrder(selected.id));
+        setSelectedTasks(getDemoTasksByOrder(selectedId));
       } else if (workspaceToken) {
-        void getOrderTasksAction(selected.id, studioSlug, workspaceToken).then(setSelectedTasks);
+        void getOrderTasksAction(selectedId, studioSlug, workspaceToken).then(setSelectedTasks);
       }
     } else {
       setSelectedTasks([]);
     }
-  }, [selected, isDemo, studioSlug, workspaceToken]);
+  }, [selectedId, isDemo, studioSlug, workspaceToken]);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +170,7 @@ export default function OmsPage({
       if (res.success && res.order) {
         setShowCreateModal(false);
         setOrders(getDemoOrders());
-        setSelected(res.order);
+        setSelectedId(res.order.id);
         if (res.tasks) setSelectedTasks(res.tasks);
       } else {
         setFormError("Failed to create order in demo mode.");
@@ -215,7 +210,7 @@ export default function OmsPage({
     if (res.success && res.order) {
       setShowCreateModal(false);
       await loadOrders();
-      setSelected(res.order);
+      setSelectedId(res.order.id);
       if (res.tasks) setSelectedTasks(res.tasks);
     } else {
       setFormError(res.error || "Failed to create order");
@@ -229,8 +224,6 @@ export default function OmsPage({
         setSelectedTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
         const refreshedOrders = getDemoOrders();
         setOrders(refreshedOrders);
-        const refreshedSelected = refreshedOrders.find((o) => o.id === selected.id);
-        if (refreshedSelected) setSelected(refreshedSelected);
       }
       return;
     }
@@ -254,7 +247,6 @@ export default function OmsPage({
     if (isDemo && selected) {
       const res = updateDemoPaymentStatus(selected.id, newPaymentStatus);
       if (res.success && res.order) {
-        setSelected(res.order);
         setOrders(getDemoOrders());
       }
       return;
@@ -269,8 +261,7 @@ export default function OmsPage({
       paymentStatus: newPaymentStatus,
     });
     if (res.success && res.order) {
-      setSelected(res.order);
-      await loadOrders();
+      setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
     }
   };
 
@@ -289,7 +280,6 @@ export default function OmsPage({
     });
 
     if (res.success && res.order) {
-      setSelected(res.order);
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
     } else {
       alert(res.error || "Failed to assign resource");
@@ -311,7 +301,6 @@ export default function OmsPage({
     });
 
     if (res.success && res.order) {
-      setSelected(res.order);
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
     } else {
       alert(res.error || "Failed to cancel order");
@@ -332,7 +321,7 @@ export default function OmsPage({
 
     if (res.success) {
       setOrders((prev) => prev.filter((o) => o.id !== selected.id));
-      setSelected(null);
+      setSelectedId(null);
     } else {
       alert(res.error || "Failed to delete order");
     }
@@ -429,9 +418,9 @@ export default function OmsPage({
             filtered.map((order) => (
               <button
                 key={order.id}
-                onClick={() => setSelected(order)}
+                onClick={() => setSelectedId(order.id)}
                 className={`w-full rounded-2xl border p-5 text-left transition ${
-                  selected?.id === order.id
+                  selectedId === order.id
                     ? "card-brand-blue"
                     : "border-border-default bg-white hover:border-brand-blue-light hover:shadow-xs"
                 }`}
@@ -477,7 +466,7 @@ export default function OmsPage({
               <h2 className="text-lg font-extrabold text-text-primary">{selected.customer.name}</h2>
             </div>
             <button
-              onClick={() => setSelected(null)}
+              onClick={() => setSelectedId(null)}
               className="rounded-full p-2 text-text-tertiary hover:bg-surface-app hover:text-text-primary transition"
             >
               ✕

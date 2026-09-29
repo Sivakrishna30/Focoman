@@ -1,6 +1,16 @@
 import Link from "next/link";
+import { requireVerifiedSession } from "@/lib/serverAuth";
 
-export default function NotFound() {
+export default async function NotFound() {
+  // Check session server-side — do not show auth-gated links to unauthenticated visitors
+  let isSignedIn = false;
+  try {
+    await requireVerifiedSession();
+    isSignedIn = true;
+  } catch {
+    isSignedIn = false;
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
       <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xs">
@@ -16,12 +26,14 @@ export default function NotFound() {
           >
             Go to Home
           </Link>
-          <Link
-            href="/workspaces"
-            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            My Workspaces
-          </Link>
+          {isSignedIn && (
+            <Link
+              href="/workspaces"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              My Workspaces
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -37,10 +37,7 @@ export default function WorkspacesPage() {
       setLoadingUser(false);
       if (user) {
         setLoadingWorkspaces(true);
-        // Load default workspace preference
-        const stored = 
-          localStorage.getItem(`focoman_default_workspace_${user.uid}`) ||
-          localStorage.getItem("focoman_default_workspace");
+
 
         // CHG-011: Pass the Firebase ID token (JWT), not the UID — identity is verified server-side.
         const idToken = await user.getIdToken();
@@ -52,14 +49,20 @@ export default function WorkspacesPage() {
         setPendingInvitations(invitations);
 
         // If stored default is found and matches an active workspace, use it.
-        // Otherwise, first created studio is default by default!
-        if (stored && data.some((w) => w.studioId.toLowerCase() === stored.toLowerCase())) {
-          setDefaultStudioId(stored);
-        } else if (data.length > 0) {
+        // null = never configured → auto-set first studio as default
+        // '__cleared__' = user explicitly cleared → respect it, no default
+        // any other value = their chosen default
+        const stored = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
+        const hasExplicitDefault = stored && stored !== '__cleared__' && data.some((w) => w.studioId.toLowerCase() === stored.toLowerCase());
+        const wasCleared = stored === '__cleared__';
+
+        if (hasExplicitDefault) {
+          setDefaultStudioId(stored!);
+        } else if (!wasCleared && data.length > 0) {
+          // First time — auto-set first studio as default
           const firstStudio = data[0].studioId;
           setDefaultStudioId(firstStudio);
           localStorage.setItem(`focoman_default_workspace_${user.uid}`, firstStudio);
-          localStorage.setItem("focoman_default_workspace", firstStudio);
         } else {
           setDefaultStudioId(null);
         }
@@ -77,7 +80,6 @@ export default function WorkspacesPage() {
   const handleSetDefault = (studioId: string) => {
     if (!currentUser) return;
     localStorage.setItem(`focoman_default_workspace_${currentUser.uid}`, studioId);
-    localStorage.setItem("focoman_default_workspace", studioId);
     setDefaultStudioId(studioId);
     setSuccessToast(`Default workspace switched to "/${studioId}". Future dashboard visits will open this studio.`);
     setTimeout(() => setSuccessToast(null), 4000);
@@ -86,7 +88,6 @@ export default function WorkspacesPage() {
   const handleClearDefault = () => {
     if (!currentUser) return;
     localStorage.removeItem(`focoman_default_workspace_${currentUser.uid}`);
-    localStorage.removeItem("focoman_default_workspace");
     setDefaultStudioId(null);
     setSuccessToast("Cleared default workspace preference.");
     setTimeout(() => setSuccessToast(null), 3000);
@@ -322,8 +323,7 @@ export default function WorkspacesPage() {
               <div className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2">
                   {workspaces.map((m) => {
-                    const hasMultipleWorkspaces = workspaces.length > 1;
-                    const isDefault = hasMultipleWorkspaces && m.studioId.toLowerCase() === defaultStudioId?.toLowerCase();
+                    const isDefault = m.studioId.toLowerCase() === defaultStudioId?.toLowerCase();
                     return (
                       <div
                         key={m.id}

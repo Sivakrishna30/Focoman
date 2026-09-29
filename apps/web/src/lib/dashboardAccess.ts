@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import {
   requireStudioSessionMember,
   StudioMembershipRequiredError,
@@ -18,7 +18,7 @@ export async function requireDashboardStudioAccess(
     return access;
   } catch (error: unknown) {
     if (error instanceof UnauthenticatedSessionError) {
-      redirect('/sign-in');
+      notFound(); // Do not reveal whether this studio route exists — same 404 as unauthorized
     }
     if (error instanceof StudioMembershipRequiredError) {
       notFound();

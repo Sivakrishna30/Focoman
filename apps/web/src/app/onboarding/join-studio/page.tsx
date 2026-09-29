@@ -119,6 +119,7 @@ function JoinStudioContent() {
       const res = await acceptInvitationAction({
         inviteCode: inviteCode.trim(),
         claimCode: claimCode || undefined,
+        linkToken: searchParams.get("token") || undefined,
         idToken,
       });
 
@@ -291,9 +292,18 @@ function JoinStudioContent() {
 
       {currentUser && claimStatus?.status !== "OWNER_VIEW" && claimStatus?.status !== "CLAIMED" && claimStatus?.status !== "REVOKED" && claimStatus?.status !== "LOCKED" && claimStatus?.status !== "UNAVAILABLE" && claimStatus?.status !== "EMAIL_MISMATCH" && claimStatus?.status !== "NOT_FOUND" && (
         <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 text-xs text-text-secondary border border-border-default">
-          <span>
-            Signed in as: <strong className="text-text-primary">{currentUser.email}</strong>
-          </span>
+          <div className="flex flex-col">
+            <span>
+              Signed in as: <strong className="text-text-primary">{currentUser.email}</strong>
+            </span>
+            <button 
+              type="button" 
+              onClick={handleGoogleSignIn}
+              className="mt-1 text-left text-[10px] font-semibold text-brand-purple-primary hover:underline"
+            >
+              Switch Account
+            </button>
+          </div>
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
             Authenticated
           </span>

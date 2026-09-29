@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -19,16 +23,40 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@focoman/types": ["../../packages/types/src/index.ts"],
-      "@focoman/validation": ["../../packages/validation/src/index.ts"],
-      "@focoman/domain": ["../../packages/domain/src/index.ts"],
-      "@focoman/db": ["../../packages/db/src/index.ts"],
-      "@focoman/auth": ["../../packages/auth/src/index.ts"],
-      "@focoman/config": ["../../packages/config/src/index.ts"],
-      "@focoman/entitlements": ["../../packages/entitlements/src/index.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@focoman/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@focoman/validation": [
+        "../../packages/validation/src/index.ts"
+      ],
+      "@focoman/domain": [
+        "../../packages/domain/src/index.ts"
+      ],
+      "@focoman/db": [
+        "../../packages/db/src/index.ts"
+      ],
+      "@focoman/auth": [
+        "../../packages/auth/src/index.ts"
+      ],
+      "@focoman/config": [
+        "../../packages/config/src/index.ts"
+      ],
+      "@focoman/entitlements": [
+        "../../packages/entitlements/src/index.ts"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    ".next-dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

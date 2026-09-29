@@ -1,4 +1,4 @@
-# Focoman — Master Manual Functional Testing Checklist
+﻿# Focoman — Master Manual Functional Testing Checklist
 
 ## 0. Testing Instructions
 
@@ -224,13 +224,17 @@ Expected Result:
 - No data leakage
 
 Actual Result:
-- 
+- Unauthenticated access to studio routes (e.g. /testsiva/dashboard, /testsiva/dashboard/oms) returns 404 -- no data, no redirect hint.
+- Member signed in as crew member: studio settings page shows read-only view with Leave option only; no owner-destructive actions exposed.
+- Firestore document ID used in /track/ URL returns Order Not Found correctly.
+- Order was only visible when authenticated as the rightful customer account -- correct behaviour.
+- 404 page fixed: unauthenticated visitors see only Go to Home (no My Workspaces link).
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
-- 
+- None.
 
 Notes:
 - Test both UI and direct access paths.
@@ -251,16 +255,19 @@ Expected Result:
 - No data from another studio or unassigned work is returned.
 
 Actual Result:
-- 
+- Member sidebar shows only My Orders and Settings -- full OMS/CRM/ERP/Team routes return 404. UI access isolation confirmed.
+- Settings page is read-only for members (Leave only, no edit/delete actions).\r
+- Step 3 (assigned task update) deferred -- task assignment UI requires OMS/ERP module work not yet built; will retest under OMS/ERP module tests.\r
+- Default workspace bug found and fixed: shared unscoped localStorage key was leaking owner's default into member session.\r
 
 Status:
-- [ ] NOT TESTED
+- [~] PARTIAL
 
 Issue:
-- 
+- Step 3 (assigned task update by member) not testable yet -- task assignment not implemented in confirmed order flow.\r
 
 Severity:
-- 
+- Low -- deferred to OMS/ERP module testing.\r
 
 Notes:
 - UI hiding alone is not authorization; verify server-side responses.
@@ -340,10 +347,10 @@ Expected Result:
 Actual Result:
 - Home page returns HTTP 200 and contains no `/demo-studio/dashboard` link.
 - Direct `/demo-studio/dashboard` returns HTTP 200 and renders the Demo Mode banner.
-- Signed-in Workspaces browser view still needs manual confirmation that no demo card appears.
+- Confirmed no demo studio is visible in the Workspaces page.
 
 Status:
-- [~] PARTIAL
+- [x] PASS
 
 Issue:
 - 
@@ -376,10 +383,13 @@ Expected Result:
 - Invitations do not expire automatically. Five wrong passcodes lock the generic invite until the Owner revokes it and creates a replacement.
 
 Actual Result:
-- 
+- Validated invalid/missing link token guard (resolved bug where links were generated without tokens).
+- Verified incorrect passcode returns expected error and decrements attempts.
+- Verified successful join flow with correct passcode.
+- Switch Account flow allows graceful recovery without kicking out to root.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 
@@ -422,7 +432,35 @@ Notes:
 
 ---
 
-## 4. Module 2 — Studio Signup / Initial Setup
+
+## 4. Module 2 — UI & Design Scope Review (NEW PRIORITY)
+
+*Note: Per user request, testing has been reorganized to prioritize UI design and aesthetic perfection before proceeding with functional data-flow tests. The modules will be verified in hierarchical order.*
+
+### UI-001 — Dashboard Home Page
+Status: [ ] NOT TESTED
+Notes: Ensure metrics, recent activity, and quick actions are visually stunning and layout is intuitive.
+
+### UI-002 — OMS (Order Management System) Pipeline
+Status: [ ] NOT TESTED
+Notes: Focus on Confirmed Orders, Stages, Tasks, and clear visual hierarchy.
+
+### UI-003 — CRM (Customer Relationship Management)
+Status: [ ] NOT TESTED
+Notes: Customer directory, order history, communication logs.
+
+### UI-004 — ERP (Resource Planning)
+Status: [ ] NOT TESTED
+Notes: Crew members, assignments, availability.
+
+### UI-005 — Marketplace & Settings
+Status: [ ] NOT TESTED
+Notes: Public profile, packages, pricing, and studio config.
+
+---
+
+## 5. Module 3 — Studio Signup / Initial Setup
+
 
 ### A. Navigation & Entry
 

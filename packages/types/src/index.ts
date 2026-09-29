@@ -244,6 +244,12 @@ export interface CustomerOrderView {
   updatedAt: string;
 }
 
+export interface OrderCollaborator {
+  email: string;
+  role: "VIEWER" | "EDITOR"; // "can view" | "can edit"
+  addedAt: string;
+}
+
 export interface CustomerTrackingView {
   order: {
     id: string;
@@ -256,6 +262,7 @@ export interface CustomerTrackingView {
     customerName: string;
     customerEmail?: string;
     customerUid?: string;
+    collaborators?: OrderCollaborator[];
     eventType: string;
     eventDate: string;
     eventLocation?: string;
@@ -478,6 +485,7 @@ export interface Order extends SoftDeletable {
   cancellationInfo?: CancellationInfo;
   trackingPasskey: string;
   notifyWhatsApp?: boolean;
+  collaborators?: OrderCollaborator[];
   createdAt: string;
   updatedAt: string;
 }

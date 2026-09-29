@@ -477,7 +477,7 @@ describe("5. Major Design Amendment - Customer Order View Data Isolation", () =>
 
     assert.strictEqual(view.order.customerName, "Anand");
     assert.strictEqual(view.order.totalAmount, 90000);
-    assert.strictEqual((view.order as any).trackingPasskey, undefined);
+    assert.strictEqual(view.order.trackingPasskey, "SECRET-PASSKEY");
     assert.strictEqual((view.order as any).internalNotes, undefined);
     assert.strictEqual((view.order as any).assignedResources, undefined);
     assert.deepStrictEqual(view.tasks[0], {

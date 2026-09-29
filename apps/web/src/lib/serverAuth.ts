@@ -30,7 +30,7 @@ function parsePrivateKey(rawKey: string | undefined): string | undefined {
   return key.replace(/\\n/g, '\n').replace(/\\\\n/g, '\n');
 }
 
-function getAdminAuthInstance() {
+export function getAdminAuthInstance() {
   const projectId =
     process.env.FIREBASE_PROJECT_ID ||
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||

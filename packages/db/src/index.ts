@@ -99,16 +99,35 @@ export function isWithinRecoveryWindow(deletedAt?: string | null, windowDays = R
 
 export async function getStudioBySlug(slug: string): Promise<Studio | null> {
   const firestore = getFirestoreServerInstance();
+  const clean = slug.toLowerCase();
+
+  // 1. Try document ID directly
+  const docSnap = await firestore.collection('studios').doc(clean).get();
+  if (docSnap.exists) {
+    const studio = docSnap.data() as Studio;
+    if (!studio.isDeleted) return studio;
+  }
+
+  // 2. Try where 'id' == clean
   const snap = await firestore
     .collection('studios')
-    .where('id', '==', slug.toLowerCase())
+    .where('id', '==', clean)
     .limit(1)
     .get();
   if (!snap.empty) {
     const studio = snap.docs[0].data() as Studio;
-    if (studio.isDeleted) return null;
-    return studio;
+    if (!studio.isDeleted) return studio;
   }
+
+  // 3. Fallback to raw slug
+  if (clean !== slug) {
+    const rawDoc = await firestore.collection('studios').doc(slug).get();
+    if (rawDoc.exists) {
+      const studio = rawDoc.data() as Studio;
+      if (!studio.isDeleted) return studio;
+    }
+  }
+
   return null;
 }
 
@@ -284,6 +303,20 @@ export async function getMembershipByUidAndStudio(
     .get();
   if (snap.empty) return null;
   return snap.docs[0].data() as StudioMembership;
+}
+
+export async function getMembershipsByStudio(
+  studioId: string
+): Promise<StudioMembership[]> {
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore
+    .collection('memberships')
+    .where('studioId', '==', studioId.toLowerCase())
+    .where('status', '==', 'ACTIVE')
+    .get();
+  return snap.docs
+    .map((d) => d.data() as StudioMembership)
+    .filter((m) => !m.isDeleted);
 }
 
 // ============================================================================

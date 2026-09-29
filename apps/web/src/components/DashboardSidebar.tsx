@@ -145,9 +145,12 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
   ];
 
   const visibleNavItems = role === "STUDIO_MEMBER"
-    ? navItems
-        .filter((item) => item.key === "dashboard")
-        .map((item) => ({ ...item, label: "My Orders & Tasks", sublabel: "Assigned Work" }))
+    ? [
+        ...navItems
+          .filter((item) => item.key === "dashboard")
+          .map((item) => ({ ...item, label: "My Orders", sublabel: "Assigned Work" })),
+        ...navItems.filter((item) => item.key === "settings"),
+      ]
     : navItems;
 
   const handleSignOut = async () => {

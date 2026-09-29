@@ -31,10 +31,12 @@ import {
   getTaskById,
   getTaskByIdIncludeDeleted,
   getMembersByStudio,
+  getMembershipsByStudio,
+  getMembershipByUidAndStudio,
   saveCustomer,
 } from "@focoman/db";
-import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
-import { requireVerifiedUser, requireStudioMember, requireStudioOwner } from "@/lib/serverAuth";
+import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus, OrderCollaborator } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember, requireStudioOwner, getAdminAuthInstance } from "@/lib/serverAuth";
 
 /**
  * Server Actions for Order Lifecycle, Tasks & Post-Event Production Pipeline (OMS)
@@ -325,15 +327,43 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
     }
 
     const tasks = await getTasksByOrder(order.id);
-    const studio = await getStudioBySlug(order.studioId);
+    const cleanStudioId = order.studioId.toLowerCase();
+    const studio = await getStudioBySlug(cleanStudioId);
     const staffEmails: string[] = [];
     const staffUids: string[] = [];
 
-    if (studio?.ownerEmail) staffEmails.push(studio.ownerEmail.toLowerCase());
-    if (studio?.ownerId) staffUids.push(studio.ownerId);
+    let studioOwnerId = studio?.ownerId;
+    let studioOwnerEmail = studio?.ownerEmail ? studio.ownerEmail.toLowerCase() : undefined;
 
+    if (studioOwnerEmail) staffEmails.push(studioOwnerEmail);
+    if (studioOwnerId) staffUids.push(studioOwnerId);
+
+    // Fetch all active studio memberships to capture owner and all crew/staff members
     try {
-      const studioMembers = await getMembersByStudio(order.studioId);
+      const memberships = await getMembershipsByStudio(cleanStudioId);
+      const adminAuth = getAdminAuthInstance();
+      for (const m of memberships) {
+        if (m.uid) {
+          staffUids.push(m.uid);
+          if (m.role === 'STUDIO_OWNER' && !studioOwnerId) {
+            studioOwnerId = m.uid;
+          }
+          try {
+            const userRecord = await adminAuth.getUser(m.uid);
+            if (userRecord.email) {
+              const emailLower = userRecord.email.toLowerCase();
+              staffEmails.push(emailLower);
+              if (m.role === 'STUDIO_OWNER' && !studioOwnerEmail) {
+                studioOwnerEmail = emailLower;
+              }
+            }
+          } catch {
+            // User not found in auth (e.g. deleted account)
+          }
+        }
+      }
+
+      const studioMembers = await getMembersByStudio(cleanStudioId);
       studioMembers.forEach((m) => {
         if (m.email) staffEmails.push(m.email.toLowerCase());
       });
@@ -343,8 +373,8 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
 
     const view = toCustomerTrackingView(order, studio?.name || "Studio", tasks, {
       studioId: order.studioId,
-      studioOwnerId: studio?.ownerId,
-      studioOwnerEmail: studio?.ownerEmail,
+      studioOwnerId,
+      studioOwnerEmail,
       staffEmails: Array.from(new Set(staffEmails)),
       staffUids: Array.from(new Set(staffUids)),
     });
@@ -771,6 +801,35 @@ export async function syncOrderToAccountAction(input: {
       return { success: false, error: "Order not found for this access code." };
     }
 
+    // 0. Studio owners and members cannot claim an order as the primary customer
+    const studioMembership = await getMembershipByUidAndStudio(decoded.uid, order.studioId);
+    if (studioMembership && studioMembership.status === "ACTIVE") {
+      return {
+        success: false,
+        error: "Studio owners and crew members cannot claim an order as the primary customer.",
+      };
+    }
+
+    // 1. If order already has a customer.email registered, the syncing user MUST have that same email
+    if (
+      order.customer.email &&
+      decoded.email &&
+      order.customer.email.trim().toLowerCase() !== decoded.email.trim().toLowerCase()
+    ) {
+      return {
+        success: false,
+        error: `This order is registered to ${order.customer.email}. Please sign in with ${order.customer.email} to link this order.`,
+      };
+    }
+
+    // 2. If order already has a customer.uid bound, prevent another account from taking it over
+    if (order.customer.uid && order.customer.uid !== decoded.uid) {
+      return {
+        success: false,
+        error: "This order is already claimed by the primary customer account.",
+      };
+    }
+
     const updatedCustomer = {
       ...order.customer,
       uid: decoded.uid,
@@ -797,3 +856,65 @@ export async function getMySyncedOrdersAction(idToken: string): Promise<Order[]>
     return [];
   }
 }
+
+export async function updateOrderCollaboratorsAction(input: {
+  orderId: string;
+  collaborators: OrderCollaborator[];
+  idToken: string;
+}): Promise<{ success: boolean; collaborators?: OrderCollaborator[]; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    const order = await getOrderById(input.orderId);
+    if (!order) {
+      return { success: false, error: "Order not found." };
+    }
+
+    const userEmail = decoded.email?.toLowerCase();
+    const customerEmail = order.customer.email?.toLowerCase();
+    const isPrimaryCustomer = Boolean(
+      (userEmail && customerEmail && userEmail === customerEmail) ||
+      (order.customer.uid && order.customer.uid === decoded.uid)
+    );
+
+    let isStudioStaff = false;
+    try {
+      const membership = await requireStudioMember(decoded.uid, order.studioId);
+      if (membership) isStudioStaff = true;
+    } catch {
+      // not studio staff
+    }
+
+    if (!isPrimaryCustomer && !isStudioStaff) {
+      return {
+        success: false,
+        error: "Unauthorized: Only the primary customer or studio staff can manage family/friend permissions.",
+      };
+    }
+
+    const updated = await updateOrder(order.id, {
+      collaborators: input.collaborators,
+    });
+
+    return { success: true, collaborators: updated?.collaborators || input.collaborators };
+  } catch (err: unknown) {
+    console.error("[updateOrderCollaboratorsAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update collaborators." };
+  }
+}
+
+export async function checkIsStudioStaffAction(input: {
+  studioId: string;
+  idToken: string;
+}): Promise<{ isStaff: boolean; role?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    const membership = await getMembershipByUidAndStudio(decoded.uid, input.studioId);
+    if (membership && membership.status === "ACTIVE") {
+      return { isStaff: true, role: membership.role };
+    }
+    return { isStaff: false };
+  } catch {
+    return { isStaff: false };
+  }
+}
+

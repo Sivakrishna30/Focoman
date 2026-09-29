@@ -49,17 +49,15 @@ export default function StudioSettingsPage() {
   // Load default preference from localStorage
   useEffect(() => {
     if (user && studioSlug) {
-      const storedDefault =
-        localStorage.getItem(`focoman_default_workspace_${user.uid}`) ||
-        localStorage.getItem("focoman_default_workspace");
-      setIsDefaultStudio(storedDefault?.toLowerCase() === studioSlug.toLowerCase());
+      // null = never set (auto-default); '__cleared__' = explicitly cleared; otherwise = chosen default
+      const storedDefault = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
+      setIsDefaultStudio(!!storedDefault && storedDefault !== '__cleared__' && storedDefault.toLowerCase() === studioSlug.toLowerCase());
     }
   }, [user, studioSlug]);
 
   const handleSetDefaultStudio = () => {
     if (!user || !studioSlug) return;
     localStorage.setItem(`focoman_default_workspace_${user.uid}`, studioSlug);
-    localStorage.setItem("focoman_default_workspace", studioSlug);
     setIsDefaultStudio(true);
     setDefaultToast(`"/${studioSlug}" is now set as your default studio workspace.`);
     setTimeout(() => setDefaultToast(null), 4000);
@@ -67,8 +65,8 @@ export default function StudioSettingsPage() {
 
   const handleClearDefaultStudio = () => {
     if (!user) return;
-    localStorage.removeItem(`focoman_default_workspace_${user.uid}`);
-    localStorage.removeItem("focoman_default_workspace");
+    // Write '__cleared__' sentinel so app knows this was intentional (vs never configured)
+    localStorage.setItem(`focoman_default_workspace_${user.uid}`, '__cleared__');
     setIsDefaultStudio(false);
     setDefaultToast("Default workspace setting cleared.");
     setTimeout(() => setDefaultToast(null), 3000);

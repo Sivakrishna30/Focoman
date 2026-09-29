@@ -20,15 +20,22 @@ export default function GlobalDashboardRedirect() {
           const workspaces = await getUserWorkspacesAction(idToken);
           
           const activeWorkspaces = workspaces.filter((workspace) => workspace.status === "ACTIVE");
-          const defaultStudio = typeof window !== "undefined" 
-            ? (localStorage.getItem(`focoman_default_workspace_${user.uid}`) || localStorage.getItem("focoman_default_workspace"))
+          const stored = typeof window !== "undefined"
+            ? localStorage.getItem(`focoman_default_workspace_${user.uid}`)
             : null;
+          const wasCleared = stored === '__cleared__';
+          const defaultStudio = (!stored || wasCleared) ? null : stored;
 
           if (defaultStudio && activeWorkspaces.some((w) => w.studioId.toLowerCase() === defaultStudio.toLowerCase())) {
+            // Explicit default set — go straight there
             router.replace(`/${defaultStudio}/dashboard`);
-          } else if (activeWorkspaces.length === 1) {
-            router.replace(`/${activeWorkspaces[0].studioId}/dashboard`);
+          } else if (!wasCleared && activeWorkspaces.length > 0) {
+            // Never configured — auto-set first studio as default
+            const firstStudio = activeWorkspaces[0].studioId;
+            localStorage.setItem(`focoman_default_workspace_${user.uid}`, firstStudio);
+            router.replace(`/${firstStudio}/dashboard`);
           } else {
+            // Explicitly cleared — let user pick
             router.replace("/workspaces");
           }
         } catch (error) {

@@ -210,6 +210,7 @@ export function toCustomerTrackingView(
       customerName: order.customer.name,
       customerEmail: order.customer.email,
       customerUid: order.customer.uid,
+      collaborators: order.collaborators || [],
       eventType: order.eventType,
       eventDate: order.eventDate,
       eventLocation: order.eventLocation || order.locationInfo?.address,

@@ -1,5 +1,11 @@
 {
+  "/api/session/route": "app/api/session/route.js",
+  "/sign-in/page": "app/sign-in/page.js",
+  "/track/[passkey]/page": "app/track/[passkey]/page.js",
+  "/onboarding/join-studio/page": "app/onboarding/join-studio/page.js",
   "/page": "app/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/workspaces/page": "app/workspaces/page.js",
-  "/track/page": "app/track/page.js"
+  "/[studioSlug]/dashboard/page": "app/[studioSlug]/dashboard/page.js",
+  "/[studioSlug]/dashboard/erp/page": "app/[studioSlug]/dashboard/erp/page.js"
 }
