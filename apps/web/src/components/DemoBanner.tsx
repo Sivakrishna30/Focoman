@@ -140,7 +140,6 @@ export function DemoBanner({ studioSlug }: DemoBannerProps) {
                   : "border-brand-blue-soft bg-white text-brand-blue-primary hover:bg-brand-blue-background"
               }`}
             >
-              <span>🧭</span>
               <span>{showTour ? "Hide Tour" : "Guide Tour"}</span>
             </button>
 

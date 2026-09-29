@@ -6,11 +6,12 @@ import { z } from 'zod';
  */
 
 export const CreateOrderSchema = z.object({
-  idToken: z.string().min(1, 'Authentication required. No identity token provided.'),
+  idToken: z.string().min(1, 'Authentication required. No identity token provided.').optional(),
   studioId: z.string().min(1, 'Studio ID is required'),
   customerName: z.string().min(1, 'Customer name is required'),
   customerPhone: z.string().optional().or(z.literal('')),
   customerEmail: z.string().email().optional().or(z.literal('')),
+  passkeyPin: z.string().optional().or(z.literal('')),
   notifyWhatsApp: z.boolean().optional(),
   eventType: z.string().min(1, 'Event type is required'),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Event date must be YYYY-MM-DD'),

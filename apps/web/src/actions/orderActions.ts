@@ -8,12 +8,14 @@ import {
   UpdatePaymentSchema,
 } from "@focoman/validation";
 import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView } from "@focoman/domain";
+import { DEMO_ORDERS, DEMO_TASKS } from "@/lib/demoData";
 import {
   getOrdersByStudio,
   getDeletedOrdersByStudio,
   getOrderById,
   getOrderByIdIncludeDeleted,
   getOrderByPasskey,
+  getOrdersByCustomerUid,
   getStudioBySlug,
   saveOrder,
   updateOrder,
@@ -94,6 +96,12 @@ export async function createOrderAction(rawInput: unknown): Promise<{
 
     const customerPhone = validated.customerPhone?.trim() || undefined;
     const customerEmail = validated.customerEmail?.trim() || undefined;
+    const passkeyPin = validated.passkeyPin?.trim() || undefined;
+
+    const studioPrefix = prefixLetters(validated.studioId);
+    const finalPasskey = passkeyPin
+      ? `FOC-${studioPrefix}-${passkeyPin}`
+      : passkey;
 
     const newOrder: Order = {
       id: orderId,
@@ -103,6 +111,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
         id: customerId,
         name: validated.customerName,
         ...(customerPhone ? { phone: customerPhone } : {}),
+        ...(customerEmail ? { email: customerEmail } : {}),
       },
       eventType: validated.eventType,
       eventDate: validated.eventDate,
@@ -118,14 +127,13 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       paymentStatus: initialPaymentStatus,
       orderStatus: "AWAITING_EVENT",
       assignedResources: [],
-      trackingPasskey: passkey,
+      trackingPasskey: finalPasskey,
       ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
       isDeleted: false,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
 
-    const studioPrefix = prefixLetters(validated.studioId);
     const workflowTasks = generateWorkflowTasks(orderId, validated.studioId, validated.services).map((t, idx) => {
       const { dateStamp, timeStamp } = generateTimestampDigits(new Date(now.getTime() + idx));
       return {
@@ -185,16 +193,21 @@ export async function getOrderAction(
   studioSlug: string,
   idToken: string
 ): Promise<{ order: Order | null; tasks: Task[] }> {
-  const decoded = await requireVerifiedUser(idToken);
-  await requireStudioOwner(decoded.uid, studioSlug);
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioOwner(decoded.uid, studioSlug);
 
-  const order = await getOrderById(orderId);
-  if (!order) return { order: null, tasks: [] };
-  if (order.studioId !== studioSlug.toLowerCase()) {
-    throw new Error("Access denied: Order does not belong to authorized studio.");
+    const order = await getOrderById(orderId);
+    if (!order) return { order: null, tasks: [] };
+    if (order.studioId.toLowerCase() !== studioSlug.toLowerCase()) {
+      return { order: null, tasks: [] };
+    }
+    const tasks = await getTasksByOrder(order.id);
+    return { order, tasks };
+  } catch (err) {
+    console.error("[getOrderAction] Error:", err);
+    return { order: null, tasks: [] };
   }
-  const tasks = await getTasksByOrder(order.id);
-  return { order, tasks };
 }
 
 export async function getOrderTasksAction(
@@ -202,15 +215,20 @@ export async function getOrderTasksAction(
   studioSlug: string,
   idToken: string
 ): Promise<Task[]> {
-  const decoded = await requireVerifiedUser(idToken);
-  const membership = await requireStudioMember(decoded.uid, studioSlug);
-  const order = await getOrderById(orderId);
-  if (!order || order.studioId !== studioSlug.toLowerCase()) {
-    throw new Error("Order not found in authorized studio.");
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    const membership = await requireStudioMember(decoded.uid, studioSlug);
+    const order = await getOrderById(orderId);
+    if (!order || order.studioId.toLowerCase() !== studioSlug.toLowerCase()) {
+      return [];
+    }
+    const member = await requireAssignedOrderAccess(membership, decoded.email, studioSlug, order);
+    const tasks = await getTasksByOrder(order.id);
+    return member ? tasks.filter((task) => task.assignedMemberId === member.id) : tasks;
+  } catch (err) {
+    console.error("[getOrderTasksAction] Error:", err);
+    return [];
   }
-  const member = await requireAssignedOrderAccess(membership, decoded.email, studioSlug, order);
-  const tasks = await getTasksByOrder(orderId);
-  return member ? tasks.filter((task) => task.assignedMemberId === member.id) : tasks;
 }
 
 export async function updateOrderAction(input: {
@@ -296,17 +314,40 @@ export async function getOrderByPasskeyAction(passkey: string): Promise<{
       return { success: false, error: "Tracking passkey is required." };
     }
 
-    const order = await getOrderByPasskey(passkey.trim().toUpperCase());
+    const cleanPasskey = passkey.trim().toUpperCase();
+    const order = await getOrderByPasskey(cleanPasskey);
+
     if (!order) {
       return {
         success: false,
-        error: "No order was found for this tracking link.",
+        error: `No order was found for access code "${passkey}".`,
       };
     }
 
     const tasks = await getTasksByOrder(order.id);
     const studio = await getStudioBySlug(order.studioId);
-    const view = toCustomerTrackingView(order, studio?.name || "Studio", tasks);
+    const staffEmails: string[] = [];
+    const staffUids: string[] = [];
+
+    if (studio?.ownerEmail) staffEmails.push(studio.ownerEmail.toLowerCase());
+    if (studio?.ownerId) staffUids.push(studio.ownerId);
+
+    try {
+      const studioMembers = await getMembersByStudio(order.studioId);
+      studioMembers.forEach((m) => {
+        if (m.email) staffEmails.push(m.email.toLowerCase());
+      });
+    } catch (err) {
+      console.warn("[getOrderByPasskeyAction] Error fetching members:", err);
+    }
+
+    const view = toCustomerTrackingView(order, studio?.name || "Studio", tasks, {
+      studioId: order.studioId,
+      studioOwnerId: studio?.ownerId,
+      studioOwnerEmail: studio?.ownerEmail,
+      staffEmails: Array.from(new Set(staffEmails)),
+      staffUids: Array.from(new Set(staffUids)),
+    });
     return { success: true, view };
   } catch (err: unknown) {
     console.error("[getOrderByPasskeyAction] Error:", err);
@@ -716,5 +757,43 @@ export async function cancelOrderAction(input: {
   } catch (err: unknown) {
     console.error("[cancelOrderAction] Error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Failed to cancel order" };
+  }
+}
+
+export async function syncOrderToAccountAction(input: {
+  passkey: string;
+  idToken: string;
+}): Promise<{ success: boolean; order?: Order; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    const order = await getOrderByPasskey(input.passkey);
+    if (!order) {
+      return { success: false, error: "Order not found for this access code." };
+    }
+
+    const updatedCustomer = {
+      ...order.customer,
+      uid: decoded.uid,
+      email: decoded.email || order.customer.email,
+    };
+
+    const updatedOrder = await updateOrder(order.id, {
+      customer: updatedCustomer,
+    });
+
+    return { success: true, order: updatedOrder || undefined };
+  } catch (err: unknown) {
+    console.error("[syncOrderToAccountAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to sync order." };
+  }
+}
+
+export async function getMySyncedOrdersAction(idToken: string): Promise<Order[]> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    return await getOrdersByCustomerUid(decoded.uid, decoded.email);
+  } catch (err: unknown) {
+    console.error("[getMySyncedOrdersAction] Error:", err);
+    return [];
   }
 }

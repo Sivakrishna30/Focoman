@@ -4,8 +4,11 @@ import {
   getStudioBySlug,
   registerStudioTransaction,
   getMembershipsByUid,
+  getMembershipByUidAndStudio,
   updateStudio,
   softDeleteStudio,
+  hardDeleteStudio,
+  leaveStudioMembership,
   restoreStudio,
 } from "@focoman/db";
 import { Studio, StudioMembership } from "@focoman/types";
@@ -186,17 +189,46 @@ export async function resetStudioWhatsappConfigAction(
 
 export async function deleteStudioAction(
   studioSlug: string,
-  idToken: string
+  idToken: string,
+  options?: { permanent?: boolean }
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(idToken);
     await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
 
-    await softDeleteStudio(studioSlug, decoded.uid);
+    if (options?.permanent) {
+      await hardDeleteStudio(studioSlug);
+    } else {
+      await softDeleteStudio(studioSlug, decoded.uid);
+    }
     return { success: true };
   } catch (err: unknown) {
     console.error("[deleteStudioAction] Error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Failed to delete studio." };
+  }
+}
+
+export async function leaveStudioAction(
+  studioSlug: string,
+  idToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    const membership = await getMembershipByUidAndStudio(decoded.uid, studioSlug);
+    if (!membership) {
+      return { success: false, error: "Membership not found." };
+    }
+    if (membership.role === "STUDIO_OWNER") {
+      return {
+        success: false,
+        error: "Studio owners cannot leave their studio. Use Delete Studio instead.",
+      };
+    }
+    await leaveStudioMembership(decoded.uid, studioSlug);
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[leaveStudioAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to leave studio." };
   }
 }
 

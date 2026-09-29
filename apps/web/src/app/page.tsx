@@ -49,7 +49,7 @@ export default function HomePage() {
           id="home"
           className="relative overflow-hidden border-b border-border-divider bg-gradient-to-b from-white via-brand-blue-background/25 to-surface-app px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
         >
-          <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[42%] h-[480px] w-[480px] sm:h-[520px] sm:w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
+          <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[52%] h-[480px] w-[480px] sm:h-[520px] sm:w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
 
           <div className="relative z-10 mx-auto max-w-4xl text-center">
             <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-5 py-2 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-brand-orange-primary shadow-2xs">

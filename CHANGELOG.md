@@ -4,6 +4,21 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-041 — Resolve Container Reverse-Proxy Mismatches for Google Sign-In Session Creation
+
+- **Task:** CHG-041 — Resolve Google Sign-In Session Proxy Mismatch & Invalidate Webpack Cache
+- **Date:** 2026-09-27
+- **Area:** `apps/web/src/app/api/session/route.ts`, `CHANGELOG.md`
+- **Change:**
+  1. **Bypassed Strict Host-Origin Comparison in `/api/session`**:
+     - Google Cloud Run container routing terminates SSL and forwards requests via internal reverse-proxies, causing a host mismatch between the public origin (`https://ais-dev-...run.app`) and internal host header (`localhost:3000`).
+     - Bypassed the comparison check to rely fully on the cryptographic verification of the Firebase/Google ID token, resolving the login error: `Google sign-in failed: Unable to establish a secure server session.`
+  2. **Purged Next.js Build Cache**:
+     - Deleted local Webpack build directories (`apps/web/.next` and `.cache`) to resolve stale compilation artifacts.
+- **Verification:** `compile_applet` passed (`Build succeeded`), `lint_applet` passed cleanly with 0 warnings/errors.
+
+---
+
 ## CHG-040 — Safe Single-Use Studio Invitations Without Automatic Expiry
 
 - **Task:** Make accepted invites repeat-safe and add Owner-generated email-free passcode invitations

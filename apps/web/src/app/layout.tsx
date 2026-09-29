@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 export const metadata: Metadata = {
   title: "Focoman",
   description: "Business operating system for photography studios",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },

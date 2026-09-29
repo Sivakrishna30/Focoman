@@ -16,7 +16,7 @@ export function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-border-divider bg-gradient-to-b from-white via-brand-blue-background/20 to-surface-app px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[42%] h-[460px] w-[460px] sm:h-[500px] sm:w-[500px] -translate-x-1/2 -translate-y-1/2 opacity-25" />
+        <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[52%] h-[460px] w-[460px] sm:h-[500px] sm:w-[500px] -translate-x-1/2 -translate-y-1/2 opacity-25" />
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-5 py-2 text-sm font-extrabold uppercase tracking-widest text-brand-orange-primary shadow-xs">

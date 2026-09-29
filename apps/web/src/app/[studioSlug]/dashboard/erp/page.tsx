@@ -302,6 +302,10 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
               onClick={() => {
                 setShowModal(true);
                 setModalError(null);
+                setForm((prev) => ({
+                  ...prev,
+                  claimCode: prev.claimCode || Math.floor(100000 + Math.random() * 900000).toString(),
+                }));
               }}
               className="btn-brand-purple"
             >
@@ -694,7 +698,15 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                   type="email"
                   placeholder="crew@studio.com"
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value, claimCode: e.target.value ? "" : form.claimCode })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      email: e.target.value,
+                      claimCode: e.target.value
+                        ? ""
+                        : form.claimCode || Math.floor(100000 + Math.random() * 900000).toString(),
+                    })
+                  }
                   className={`mt-1 w-full rounded-xl border px-3.5 py-2 text-xs outline-none focus:ring-1 ${
                     fieldHints.emailHint?.type === "error"
                       ? "border-red-400 focus:border-red-500 focus:ring-red-300"
@@ -717,17 +729,28 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                   <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">
                     {form.email.trim()
                       ? "✓ Member will authenticate directly using this Google email address."
-                      : "Provide email for Google sign-in auth, or leave blank and set a 6-digit passcode instead."}
+                      : "Provide email for Google sign-in auth, or leave blank to use the auto-generated 6-digit access PIN below."}
                   </p>
                 )}
               </div>
               {!form.email.trim() && (
-                <div className="rounded-xl border border-brand-purple-soft/60 bg-brand-purple-background/30 p-3">
+                <div className="rounded-xl border border-brand-purple-soft/60 bg-brand-purple-background/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="block font-bold text-brand-purple-primary">
-                      6-Digit Passcode *
+                    <label className="text-xs font-bold text-brand-purple-primary block">
+                      6-Digit Guest Access PIN *
                     </label>
-                    <span className="text-[10px] font-semibold text-brand-purple-primary/80">Required without email</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          claimCode: Math.floor(100000 + Math.random() * 900000).toString(),
+                        }))
+                      }
+                      className="text-[10px] font-bold text-brand-purple-primary hover:underline"
+                    >
+                      Regenerate PIN
+                    </button>
                   </div>
                   <input
                     type="text"
@@ -736,13 +759,15 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                     required
                     pattern="[0-9]{6}"
                     maxLength={6}
-                    placeholder="Enter a 6-digit passcode (e.g. 123456)"
+                    placeholder="e.g. 492015"
                     value={form.claimCode}
-                    onChange={(e) => setForm({ ...form, claimCode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
-                    className="mt-1.5 w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-xs tracking-wider outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                    onChange={(e) =>
+                      setForm({ ...form, claimCode: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                    }
+                    className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
                   />
-                  <p className="mt-1.5 text-[11px] text-text-secondary">
-                    The member will enter this 6-digit passcode alongside their invite code to authenticate and join.
+                  <p className="text-[11px] text-text-secondary">
+                    Share this 6-digit PIN alongside the invitation link with your crew member to join the studio without a Google email account.
                   </p>
                 </div>
               )}

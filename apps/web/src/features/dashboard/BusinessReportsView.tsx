@@ -286,7 +286,7 @@ export function BusinessReportsView({
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary">
             <span>Avg Order Value (AOV)</span>
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-50 text-brand-purple-primary font-bold text-xs">
-              📊
+              AOV
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -404,7 +404,7 @@ export function BusinessReportsView({
 
           <div className="mt-6 pt-4 border-t border-border-divider">
             <p className="text-[11px] text-text-secondary">
-              💡 <strong>Pro Tip:</strong> Focus marketing on your highest margin package categories to maximize studio net profits.
+              <strong>Pro Tip:</strong> Focus marketing on your highest margin package categories to maximize studio net profits.
             </p>
           </div>
         </div>
@@ -432,7 +432,7 @@ export function BusinessReportsView({
 
         {pendingOrders.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border-default p-8 text-center text-xs text-text-secondary">
-            🎉 All confirmed orders have zero outstanding balance dues! Cash flow is fully collected.
+            All confirmed orders have zero outstanding balance dues! Cash flow is fully collected.
           </div>
         ) : (
           <div className="overflow-x-auto">

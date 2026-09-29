@@ -246,9 +246,16 @@ export interface CustomerOrderView {
 
 export interface CustomerTrackingView {
   order: {
+    id: string;
+    studioId?: string;
+    studioOwnerId?: string;
+    studioOwnerEmail?: string;
     orderNumber: string;
+    trackingPasskey: string;
     studioName: string;
     customerName: string;
+    customerEmail?: string;
+    customerUid?: string;
     eventType: string;
     eventDate: string;
     eventLocation?: string;
@@ -258,6 +265,8 @@ export interface CustomerTrackingView {
     remainingAmount: number;
     paymentStatus: PaymentStatus;
     orderStatus: OrderStatus;
+    staffEmails?: string[];
+    staffUids?: string[];
   };
   tasks: Array<{
     title: string;
@@ -298,6 +307,8 @@ export interface Studio extends SoftDeletable {
   planInfo?: StudioPlan;
 
   city: string;
+  website?: string;
+  instagram?: string;
   ownerId: string;
   ownerName: string;
   ownerEmail: string;
@@ -403,6 +414,7 @@ export interface Customer extends SoftDeletable {
   name: string;
   phone?: string;
   email?: string;
+  uid?: string;
   address?: string;
   createdAt: string;
   updatedAt: string;
@@ -448,6 +460,7 @@ export interface Order extends SoftDeletable {
     name: string;
     phone?: string;
     email?: string;
+    uid?: string;
   };
   eventType: string;
   eventDate: string; // YYYY-MM-DD

@@ -20,7 +20,13 @@ export default function GlobalDashboardRedirect() {
           const workspaces = await getUserWorkspacesAction(idToken);
           
           const activeWorkspaces = workspaces.filter((workspace) => workspace.status === "ACTIVE");
-          if (activeWorkspaces.length === 1) {
+          const defaultStudio = typeof window !== "undefined" 
+            ? (localStorage.getItem(`focoman_default_workspace_${user.uid}`) || localStorage.getItem("focoman_default_workspace"))
+            : null;
+
+          if (defaultStudio && activeWorkspaces.some((w) => w.studioId.toLowerCase() === defaultStudio.toLowerCase())) {
+            router.replace(`/${defaultStudio}/dashboard`);
+          } else if (activeWorkspaces.length === 1) {
             router.replace(`/${activeWorkspaces[0].studioId}/dashboard`);
           } else {
             router.replace("/workspaces");

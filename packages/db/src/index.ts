@@ -128,7 +128,10 @@ export async function registerStudioTransaction(
       const studioRef = firestore.collection('studios').doc(studio.id);
       const studioDoc = await transaction.get(studioRef);
       if (studioDoc.exists) {
-        throw new Error(`Studio identifier "${studio.id}" is already in use.`);
+        const existingData = studioDoc.data() as Studio;
+        if (!existingData.isDeleted) {
+          throw new Error(`Studio identifier "${studio.id}" is already in use.`);
+        }
       }
       transaction.set(studioRef, studio);
       const membershipRef = firestore.collection('memberships').doc(membership.id);
@@ -157,6 +160,73 @@ export async function softDeleteStudio(studioId: string, deletedByUid: string): 
     deletedBy: deletedByUid,
     updatedAt: now,
   });
+
+  // Deactivate active memberships so this deleted studio does not appear in active workspaces
+  const memSnap = await firestore
+    .collection('memberships')
+    .where('studioId', '==', studioId.toLowerCase())
+    .where('status', '==', 'ACTIVE')
+    .get();
+
+  if (!memSnap.empty) {
+    const batch = firestore.batch();
+    memSnap.docs.forEach((doc) => {
+      batch.update(doc.ref, { status: 'INACTIVE', updatedAt: now });
+    });
+    await batch.commit();
+  }
+  return true;
+}
+
+export async function hardDeleteStudio(studioId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const sid = studioId.toLowerCase();
+
+  // 1. Delete the studio document
+  await firestore.collection('studios').doc(sid).delete();
+
+  // 2. Delete all memberships for this studio
+  const memSnap = await firestore
+    .collection('memberships')
+    .where('studioId', '==', sid)
+    .get();
+
+  const batch = firestore.batch();
+  memSnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  // 3. Delete all invitations for this studio
+  const invSnap = await firestore
+    .collection('invitations')
+    .where('studioId', '==', sid)
+    .get();
+
+  invSnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  await batch.commit();
+  return true;
+}
+
+export async function leaveStudioMembership(uid: string, studioId: string): Promise<boolean> {
+  const firestore = getFirestoreServerInstance();
+  const sid = studioId.toLowerCase();
+
+  const memSnap = await firestore
+    .collection('memberships')
+    .where('uid', '==', uid)
+    .where('studioId', '==', sid)
+    .get();
+
+  if (memSnap.empty) return false;
+
+  const batch = firestore.batch();
+  memSnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
   return true;
 }
 
@@ -225,11 +295,11 @@ export async function getOrdersByStudio(studioId: string): Promise<Order[]> {
   const snap = await firestore
     .collection('orders')
     .where('studioId', '==', studioId.toLowerCase())
-    .orderBy('createdAt', 'desc')
     .get();
-  return snap.docs
+  const orders = snap.docs
     .map((d) => d.data() as Order)
     .filter((order) => !order.isDeleted);
+  return orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
 export async function getDeletedOrdersByStudio(studioId: string): Promise<Order[]> {
@@ -237,14 +307,15 @@ export async function getDeletedOrdersByStudio(studioId: string): Promise<Order[
   const snap = await firestore
     .collection('orders')
     .where('studioId', '==', studioId.toLowerCase())
-    .orderBy('createdAt', 'desc')
     .get();
-  return snap.docs
+  const orders = snap.docs
     .map((d) => d.data() as Order)
     .filter((order) => !!order.isDeleted);
+  return orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
 export async function getOrderById(orderId: string): Promise<Order | null> {
+  if (!orderId) return null;
   const firestore = getFirestoreServerInstance();
   const doc = await firestore.collection('orders').doc(orderId).get();
   if (doc.exists) {
@@ -252,7 +323,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
     if (order.isDeleted) return null;
     return order;
   }
-  return null;
+  return getOrderByPasskey(orderId);
 }
 
 export async function getOrderByIdIncludeDeleted(orderId: string): Promise<Order | null> {
@@ -262,20 +333,78 @@ export async function getOrderByIdIncludeDeleted(orderId: string): Promise<Order
   return null;
 }
 
-export async function getOrderByPasskey(passkey: string): Promise<Order | null> {
-  const cleanPasskey = passkey.trim().toUpperCase();
+export async function getOrderByPasskey(identifier: string): Promise<Order | null> {
+  const clean = identifier.trim().toUpperCase();
   const firestore = getFirestoreServerInstance();
-  const snap = await firestore
+
+  // 1. Try trackingPasskey
+  let snap = await firestore
     .collection('orders')
-    .where('trackingPasskey', '==', cleanPasskey)
+    .where('trackingPasskey', '==', clean)
     .limit(1)
     .get();
+
+  if (snap.empty) {
+    // 2. Try orderNumber (e.g. ORD-TES-260928-172054)
+    snap = await firestore
+      .collection('orders')
+      .where('orderNumber', '==', clean)
+      .limit(1)
+      .get();
+  }
+
   if (!snap.empty) {
     const order = snap.docs[0].data() as Order;
-    if (order.isDeleted) return null; // Guest tracking strictly hides deleted orders
+    if (order.isDeleted) return null;
     return order;
   }
+
+  // 3. Try document ID
+  const doc = await firestore.collection('orders').doc(clean).get();
+  if (doc.exists) {
+    const order = doc.data() as Order;
+    if (!order.isDeleted) return order;
+  }
+
   return null;
+}
+
+export async function getOrdersByCustomerUid(uid: string, email?: string): Promise<Order[]> {
+  const firestore = getFirestoreServerInstance();
+  const results: Order[] = [];
+  const seenIds = new Set<string>();
+
+  // 1. Query by customer.uid
+  const snapUid = await firestore
+    .collection('orders')
+    .where('customer.uid', '==', uid)
+    .get();
+
+  snapUid.docs.forEach((doc) => {
+    const data = doc.data() as Order;
+    if (!data.isDeleted && !seenIds.has(data.id)) {
+      seenIds.add(data.id);
+      results.push(data);
+    }
+  });
+
+  // 2. Query by customer.email if available
+  if (email && email.trim()) {
+    const snapEmail = await firestore
+      .collection('orders')
+      .where('customer.email', '==', email.trim().toLowerCase())
+      .get();
+
+    snapEmail.docs.forEach((doc) => {
+      const data = doc.data() as Order;
+      if (!data.isDeleted && !seenIds.has(data.id)) {
+        seenIds.add(data.id);
+        results.push(data);
+      }
+    });
+  }
+
+  return results.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
 export async function saveOrder(order: Order): Promise<Order> {
@@ -540,11 +669,11 @@ export async function getTasksByOrder(orderId: string): Promise<Task[]> {
   const snap = await firestore
     .collection('tasks')
     .where('orderId', '==', orderId)
-    .orderBy('sequenceOrder', 'asc')
     .get();
-  return snap.docs
+  const tasks = snap.docs
     .map((d) => d.data() as Task)
     .filter((t) => !t.isDeleted);
+  return tasks.sort((a, b) => (a.sequenceOrder || 0) - (b.sequenceOrder || 0));
 }
 
 export async function getTasksByMember(studioId: string, memberId: string): Promise<Task[]> {

@@ -91,7 +91,6 @@ export function CheckoutBuilder() {
       {upgradeParam && (
         <div className="rounded-2xl border border-brand-orange-light bg-brand-orange-background/40 p-4 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
             <div>
               <p className="text-xs font-extrabold text-brand-orange-primary uppercase tracking-wider">
                 Navigated from Studio Workspace: {upgradeParam.toUpperCase()} Selected
@@ -302,7 +301,6 @@ export function CheckoutBuilder() {
 
         {checkoutSuccess ? (
           <div className="rounded-2xl bg-emerald-100 border border-emerald-300 p-6 text-center space-y-2">
-            <span className="text-2xl">🎉</span>
             <h4 className="text-base font-extrabold text-emerald-900">
               Modules Updated Successfully!
             </h4>

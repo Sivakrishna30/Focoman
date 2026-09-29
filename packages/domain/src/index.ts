@@ -189,13 +189,27 @@ export function toCustomerOrderView(order: Order, studioName: string): CustomerO
 export function toCustomerTrackingView(
   order: Order,
   studioName: string,
-  tasks: Task[]
+  tasks: Task[],
+  studioInfo?: {
+    studioId?: string;
+    studioOwnerId?: string;
+    studioOwnerEmail?: string;
+    staffEmails?: string[];
+    staffUids?: string[];
+  }
 ): CustomerTrackingView {
   return {
     order: {
+      id: order.id,
+      studioId: studioInfo?.studioId || order.studioId,
+      studioOwnerId: studioInfo?.studioOwnerId,
+      studioOwnerEmail: studioInfo?.studioOwnerEmail,
       orderNumber: order.orderNumber,
+      trackingPasskey: order.trackingPasskey,
       studioName,
       customerName: order.customer.name,
+      customerEmail: order.customer.email,
+      customerUid: order.customer.uid,
       eventType: order.eventType,
       eventDate: order.eventDate,
       eventLocation: order.eventLocation || order.locationInfo?.address,
@@ -205,6 +219,8 @@ export function toCustomerTrackingView(
       remainingAmount: order.pricing.remainingAmount,
       paymentStatus: order.paymentStatus,
       orderStatus: order.orderStatus,
+      staffEmails: studioInfo?.staffEmails,
+      staffUids: studioInfo?.staffUids,
     },
     tasks: tasks.map((task) => ({
       title: task.title,

@@ -150,6 +150,91 @@ Severity:
 Notes:
 - Manual verification reported by the user; automated HTTP probe also returned 307 to `/sign-in` without a session cookie.
 
+### AUTH-003 — Studio member role enforcement works for Owner vs Member
+Preconditions:
+- An Owner studio has an active invited Member account.
+- At least one order/task is assigned to that Member and another is assigned to a different crew member.
+
+Steps:
+1. Log in as OWNER and confirm the full studio dashboard remains available.
+2. Log in as MEMBER and open `/{studioSlug}/dashboard`.
+3. Confirm the Member sees assigned orders and tasks only.
+4. Try direct URLs for OMS full list, CRM, ERP roster, WhatsApp, reports, marketplace settings, and capabilities.
+5. Update the Member's assigned task; then try changing another Member's task directly.
+
+Expected Result:
+- OWNER retains full operations access.
+- MEMBER sees only assigned orders/tasks and can update only their own assigned task.
+- Owner-only routes and data remain inaccessible to MEMBER.
+
+Actual Result:
+- Verified by user in live browser testing:
+  - Studio owner is automatically the first crew member with owner status and role in ERP roster.
+  - Self-invites are blocked both dynamically in the UI and enforced in backend action.
+  - Member vs Owner role enforcement verified; member dashboard displays assigned tasks while restricting owner administrative routes.
+  - Standardized invite code format (`INV-<Studio3>-<Member3>-<4digits>`), optional email handling with 6-digit passcode authentication, and member onboarding work as expected.
+
+Status:
+- [x] PASS
+
+Issue:
+- Resolved.
+
+Severity:
+- None
+
+Notes:
+- Only studio-owner routes are hidden/blocked; public profile URLs use `/studios/{publicSlug}` and are not Member dashboard routes.
+
+### AUTH-004 — Customer access is limited to customer order data
+Preconditions:
+- Customer passkey or customer session exists
+
+Steps:
+1. Open customer tracking portal
+2. Try viewing unrelated order data
+3. Attempt to access private studio data not included in the order DTO
+
+Expected Result:
+- Only the permitted order and sanitized customer-facing data are visible
+- Private financial/order internals are hidden
+
+Actual Result:
+- 
+
+Status:
+- [ ] NOT TESTED
+
+Issue:
+- 
+
+Notes:
+- Important for “customer access isolation” requirement in docs.
+
+### AUTH-005 — Direct URL access to protected actions is rejected
+Preconditions:
+- Studio URL pattern is known
+
+Steps:
+1. Access a private route using a direct URL without auth
+2. Access a role-protected route as a lower-privilege user
+
+Expected Result:
+- Access denied
+- No data leakage
+
+Actual Result:
+- 
+
+Status:
+- [ ] NOT TESTED
+
+Issue:
+- 
+
+Notes:
+- Test both UI and direct access paths.
+
 ### AUTH-006 — Member access is limited to assigned work and permitted actions
 Preconditions:
 - A studio has one owner, two members, assigned and unassigned orders/tasks, customer records, and payment data.
@@ -239,41 +324,35 @@ Notes:
 - UI and direct Server Action enforcement must both be checked.
 - Verify the Member experience and direct Server Action enforcement separately.
 
-### AUTH-003 — Studio member role enforcement works for Owner vs Member
+### AUTH-009 — Developer demo is not surfaced in user navigation
 Preconditions:
-- An Owner studio has an active invited Member account.
-- At least one order/task is assigned to that Member and another is assigned to a different crew member.
+- App is running and the user can access the public home and Workspaces pages.
 
 Steps:
-1. Log in as OWNER and confirm the full studio dashboard remains available.
-2. Log in as MEMBER and open `/{studioSlug}/dashboard`.
-3. Confirm the Member sees assigned orders and tasks only.
-4. Try direct URLs for OMS full list, CRM, ERP roster, WhatsApp, reports, marketplace settings, and capabilities.
-5. Update the Member's assigned task; then try changing another Member's task directly.
+1. Check the public home page and Workspaces for demo links/cards.
+2. Open `/demo-studio/dashboard` directly.
 
 Expected Result:
-- OWNER retains full operations access.
-- MEMBER sees only assigned orders/tasks and can update only their own assigned task.
-- Owner-only routes and data remain inaccessible to MEMBER.
+- No normal user-facing navigation links to the demo appear.
+- Direct developer/demo URL still loads the isolated mock workspace.
+- Demo data does not appear under an ordinary studio slug such as `/demo/dashboard`.
 
 Actual Result:
-- Verified by user in live browser testing:
-  - Studio owner is automatically the first crew member with owner status and role in ERP roster.
-  - Self-invites are blocked both dynamically in the UI and enforced in backend action.
-  - Member vs Owner role enforcement verified; member dashboard displays assigned tasks while restricting owner administrative routes.
-  - Standardized invite code format (`INV-<Studio3>-<Member3>-<4digits>`), optional email handling with 6-digit passcode authentication, and member onboarding work as expected.
+- Home page returns HTTP 200 and contains no `/demo-studio/dashboard` link.
+- Direct `/demo-studio/dashboard` returns HTTP 200 and renders the Demo Mode banner.
+- Signed-in Workspaces browser view still needs manual confirmation that no demo card appears.
 
 Status:
-- [x] PASS
+- [~] PARTIAL
 
 Issue:
-- Resolved.
+- 
 
 Severity:
-- None
+- 
 
 Notes:
-- Only studio-owner routes are hidden/blocked; public profile URLs use `/studios/{publicSlug}` and are not Member dashboard routes.
+- `demo-studio` is the only demo route slug; internal fixtures retain their `lumina-studios` data ID.
 
 ### AUTH-010 — Invitation is single-use, repeat-safe, and has no expiry
 Preconditions:
@@ -340,85 +419,6 @@ Severity:
 
 Notes:
 - Generic email-free invitations are intentionally not discoverable from Workspaces; their secret link and passcode are required.
-
-### AUTH-009 — Developer demo is not surfaced in user navigation
-Preconditions:
-- App is running and the user can access the public home and Workspaces pages.
-
-Steps:
-1. Check the public home page and Workspaces for demo links/cards.
-2. Open `/demo-studio/dashboard` directly.
-
-Expected Result:
-- No normal user-facing navigation links to the demo appear.
-- Direct developer/demo URL still loads the isolated mock workspace.
-- Demo data does not appear under an ordinary studio slug such as `/demo/dashboard`.
-
-Actual Result:
-- Home page returns HTTP 200 and contains no `/demo-studio/dashboard` link.
-- Direct `/demo-studio/dashboard` returns HTTP 200 and renders the Demo Mode banner.
-- Signed-in Workspaces browser view still needs manual confirmation that no demo card appears.
-
-Status:
-- [~] PARTIAL
-
-Issue:
-- 
-
-Severity:
-- 
-
-Notes:
-- `demo-studio` is the only demo route slug; internal fixtures retain their `lumina-studios` data ID.
-
-### AUTH-004 — Customer access is limited to customer order data
-Preconditions:
-- Customer passkey or customer session exists
-
-Steps:
-1. Open customer tracking portal
-2. Try viewing unrelated order data
-3. Attempt to access private studio data not included in the order DTO
-
-Expected Result:
-- Only the permitted order and sanitized customer-facing data are visible
-- Private financial/order internals are hidden
-
-Actual Result:
-- 
-
-Status:
-- [ ] NOT TESTED
-
-Issue:
-- 
-
-Notes:
-- Important for “customer access isolation” requirement in docs.
-
-### AUTH-005 — Direct URL access to protected actions is rejected
-Preconditions:
-- Studio URL pattern is known
-
-Steps:
-1. Access a private route using a direct URL without auth
-2. Access a role-protected route as a lower-privilege user
-
-Expected Result:
-- Access denied
-- No data leakage
-
-Actual Result:
-- 
-
-Status:
-- [ ] NOT TESTED
-
-Issue:
-- 
-
-Notes:
-- Test both UI and direct access paths.
 
 ---
 

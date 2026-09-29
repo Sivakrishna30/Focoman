@@ -26,7 +26,7 @@ const TOUR_STEPS: TourStep[] = [
     targetId: "tour-switch-workspace",
     fallbackTargetId: "tour-sidebar-switch",
     badge: "Step 1 of 5 · Navigation",
-    actionPrompt: "👉 Click here: Switch Workspace",
+    actionPrompt: "Click here: Switch Workspace",
     title: "Switch Studio Workspace",
     description:
       "Click here anytime to switch between different studio workspaces or return to your account's workspace directory.",
@@ -36,7 +36,7 @@ const TOUR_STEPS: TourStep[] = [
     id: "persona-switcher",
     targetId: "tour-persona-switcher",
     badge: "Step 2 of 5 · Roles & Access",
-    actionPrompt: "👉 Click here: Switch Roles",
+    actionPrompt: "Click here: Switch Roles",
     title: "Studio Owner vs. Crew Experience",
     description:
       "You're currently in the Studio Owner view (Arjun) with full financials. Click here to switch to Rohan (Editor) to see how crew only access assigned tasks.",
@@ -47,7 +47,7 @@ const TOUR_STEPS: TourStep[] = [
     targetId: "tour-nav-oms",
     fallbackTargetId: "tour-quick-oms",
     badge: "Step 3 of 5 · Core OMS",
-    actionPrompt: "👉 Open here: Order Pipeline",
+    actionPrompt: "Open here: Order Pipeline",
     title: "Order Management (OMS)",
     description:
       "Track and manage confirmed orders and their status across every milestone, from RAW photo selection and editing through to final album delivery and payments.",
@@ -58,7 +58,7 @@ const TOUR_STEPS: TourStep[] = [
     targetId: "tour-nav-crm",
     fallbackTargetId: "tour-nav-erp",
     badge: "Step 4 of 5 · Business Operations",
-    actionPrompt: "👉 See this: Clients & Team Allocation",
+    actionPrompt: "See this: Clients & Team Allocation",
     title: "Customer CRM & Crew ERP",
     description:
       "Click here to view client booking histories, track lifetime revenue, and assign photographers and retouchers based on shoot date availability.",
@@ -68,7 +68,7 @@ const TOUR_STEPS: TourStep[] = [
     id: "reset-defaults",
     targetId: "tour-reset-defaults",
     badge: "Step 5 of 5 · Live Sandbox",
-    actionPrompt: "👉 Click here: Reset Anytime",
+    actionPrompt: "Click here: Reset Anytime",
     title: "Browser Memory & Reset",
     description:
       "All your edits, new orders, and status updates persist safely in your browser memory. Click 'Reset Defaults' anytime to restore default seed data.",

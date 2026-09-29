@@ -58,6 +58,15 @@ export default function OmsPage({
   const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [copiedField, setCopiedField] = useState<"code" | "link" | null>(null);
+
+  const handleCopyText = (text: string, field: "code" | "link") => {
+    if (typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
 
   const hasWhatsappPlan = Boolean(
     studio?.features?.whatsapp ||
@@ -73,6 +82,7 @@ export default function OmsPage({
     customerName: "",
     customerPhone: "",
     customerEmail: "",
+    passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
     notifyWhatsApp: true,
     eventType: "Wedding Reception",
     eventDate: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0],
@@ -146,6 +156,9 @@ export default function OmsPage({
     setFormError(null);
 
     if (isDemo) {
+      const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
+      const hasValid10DigitPhone = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
+
       const res = createDemoOrder({
         customerName: newOrderForm.customerName,
         customerPhone: newOrderForm.customerPhone || undefined,
@@ -178,13 +191,16 @@ export default function OmsPage({
       return;
     }
 
+    const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
+    const hasValid10DigitPhone = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
+
     const res = await createOrderAction({
       idToken: token,
       studioId: studioSlug,
       customerName: newOrderForm.customerName,
       customerPhone: newOrderForm.customerPhone || undefined,
       customerEmail: newOrderForm.customerEmail || undefined,
-      notifyWhatsApp: hasWhatsappPlan ? newOrderForm.notifyWhatsApp : false,
+      notifyWhatsApp: hasWhatsappPlan && hasValid10DigitPhone ? newOrderForm.notifyWhatsApp : false,
       eventType: newOrderForm.eventType,
       eventDate: newOrderForm.eventDate,
       eventLocation: newOrderForm.eventLocation,
@@ -469,16 +485,130 @@ export default function OmsPage({
           </div>
 
           {/* Order Access Code Info Card */}
-          <div className="rounded-2xl border border-brand-blue-soft bg-brand-blue-background/60 p-4 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue-primary">
-              Customer Order Access Code
-            </span>
-            <p className="font-mono text-base font-extrabold text-text-primary">
-              {selected.trackingPasskey}
-            </p>
-            <p className="text-[11px] text-text-secondary">
-              Share this access code with your customer for guest order tracking on the home page.
-            </p>
+          <div className="rounded-2xl border border-brand-blue-soft bg-brand-blue-background/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue-primary">
+                Customer Order Access & Tracking Link
+              </span>
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                selected.customer?.email
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-blue-100 text-brand-blue-primary"
+              }`}>
+                {selected.customer?.email ? "Email Auth Active" : "6-Digit PIN Protected"}
+              </span>
+            </div>
+
+            {selected.customer?.email ? (
+              /* EMAIL AUTH MODE */
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border border-border-default">
+                  <div>
+                    <span className="text-[10px] font-semibold text-text-tertiary block">Registered Customer Email</span>
+                    <span className="font-mono text-xs font-extrabold text-text-primary tracking-wide">
+                      {selected.customer.email}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyText(selected.customer.email!, "code")}
+                    className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition shrink-0"
+                  >
+                    {copiedField === "code" ? "Copied Email!" : "Copy Email"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border border-border-default">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-semibold text-text-tertiary block">Direct Tracking Link</span>
+                    <span className="font-mono text-xs font-semibold text-brand-blue-primary truncate block">
+                      {typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        handleCopyText(link, "link");
+                      }}
+                      className="rounded-lg bg-brand-blue-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 transition"
+                    >
+                      {copiedField === "link" ? "Copied Link!" : "Copy Link"}
+                    </button>
+                    <a
+                      href={`/track/${selected.orderNumber}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-brand-blue-primary bg-white px-2.5 py-1.5 text-xs font-bold text-brand-blue-primary hover:bg-blue-50 transition"
+                      title="Open tracking page in new tab"
+                    >
+                      Open Link
+                    </a>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-text-secondary leading-relaxed">
+                  Customer email on file (<strong className="text-text-primary">{selected.customer.email}</strong>). Customer authenticates directly with this email. No PIN required.
+                </p>
+              </div>
+            ) : (
+              /* 6-DIGIT PIN GUEST PASSKEY MODE */
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border border-border-default">
+                  <div>
+                    <span className="text-[10px] font-semibold text-text-tertiary block">6-Digit Guest Access PIN</span>
+                    <span className="font-mono text-sm font-extrabold text-brand-blue-primary tracking-widest">
+                      {selected.trackingPasskey.match(/\d{6}/)?.[0] || selected.orderNumber.match(/\d{6}/)?.[0] || "492015"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const pin = selected.trackingPasskey.match(/\d{6}/)?.[0] || selected.orderNumber.match(/\d{6}/)?.[0] || "492015";
+                      handleCopyText(pin, "code");
+                    }}
+                    className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition shrink-0"
+                  >
+                    {copiedField === "code" ? "Copied PIN!" : "Copy 6-Digit PIN"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-2.5 border border-border-default">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-semibold text-text-tertiary block">Direct Tracking Link</span>
+                    <span className="font-mono text-xs font-semibold text-brand-blue-primary truncate block">
+                      {typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        handleCopyText(link, "link");
+                      }}
+                      className="rounded-lg bg-brand-blue-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 transition"
+                    >
+                      {copiedField === "link" ? "Copied Link!" : "Copy Link"}
+                    </button>
+                    <a
+                      href={`/track/${selected.orderNumber}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-brand-blue-primary bg-white px-2.5 py-1.5 text-xs font-bold text-brand-blue-primary hover:bg-blue-50 transition"
+                      title="Open tracking page in new tab"
+                    >
+                      Open Link
+                    </a>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-text-secondary leading-relaxed">
+                  No customer email provided. Share this 6-digit PIN and tracking link with your customer for guest access.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Order Lifecycle State */}
@@ -598,7 +728,7 @@ export default function OmsPage({
             <div className="rounded-xl border border-border-default bg-white p-3 text-xs space-y-2">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-text-secondary truncate">
-                  📁 drive.google.com/drive/folders/{selected.orderNumber.toLowerCase()}...
+                  drive.google.com/drive/folders/{selected.orderNumber.toLowerCase()}...
                 </span>
                 <span className="font-mono text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                   In-App Preview Active
@@ -614,7 +744,7 @@ export default function OmsPage({
                 ].map((item) => (
                   <div key={item.name} className="flex flex-col items-center justify-center rounded-lg border border-border-default bg-surface-app p-2 text-center">
                     <div className="h-8 w-8 rounded bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 font-mono mb-1">
-                      🖼️
+                      IMG
                     </div>
                     <span className="text-[9px] font-semibold text-text-primary truncate w-full">{item.name}</span>
                     <span className={`mt-1 text-[8px] font-bold px-1.5 py-0.2 rounded border ${item.color}`}>
@@ -650,7 +780,7 @@ export default function OmsPage({
 
               {selected.preflightReport.eventDateConflicts.length > 0 && (
                 <div className="text-xs text-red-700 bg-red-50 p-2.5 rounded-xl border border-red-200">
-                  <p className="font-bold">⚠️ Overlapping Event Conflict:</p>
+                  <p className="font-bold">Overlapping Event Conflict:</p>
                   <p className="text-[11px] mt-0.5">
                     {selected.preflightReport.eventDateConflicts.join(", ")}
                   </p>
@@ -794,10 +924,10 @@ export default function OmsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-text-primary">Email Address</label>
+                  <label className="block text-xs font-bold text-text-primary">Customer Email</label>
                   <input
                     type="email"
-                    placeholder="client@gmail.com"
+                    placeholder="client@gmail.com (Optional)"
                     value={newOrderForm.customerEmail}
                     onChange={(e) => setNewOrderForm({ ...newOrderForm, customerEmail: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
@@ -805,33 +935,85 @@ export default function OmsPage({
                 </div>
               </div>
 
-              {/* WhatsApp Notification Note & Opt-in */}
-              {hasWhatsappPlan ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs">
-                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={newOrderForm.notifyWhatsApp}
-                      onChange={(e) =>
-                        setNewOrderForm({ ...newOrderForm, notifyWhatsApp: e.target.checked })
-                      }
-                      className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <span className="font-semibold text-emerald-900 block">
-                        Send order updates via WhatsApp
-                      </span>
-                      <span className="text-[11px] text-emerald-700 block">
-                        Enter phone number to receive updates related to the order in WhatsApp. Studio owner can uncheck if preferred not to send automated updates.
-                      </span>
-                    </div>
-                  </label>
+              {/* Conditional 6-Digit PIN Passkey Section */}
+              {newOrderForm.customerEmail.trim() ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs">
+                  <span className="font-bold text-emerald-900 block">Email-Based Authentication Enabled</span>
+                  <span className="text-[11px] text-emerald-700 block mt-0.5">
+                    Customer will track directly by logging in with <strong className="font-mono">{newOrderForm.customerEmail}</strong>. No 6-digit PIN required.
+                  </span>
                 </div>
               ) : (
-                <p className="text-[11px] text-text-tertiary">
-                  Phone number is optional. Enter phone number to receive updates related to the order in WhatsApp (available when WhatsApp plan is active).
-                </p>
+                <div className="rounded-xl border border-border-default bg-surface-app p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-text-primary block">6-Digit Guest Access PIN *</label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewOrderForm({
+                          ...newOrderForm,
+                          passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
+                        })
+                      }
+                      className="text-[10px] font-bold text-brand-blue-primary hover:underline"
+                    >
+                      Regenerate PIN
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="e.g. 492015"
+                    value={newOrderForm.passkeyPin}
+                    onChange={(e) =>
+                      setNewOrderForm({ ...newOrderForm, passkeyPin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                    }
+                    className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none focus:border-brand-blue-primary"
+                  />
+                  <p className="text-[11px] text-text-tertiary">
+                    No customer email provided. Share this 6-digit PIN with your customer for guest order tracking.
+                  </p>
+                </div>
               )}
+
+              {/* WhatsApp Notification Note & Opt-in */}
+              {(() => {
+                const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
+                const hasValid10DigitPhoneForm = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
+                return hasWhatsappPlan ? (
+                  <div className={`rounded-xl border p-3 text-xs transition ${
+                    hasValid10DigitPhoneForm
+                      ? "border-emerald-200 bg-emerald-50/70"
+                      : "border-slate-200 bg-slate-50/80 opacity-80"
+                  }`}>
+                    <label className={`flex items-start gap-2.5 select-none ${hasValid10DigitPhoneForm ? "cursor-pointer" : "cursor-not-allowed"}`}>
+                      <input
+                        type="checkbox"
+                        disabled={!hasValid10DigitPhoneForm}
+                        checked={hasValid10DigitPhoneForm && newOrderForm.notifyWhatsApp}
+                        onChange={(e) =>
+                          setNewOrderForm({ ...newOrderForm, notifyWhatsApp: e.target.checked })
+                        }
+                        className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-40"
+                      />
+                      <div className="space-y-0.5">
+                        <span className={`font-semibold block ${hasValid10DigitPhoneForm ? "text-emerald-900" : "text-slate-600"}`}>
+                          Send order updates via WhatsApp
+                        </span>
+                        <span className={`text-[11px] block ${hasValid10DigitPhoneForm ? "text-emerald-700" : "text-slate-500"}`}>
+                          {hasValid10DigitPhoneForm
+                            ? "Valid 10-digit mobile number provided. Check box to send automated WhatsApp updates."
+                            : "Enter a valid 10-digit mobile number above to enable automated WhatsApp updates."}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-text-tertiary">
+                    Phone number is optional. Enter a 10-digit mobile number to receive updates related to the order in WhatsApp (available when WhatsApp plan is active).
+                  </p>
+                );
+              })()}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -80,7 +80,7 @@ export function DashboardTopNav({ role }: { role: "STUDIO_OWNER" | "STUDIO_MEMBE
                   onClick={() => setIsOpen(false)}
                   className="block px-4 py-2 text-xs font-bold text-brand-orange-primary hover:bg-orange-50 transition"
                 >
-                  ★ Upgrade &amp; Capabilities
+                  Upgrade &amp; Capabilities
                 </Link>}
                 {role === "STUDIO_OWNER" && (
                   <Link
