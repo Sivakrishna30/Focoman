@@ -1,7 +1,7 @@
 "use client";
 
 import { Order, Customer, StudioMember, Task, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
-import { generateWorkflowTasks } from "@focoman/domain";
+import { generateWorkflowTasks, getStudioCalendarDate } from "@focoman/domain";
 import {
   DEMO_STUDIO_SLUG,
   DEMO_STUDIO,
@@ -89,7 +89,7 @@ function setItem<T>(key: string, value: T): void {
 // ==========================================
 export function getDemoOrders(): Order[] {
   const orders = getItem<Order[]>(STORAGE_KEYS.ORDERS, DEMO_ORDERS);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getStudioCalendarDate();
   let changed = false;
 
   const evaluated = orders.map((order) => {
@@ -136,7 +136,7 @@ export function createDemoOrder(input: {
   const customerId = `CUS-LUM-${nextNum}`;
   const passkey = `FOC-DEMO-${String(nextNum).padStart(2, "0")}`;
   const now = new Date().toISOString();
-  const todayStr = now.split("T")[0];
+  const todayStr = getStudioCalendarDate();
 
   const remainingAmount = Math.max(0, input.finalConfirmedPrice - input.advanceAmount);
   const paymentStatus: PaymentStatus =

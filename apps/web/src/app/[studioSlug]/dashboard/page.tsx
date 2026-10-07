@@ -1,8 +1,8 @@
 import { Order } from "@focoman/types";
 import { toMemberWorkView } from "@focoman/domain";
-import { getMembersByStudio, getOrdersByStudio, getTasksByMember } from "@focoman/db";
-import { DEMO_ORDERS } from "@/lib/demoData";
-import { DashboardOverviewView } from "@/features/dashboard/DashboardOverviewView";
+import { getMembersByStudio, getOrdersByStudio, getTasksByMember, getStudioBySlug } from "@focoman/db";
+import { DEMO_ORDERS, DEMO_STUDIO } from "@/lib/demoData";
+import { DashboardHomeView } from "@/features/dashboard/DashboardHomeView";
 import { MemberWorkDashboardView } from "@/features/dashboard/MemberWorkDashboardView";
 import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
@@ -16,9 +16,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
 
   if (isDemo) {
     return (
-      <DashboardOverviewView
+      <DashboardHomeView
         studioSlug={studioSlug}
         initialOrders={DEMO_ORDERS}
+        hasMarketplace={Boolean(DEMO_STUDIO.features?.marketplace)}
       />
     );
   }
@@ -51,11 +52,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
     );
   }
 
-  const orders: Order[] = await getOrdersByStudio(studioSlug);
+  // Studio owner / admin — fetch orders and studio features
+  const [orders, studio] = await Promise.all([
+    getOrdersByStudio(studioSlug) as Promise<Order[]>,
+    getStudioBySlug(studioSlug),
+  ]);
+
+  const hasMarketplace = Boolean(studio?.features?.marketplace);
+
   return (
-    <DashboardOverviewView
+    <DashboardHomeView
       studioSlug={studioSlug}
       initialOrders={orders}
+      hasMarketplace={hasMarketplace}
     />
   );
 }

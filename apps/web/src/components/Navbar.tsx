@@ -49,6 +49,13 @@ function UserDropdownMenu({ user }: { user: User }) {
           </div>
           
           <Link
+            href="/dashboard"
+            onClick={() => setIsOpen(false)}
+            className="block px-4 py-2 text-xs font-semibold text-brand-blue-primary hover:bg-brand-blue-background/40 transition"
+          >
+            {t("nav.dashboard", "Studio Dashboard")}
+          </Link>
+          <Link
             href="/workspaces"
             onClick={() => setIsOpen(false)}
             className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"

@@ -692,7 +692,13 @@ const DEFAULT_ORDER_FORM = {
               Order Lifecycle State
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
-              {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((s) => (
+              {(
+                [
+                  "AWAITING_EVENT",
+                  "POST_EVENT_IN_PROGRESS",
+                  selected.orderStatus === "CANCELLED" ? "CANCELLED" : "COMPLETED",
+                ] as OrderStatus[]
+              ).map((s) => (
                 <span
                   key={s}
                   className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${

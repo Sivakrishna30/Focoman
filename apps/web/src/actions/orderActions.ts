@@ -7,7 +7,7 @@ import {
   UpdateTaskStatusSchema,
   UpdatePaymentSchema,
 } from "@focoman/validation";
-import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView } from "@focoman/domain";
+import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate } from "@focoman/domain";
 import { DEMO_ORDERS, DEMO_TASKS } from "@/lib/demoData";
 import {
   getOrdersByStudio,
@@ -105,7 +105,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       ? `FOC-${studioPrefix}-${passkeyPin}`
       : passkey;
 
-    const todayStr = now.toISOString().split("T")[0];
+    const todayStr = getStudioCalendarDate(now);
     const initialOrderStatus: OrderStatus =
       validated.eventDate < todayStr ? "POST_EVENT_IN_PROGRESS" : "AWAITING_EVENT";
 
@@ -186,7 +186,7 @@ export async function getStudioOrdersAction(
   const decoded = await requireVerifiedUser(idToken);
   await requireStudioOwner(decoded.uid, studioSlug);
   const orders = await getOrdersByStudio(studioSlug);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getStudioCalendarDate();
 
   const updatedOrders: Order[] = [];
   for (const order of orders) {
@@ -229,7 +229,7 @@ export async function getOrderAction(
     if (order.studioId.toLowerCase() !== studioSlug.toLowerCase()) {
       return { order: null, tasks: [] };
     }
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getStudioCalendarDate();
     let currentOrder = order;
     if (order.orderStatus === "AWAITING_EVENT" && order.eventDate < todayStr) {
       currentOrder = {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signInWithGoogle } from "@/lib/firebaseAuth";
+import { signInWithGoogle, subscribeToAuthState } from "@/lib/firebaseAuth";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
@@ -15,6 +15,22 @@ function SignInContent() {
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthState((user) => {
+      if (user) {
+        if (redirectUrl) {
+          const target = autoSync
+            ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true`
+            : redirectUrl;
+          router.replace(target);
+        } else {
+          router.replace("/dashboard");
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [router, redirectUrl, autoSync]);
 
   const handleGoogleSignIn = async () => {
     try {
