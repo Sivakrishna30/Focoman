@@ -135,6 +135,7 @@ const DEFAULT_ORDER_FORM = {
   const [formError, setFormError] = useState<string | null>(null);
   const [newOrderForm, setNewOrderForm] = useState(DEFAULT_ORDER_FORM);
   const [showServicesDropdown, setShowServicesDropdown] = useState(false);
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
 
   // In-App Cancellation Dialog State
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
@@ -367,29 +368,63 @@ const DEFAULT_ORDER_FORM = {
   };
 
   const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
-    if (!selected) return;
+    if (!selected || isUpdatingPayment) return;
+    setIsUpdatingPayment(true);
 
     if (isDemo) {
       const res = updateDemoPaymentStatus(selected.id, newPaymentStatus);
+      setIsUpdatingPayment(false);
       if (res.success && res.order) {
         setOrders(getDemoOrders());
       }
       return;
     }
 
-    const token = (await getIdToken(false)) ?? workspaceToken;
-    if (!token) return;
-    const res = await updatePaymentStatusAction({
-      idToken: token,
-      studioId: studioSlug,
-      orderId: selected.id,
-      paymentStatus: newPaymentStatus,
-    });
-    if (res.success && res.order) {
-      setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
-      await loadOrders();
-    } else {
-      alert(res.error || "Failed to update payment status");
+    const previousOrders = [...orders];
+    // Optimistic UI update so owner sees immediate feedback
+    if (newPaymentStatus === "PAID") {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selected.id
+            ? {
+                ...o,
+                paymentStatus: "PAID",
+                pricing: {
+                  ...o.pricing,
+                  advanceAmount: o.pricing.finalConfirmedPrice,
+                  remainingAmount: 0,
+                },
+              }
+            : o
+        )
+      );
+    }
+
+    try {
+      const token = (await getIdToken(true)) ?? (await getIdToken(false)) ?? workspaceToken;
+      if (!token) {
+        setIsUpdatingPayment(false);
+        setOrders(previousOrders);
+        return;
+      }
+      const res = await updatePaymentStatusAction({
+        idToken: token,
+        studioId: studioSlug,
+        orderId: selected.id,
+        paymentStatus: newPaymentStatus,
+      });
+      setIsUpdatingPayment(false);
+      if (res.success && res.order) {
+        setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+        await loadOrders();
+      } else {
+        setOrders(previousOrders);
+        alert(res.error || "Failed to update payment status");
+      }
+    } catch (err: unknown) {
+      setIsUpdatingPayment(false);
+      setOrders(previousOrders);
+      alert(err instanceof Error ? err.message : "Failed to update payment status");
     }
   };
 
@@ -674,9 +709,31 @@ const DEFAULT_ORDER_FORM = {
 
           {/* 2. Post-Event Production Workflow Tasks */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
-              Post-Event Production Tasks ({selectedTasks.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                Post-Event Production Tasks ({selectedTasks.length})
+              </h3>
+            </div>
+
+            {/* Booked Services Note */}
+            {selected.services && selected.services.length > 0 && (
+              <div className="mt-2.5 rounded-xl border border-border-default bg-surface-app p-2.5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary block">
+                  Booked Services ({selected.services.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selected.services.map((svc) => (
+                    <span
+                      key={svc}
+                      className="rounded-lg bg-white px-2 py-0.5 text-[11px] font-semibold text-text-primary border border-border-default shadow-2xs"
+                    >
+                      {svc}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-3 space-y-2">
               {selectedTasks.length === 0 ? (
                 <p className="text-xs text-text-tertiary">No tasks generated for this order.</p>
@@ -720,12 +777,19 @@ const DEFAULT_ORDER_FORM = {
                 Payment & Pricing Summary
               </h3>
               <div className="flex gap-1.5">
-                <button
-                  onClick={() => handleUpdatePayment("PAID")}
-                  className="btn-brand-blue py-1 px-2.5 text-[11px]"
-                >
-                  Mark Paid
-                </button>
+                {selected.paymentStatus === "PAID" ? (
+                  <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-status-success">
+                    Payment Completed
+                  </span>
+                ) : (
+                  <button
+                    disabled={isUpdatingPayment}
+                    onClick={() => handleUpdatePayment("PAID")}
+                    className="btn-brand-blue py-1 px-2.5 text-[11px] disabled:opacity-50"
+                  >
+                    {isUpdatingPayment ? "Updating..." : "Mark Paid"}
+                  </button>
+                )}
               </div>
             </div>
             <div className="mt-2 space-y-2 rounded-2xl bg-surface-app p-4 border border-border-default text-xs">
@@ -743,7 +807,9 @@ const DEFAULT_ORDER_FORM = {
               </div>
               <div className="flex justify-between pt-2 border-t border-border-default">
                 <span className="text-text-secondary">Payment Status:</span>
-                <span className="font-bold text-text-primary">{selected.paymentStatus}</span>
+                <span className={`font-bold ${selected.paymentStatus === "PAID" ? "text-status-success" : "text-text-primary"}`}>
+                  {selected.paymentStatus === "PAID" ? "Payment Completed" : selected.paymentStatus}
+                </span>
               </div>
             </div>
           </div>
@@ -1201,36 +1267,17 @@ const DEFAULT_ORDER_FORM = {
                     </span>
                   </div>
 
-                  {/* Single Display Field Trigger */}
+                  {/* Clean Input Field Selector Trigger */}
                   <div
                     onClick={() => setShowServicesDropdown((prev) => !prev)}
-                    className="w-full min-h-[42px] rounded-xl border border-border-default bg-white px-3 py-2 flex items-center justify-between gap-2 cursor-pointer hover:border-brand-blue-primary focus-within:border-brand-blue-primary transition select-none"
+                    className="w-full h-10 rounded-xl border border-border-default bg-white px-3.5 py-2 flex items-center justify-between cursor-pointer hover:border-brand-blue-primary focus-within:border-brand-blue-primary transition select-none"
                     title="Click to choose or modify studio services"
                   >
-                    <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                      {newOrderForm.services.length === 0 ? (
-                        <span className="text-xs text-text-tertiary">Select studio services &amp; deliverables...</span>
-                      ) : (
-                        newOrderForm.services.map((svc) => (
-                          <span
-                            key={svc}
-                            className="inline-flex items-center gap-1 rounded-lg bg-brand-blue-50 px-2 py-0.5 text-[11px] font-semibold text-brand-blue-primary border border-brand-blue-soft"
-                          >
-                            <span>{svc}</span>
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleService(svc);
-                              }}
-                              className="text-[11px] font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5"
-                              title={`Remove ${svc}`}
-                            >
-                              ×
-                            </span>
-                          </span>
-                        ))
-                      )}
-                    </div>
+                    <span className={`text-xs ${newOrderForm.services.length === 0 ? "text-text-tertiary" : "font-medium text-text-primary"}`}>
+                      {newOrderForm.services.length === 0
+                        ? "Select studio services & deliverables..."
+                        : `${newOrderForm.services.length} studio service${newOrderForm.services.length > 1 ? "s" : ""} selected — click to change`}
+                    </span>
 
                     <div className="flex items-center gap-1 shrink-0 text-text-tertiary">
                       <svg
@@ -1243,6 +1290,30 @@ const DEFAULT_ORDER_FORM = {
                       </svg>
                     </div>
                   </div>
+
+                  {/* Selected Options Displayed Below the Input Field */}
+                  {newOrderForm.services.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {newOrderForm.services.map((svc) => (
+                        <span
+                          key={svc}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue-primary border border-brand-blue-soft"
+                        >
+                          <span>{svc}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleService(svc);
+                            }}
+                            className="text-xs font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5 leading-none"
+                            title={`Remove ${svc}`}
+                          >
+                            ×
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Dropdown Options Popup */}
                   {showServicesDropdown && (
