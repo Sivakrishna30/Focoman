@@ -651,7 +651,196 @@ const DEFAULT_ORDER_FORM = {
             </button>
           </div>
 
-          {/* Order Access Code Info Card */}
+          {/* 1. Order Lifecycle State */}
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+              Order Lifecycle State
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((s) => (
+                <span
+                  key={s}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
+                    selected.orderStatus === s
+                      ? STATUS_COLORS[s]
+                      : "bg-surface-app text-text-tertiary border-border-default"
+                  }`}
+                >
+                  {STATUS_LABELS[s]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. Post-Event Production Workflow Tasks */}
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+              Post-Event Production Tasks ({selectedTasks.length})
+            </h3>
+            <div className="mt-3 space-y-2">
+              {selectedTasks.length === 0 ? (
+                <p className="text-xs text-text-tertiary">No tasks generated for this order.</p>
+              ) : (
+                selectedTasks.map((task, idx) => (
+                  <div
+                    key={task.id ? `${task.id}-${idx}` : `task-${idx}`}
+                    className="flex items-center justify-between rounded-xl border border-border-default bg-white p-3 text-xs"
+                  >
+                    <div>
+                      <p className="font-bold text-text-primary">{task.title}</p>
+                      <p className="text-[10px] text-text-tertiary">
+                        Category: {task.serviceCategory} · Sequence #{task.sequenceOrder}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={task.status}
+                        onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value as TaskStatus)}
+                        className={`rounded-lg px-2 py-1 text-[10px] font-bold outline-none border border-transparent ${
+                          TASK_STATUS_COLORS[task.status]
+                        }`}
+                      >
+                        <option value="ASSIGNED">ASSIGNED</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="REVIEW">REVIEW</option>
+                        <option value="REWORK">REWORK</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                      </select>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 3. Payment & Pricing Summary */}
+          <div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                Payment & Pricing Summary
+              </h3>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => handleUpdatePayment("PAID")}
+                  className="btn-brand-blue py-1 px-2.5 text-[11px]"
+                >
+                  Mark Paid
+                </button>
+              </div>
+            </div>
+            <div className="mt-2 space-y-2 rounded-2xl bg-surface-app p-4 border border-border-default text-xs">
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Confirmed Price:</span>
+                <span className="font-bold text-text-primary">₹{selected.pricing.finalConfirmedPrice.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Advance Received:</span>
+                <span className="font-bold text-brand-blue-primary">₹{selected.pricing.advanceAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Remaining Balance:</span>
+                <span className="font-bold text-brand-orange-primary">₹{selected.pricing.remainingAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-border-default">
+                <span className="text-text-secondary">Payment Status:</span>
+                <span className="font-bold text-text-primary">{selected.paymentStatus}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Pre-flight Operational Check Report */}
+          {selected.preflightReport && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                  Pre-flight Operational Check
+                </h4>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    selected.preflightReport.hasConflicts
+                      ? "bg-red-100 text-status-error"
+                      : "bg-green-100 text-status-success"
+                  }`}
+                >
+                  {selected.preflightReport.hasConflicts ? "Review Needed" : "Passed Clear"}
+                </span>
+              </div>
+
+              {selected.preflightReport.eventDateConflicts.length > 0 && (
+                <div className="text-xs text-red-700 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                  <p className="font-bold">Overlapping Event Conflict:</p>
+                  <p className="text-[11px] mt-0.5">
+                    {selected.preflightReport.eventDateConflicts.join(", ")}
+                  </p>
+                </div>
+              )}
+
+              {selected.preflightReport.warnings.length > 0 && (
+                <div className="space-y-1">
+                  {selected.preflightReport.warnings.map((w, idx) => (
+                    <p key={idx} className="text-[11px] text-amber-900 flex items-center gap-1.5">
+                      <span>•</span> {w}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 5. Automated Resource Suggestions (Owner Reviews & Confirms) */}
+          {selected.resourceSuggestions && selected.resourceSuggestions.length > 0 && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+                    Suggested Resources
+                  </h4>
+                  <p className="text-[10px] text-blue-700">System suggests · Owner reviews & confirms</p>
+                </div>
+                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {selected.resourceSuggestions.length} Available
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {selected.resourceSuggestions.map((sug) => {
+                  const isAssigned = (selected.assignedResources || []).some(
+                    (r) => r.memberId === sug.memberId
+                  );
+
+                  return (
+                    <div
+                      key={sug.memberId}
+                      className="flex items-center justify-between rounded-xl border border-blue-200 bg-white p-2.5 text-xs"
+                    >
+                      <div>
+                        <span className="font-bold text-text-primary">{sug.memberName}</span>
+                        <span className="ml-2 rounded bg-surface-app px-1.5 py-0.5 text-[10px] font-medium text-text-secondary border border-border-default">
+                          {sug.skill}
+                        </span>
+                        <p className="text-[10px] text-text-tertiary mt-0.5">{sug.matchReason}</p>
+                      </div>
+
+                      {isAssigned ? (
+                        <span className="text-[10px] font-bold text-status-success bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                          Assigned
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleConfirmSuggestion(sug)}
+                          className="rounded-lg bg-brand-blue-primary px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-600 transition"
+                        >
+                          Confirm Assignment
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 6. Customer Order Access & Tracking Link (Sharing Option Info) */}
           <div className="rounded-2xl border border-brand-blue-soft bg-brand-blue-background/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue-primary">
@@ -777,195 +966,6 @@ const DEFAULT_ORDER_FORM = {
               </div>
             )}
           </div>
-
-          {/* Order Lifecycle State */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
-              Order Lifecycle State
-            </h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((s) => (
-                <span
-                  key={s}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
-                    selected.orderStatus === s
-                      ? STATUS_COLORS[s]
-                      : "bg-surface-app text-text-tertiary border-border-default"
-                  }`}
-                >
-                  {STATUS_LABELS[s]}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment & Pricing Summary */}
-          <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
-                Payment & Pricing Summary
-              </h3>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => handleUpdatePayment("PAID")}
-                  className="btn-brand-blue py-1 px-2.5 text-[11px]"
-                >
-                  Mark Paid
-                </button>
-              </div>
-            </div>
-            <div className="mt-2 space-y-2 rounded-2xl bg-surface-app p-4 border border-border-default text-xs">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Confirmed Price:</span>
-                <span className="font-bold text-text-primary">₹{selected.pricing.finalConfirmedPrice.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Advance Received:</span>
-                <span className="font-bold text-brand-blue-primary">₹{selected.pricing.advanceAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Remaining Balance:</span>
-                <span className="font-bold text-brand-orange-primary">₹{selected.pricing.remainingAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-border-default">
-                <span className="text-text-secondary">Payment Status:</span>
-                <span className="font-bold text-text-primary">{selected.paymentStatus}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Post-Event Production Workflow Tasks */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
-              Post-Event Production Tasks ({selectedTasks.length})
-            </h3>
-            <div className="mt-3 space-y-2">
-              {selectedTasks.length === 0 ? (
-                <p className="text-xs text-text-tertiary">No tasks generated for this order.</p>
-              ) : (
-                selectedTasks.map((task, idx) => (
-                  <div
-                    key={task.id ? `${task.id}-${idx}` : `task-${idx}`}
-                    className="flex items-center justify-between rounded-xl border border-border-default bg-white p-3 text-xs"
-                  >
-                    <div>
-                      <p className="font-bold text-text-primary">{task.title}</p>
-                      <p className="text-[10px] text-text-tertiary">
-                        Category: {task.serviceCategory} · Sequence #{task.sequenceOrder}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={task.status}
-                        onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value as TaskStatus)}
-                        className={`rounded-lg px-2 py-1 text-[10px] font-bold outline-none border border-transparent ${
-                          TASK_STATUS_COLORS[task.status]
-                        }`}
-                      >
-                        <option value="ASSIGNED">ASSIGNED</option>
-                        <option value="IN_PROGRESS">IN_PROGRESS</option>
-                        <option value="REVIEW">REVIEW</option>
-                        <option value="REWORK">REWORK</option>
-                        <option value="COMPLETED">COMPLETED</option>
-                      </select>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Pre-flight Operational Check Report */}
-          {selected.preflightReport && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
-                  Pre-flight Operational Check
-                </h4>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    selected.preflightReport.hasConflicts
-                      ? "bg-red-100 text-status-error"
-                      : "bg-green-100 text-status-success"
-                  }`}
-                >
-                  {selected.preflightReport.hasConflicts ? "Review Needed" : "Passed Clear"}
-                </span>
-              </div>
-
-              {selected.preflightReport.eventDateConflicts.length > 0 && (
-                <div className="text-xs text-red-700 bg-red-50 p-2.5 rounded-xl border border-red-200">
-                  <p className="font-bold">Overlapping Event Conflict:</p>
-                  <p className="text-[11px] mt-0.5">
-                    {selected.preflightReport.eventDateConflicts.join(", ")}
-                  </p>
-                </div>
-              )}
-
-              {selected.preflightReport.warnings.length > 0 && (
-                <div className="space-y-1">
-                  {selected.preflightReport.warnings.map((w, idx) => (
-                    <p key={idx} className="text-[11px] text-amber-900 flex items-center gap-1.5">
-                      <span>•</span> {w}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Automated Resource Suggestions (Owner Reviews & Confirms) */}
-          {selected.resourceSuggestions && selected.resourceSuggestions.length > 0 && (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
-                    Suggested Resources
-                  </h4>
-                  <p className="text-[10px] text-blue-700">System suggests · Owner reviews & confirms</p>
-                </div>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {selected.resourceSuggestions.length} Available
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {selected.resourceSuggestions.map((sug) => {
-                  const isAssigned = (selected.assignedResources || []).some(
-                    (r) => r.memberId === sug.memberId
-                  );
-
-                  return (
-                    <div
-                      key={sug.memberId}
-                      className="flex items-center justify-between rounded-xl border border-blue-200 bg-white p-2.5 text-xs"
-                    >
-                      <div>
-                        <span className="font-bold text-text-primary">{sug.memberName}</span>
-                        <span className="ml-2 rounded bg-surface-app px-1.5 py-0.5 text-[10px] font-medium text-text-secondary border border-border-default">
-                          {sug.skill}
-                        </span>
-                        <p className="text-[10px] text-text-tertiary mt-0.5">{sug.matchReason}</p>
-                      </div>
-
-                      {isAssigned ? (
-                        <span className="text-[10px] font-bold text-status-success bg-green-50 px-2 py-1 rounded-lg border border-green-200">
-                          Assigned
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleConfirmSuggestion(sug)}
-                          className="rounded-lg bg-brand-blue-primary px-2.5 py-1 text-[11px] font-bold text-white hover:bg-sky-600 transition"
-                        >
-                          Confirm Assignment
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Cancellation & Soft-Deletion Operations */}
           <div className="border-t border-border-divider pt-4 flex items-center justify-between gap-2">
