@@ -1257,7 +1257,7 @@ const DEFAULT_ORDER_FORM = {
                 </div>
 
                 {/* Studio Services & Deliverables Dropdown with Multi-Select */}
-                <div className="relative">
+                <div className="flex flex-col">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-text-primary">
                       Studio Services &amp; Deliverables *
@@ -1332,82 +1332,82 @@ const DEFAULT_ORDER_FORM = {
                     </div>
                   )}
 
-                  {/* Dropdown Options Popup */}
-                  {showServicesDropdown && (
-                    <div className="absolute z-20 left-0 right-0 mt-1.5 rounded-2xl border border-border-default bg-white shadow-xl p-2.5 space-y-1.5 animate-in fade-in zoom-in-95 duration-100">
-                      <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-                        <span>Select Services ({newOrderForm.services.length} selected)</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowServicesDropdown(false)}
-                          className="text-brand-blue-primary hover:underline lowercase font-semibold"
-                        >
-                          done
-                        </button>
-                      </div>
+                    {/* Dropdown Options Popup */}
+                    {showServicesDropdown && (
+                      <div className="absolute top-full z-20 left-0 right-0 mt-1.5 rounded-2xl border border-border-default bg-white shadow-xl p-2.5 space-y-1.5 animate-in fade-in zoom-in-95 duration-100">
+                        <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                          <span>Select Services ({newOrderForm.services.length} selected)</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowServicesDropdown(false)}
+                            className="text-brand-blue-primary hover:underline lowercase font-semibold"
+                          >
+                            done
+                          </button>
+                        </div>
 
-                      <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
-                        {PRESET_STUDIO_SERVICES
-                          .filter((svc) => svc.toLowerCase().includes(newOrderForm.customServiceInput.toLowerCase()))
-                          .map((svc) => {
-                          const isSvcSelected = newOrderForm.services.includes(svc);
-                          return (
-                            <label
-                              key={svc}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition select-none ${
-                                isSvcSelected
-                                  ? "bg-brand-blue-50/80 text-brand-blue-primary"
-                                  : "text-text-primary hover:bg-surface-app"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <input
-                                  type="checkbox"
-                                  checked={isSvcSelected}
-                                  onChange={() => toggleService(svc)}
-                                  className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
-                                />
-                                <span className="truncate">{svc}</span>
-                              </div>
-                              {isSvcSelected && (
-                                <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Selected</span>
-                              )}
-                            </label>
-                          );
-                        })}
+                        <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
+                          {PRESET_STUDIO_SERVICES
+                            .filter((svc) => svc.toLowerCase().includes(newOrderForm.customServiceInput.toLowerCase()))
+                            .map((svc) => {
+                            const isSvcSelected = newOrderForm.services.includes(svc);
+                            return (
+                              <label
+                                key={svc}
+                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition select-none ${
+                                  isSvcSelected
+                                    ? "bg-brand-blue-50/80 text-brand-blue-primary"
+                                    : "text-text-primary hover:bg-surface-app"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSvcSelected}
+                                    onChange={() => toggleService(svc)}
+                                    className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
+                                  />
+                                  <span className="truncate">{svc}</span>
+                                </div>
+                                {isSvcSelected && (
+                                  <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Selected</span>
+                                )}
+                              </label>
+                            );
+                          })}
 
-                        {/* Custom Services Added by User */}
-                        {newOrderForm.services
-                          .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
-                          .map((customSvc) => (
-                            <label
-                              key={customSvc}
-                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-brand-blue-50/80 text-brand-blue-primary cursor-pointer transition select-none"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <input
-                                  type="checkbox"
-                                  checked={true}
-                                  onChange={() => toggleService(customSvc)}
-                                  className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
-                                />
-                                <span className="truncate">{customSvc}</span>
-                              </div>
-                              <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Custom</span>
-                            </label>
-                          ))}
-                          
-                        {/* Prompt to press enter if typing custom that doesn't match presets */}
-                        {newOrderForm.customServiceInput.trim() && 
-                         !PRESET_STUDIO_SERVICES.some(s => s.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
-                         !newOrderForm.services.includes(newOrderForm.customServiceInput.trim()) && (
-                          <div className="px-2.5 py-1.5 text-[10px] font-medium text-text-tertiary italic">
-                            Press Enter to add "{newOrderForm.customServiceInput.trim()}"
-                          </div>
-                        )}
+                          {/* Custom Services Added by User */}
+                          {newOrderForm.services
+                            .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
+                            .map((customSvc) => (
+                              <label
+                                key={customSvc}
+                                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-brand-blue-50/80 text-brand-blue-primary cursor-pointer transition select-none"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={true}
+                                    onChange={() => toggleService(customSvc)}
+                                    className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
+                                  />
+                                  <span className="truncate">{customSvc}</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Custom</span>
+                              </label>
+                            ))}
+                            
+                          {/* Prompt to press enter if typing custom that doesn't match presets */}
+                          {newOrderForm.customServiceInput.trim() && 
+                           !PRESET_STUDIO_SERVICES.some(s => s.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
+                           !newOrderForm.services.includes(newOrderForm.customServiceInput.trim()) && (
+                            <div className="px-2.5 py-1.5 text-[10px] font-medium text-text-tertiary italic">
+                              Press Enter to add "{newOrderForm.customServiceInput.trim()}"
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
 
                 {/* Pricing & Advance with Validation */}

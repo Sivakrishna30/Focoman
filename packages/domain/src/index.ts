@@ -312,43 +312,15 @@ export function generateWorkflowTasks(
 
   const servicesLower = services.map(s => s.toLowerCase());
 
-  const hasPhoto = servicesLower.some(s => s.includes('photo') || s.includes('candid') || s.includes('traditional'));
-  const hasVideo = servicesLower.some(s => s.includes('video') || s.includes('cinematic') || s.includes('teaser'));
-  const hasDrone = servicesLower.some(s => s.includes('drone') || s.includes('aerial'));
-  const hasPreOrPost = servicesLower.some(s => s.includes('pre-wedding') || s.includes('post-wedding') || s.includes('outdoor'));
+  const hasPhoto = servicesLower.some(s => s.includes('photo') || s.includes('candid') || s.includes('traditional') || s.includes('outdoor') || s.includes('wedding'));
+  const hasVideo = servicesLower.some(s => s.includes('video') || s.includes('cinematic') || s.includes('teaser') || s.includes('drone') || s.includes('aerial') || s.includes('wedding'));
   const hasAlbum = servicesLower.some(s => s.includes('album') || s.includes('book') || s.includes('print'));
 
-  if (hasDrone) {
+  if (hasPhoto || (!hasVideo && !hasAlbum)) {
     tasks.push({
       orderId,
       studioId,
-      title: 'Drone Aerial Footage Ingestion & Selection',
-      serviceCategory: 'VIDEOGRAPHY',
-      assignedMemberId: '',
-      assignedMemberName: 'Unassigned',
-      status: 'ASSIGNED',
-      sequenceOrder: seq++
-    });
-  }
-
-  if (hasPreOrPost) {
-    tasks.push({
-      orderId,
-      studioId,
-      title: 'Outdoor Shoot Culling & Highlight Selection',
-      serviceCategory: 'PHOTOGRAPHY',
-      assignedMemberId: '',
-      assignedMemberName: 'Unassigned',
-      status: 'ASSIGNED',
-      sequenceOrder: seq++
-    });
-  }
-
-  if (hasPhoto || (!hasVideo && !hasAlbum && !hasDrone && !hasPreOrPost)) {
-    tasks.push({
-      orderId,
-      studioId,
-      title: 'RAW Photos Review & Selection',
+      title: 'Raw Photo Selection',
       serviceCategory: 'PHOTOGRAPHY',
       assignedMemberId: '',
       assignedMemberName: 'Unassigned',
@@ -358,7 +330,7 @@ export function generateWorkflowTasks(
     tasks.push({
       orderId,
       studioId,
-      title: 'Photo Editing & Color Retouching',
+      title: 'Photo Editing',
       serviceCategory: 'PHOTOGRAPHY',
       assignedMemberId: '',
       assignedMemberName: 'Unassigned',
@@ -371,17 +343,7 @@ export function generateWorkflowTasks(
     tasks.push({
       orderId,
       studioId,
-      title: 'Video Footage Sync & Teaser Edit',
-      serviceCategory: 'VIDEOGRAPHY',
-      assignedMemberId: '',
-      assignedMemberName: 'Unassigned',
-      status: 'ASSIGNED',
-      sequenceOrder: seq++
-    });
-    tasks.push({
-      orderId,
-      studioId,
-      title: 'Full Video Editing & Audio Mastering',
+      title: 'Video Editing',
       serviceCategory: 'VIDEOGRAPHY',
       assignedMemberId: '',
       assignedMemberName: 'Unassigned',
@@ -394,17 +356,7 @@ export function generateWorkflowTasks(
     tasks.push({
       orderId,
       studioId,
-      title: 'Album Preparation & Design Layout',
-      serviceCategory: 'ALBUM',
-      assignedMemberId: '',
-      assignedMemberName: 'Unassigned',
-      status: 'ASSIGNED',
-      sequenceOrder: seq++
-    });
-    tasks.push({
-      orderId,
-      studioId,
-      title: 'Album Printing & Delivery Prep',
+      title: 'Album Edit',
       serviceCategory: 'ALBUM',
       assignedMemberId: '',
       assignedMemberName: 'Unassigned',
@@ -412,6 +364,17 @@ export function generateWorkflowTasks(
       sequenceOrder: seq++
     });
   }
+
+  tasks.push({
+    orderId,
+    studioId,
+    title: 'Final Delivery & Payment',
+    serviceCategory: 'GENERAL',
+    assignedMemberId: '',
+    assignedMemberName: 'Unassigned',
+    status: 'ASSIGNED',
+    sequenceOrder: seq++
+  });
 
   return tasks;
 }
