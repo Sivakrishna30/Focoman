@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SessionSyncProvider } from "@/components/SessionSyncProvider";
 
 export const metadata: Metadata = {
   title: "Focoman",
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeProvider>
           <LanguageProvider>
-            {children}
+            <SessionSyncProvider>
+              {children}
+            </SessionSyncProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

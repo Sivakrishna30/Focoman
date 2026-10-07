@@ -70,14 +70,18 @@ export function getAdminAuthInstance() {
  * Throws an error with a user-safe message if the token is missing or invalid.
  */
 export async function requireVerifiedUser(idToken: string | undefined): Promise<DecodedIdToken> {
-  if (!idToken || idToken.trim().length === 0) {
-    throw new Error('Authentication required. No identity token provided.');
+  if (idToken && idToken.trim().length > 0) {
+    try {
+      const adminAuth = getAdminAuthInstance();
+      const decoded = await adminAuth.verifyIdToken(idToken);
+      return decoded;
+    } catch {
+      // If client ID token has expired, fall back to verified session cookie
+    }
   }
 
   try {
-    const adminAuth = getAdminAuthInstance();
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    return decoded;
+    return await requireVerifiedSession();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Token verification failed.';
     throw new Error(`Authentication failed: ${message}`);
@@ -86,11 +90,7 @@ export async function requireVerifiedUser(idToken: string | undefined): Promise<
 
 export async function createSessionCookieFromIdToken(idToken: string): Promise<string> {
   const adminAuth = getAdminAuthInstance();
-  const decoded = await adminAuth.verifyIdToken(idToken);
-  const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 5 * 60;
-  if (decoded.auth_time < fiveMinutesAgo) {
-    throw new Error('Recent authentication is required to establish a server session.');
-  }
+  await adminAuth.verifyIdToken(idToken);
   return adminAuth.createSessionCookie(idToken, { expiresIn: SESSION_COOKIE_MAX_AGE_MS });
 }
 

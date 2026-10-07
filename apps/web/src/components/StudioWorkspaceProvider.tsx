@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User } from "firebase/auth";
 import { Studio } from "@focoman/types";
-import { subscribeToAuthState, getCurrentUserIdToken, signOutUser } from "@/lib/firebaseAuth";
+import { subscribeToTokenChange, getCurrentUserIdToken, signOutUser, syncServerSession } from "@/lib/firebaseAuth";
 import { isDemoStudio, getDemoActiveUser, subscribeToDemoStore } from "@/lib/demoStore";
 
 export interface StudioWorkspaceContextValue {
@@ -30,14 +30,15 @@ export function StudioWorkspaceProvider({
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = subscribeToAuthState(async (currentUser) => {
+    const unsubscribe = subscribeToTokenChange(async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
         try {
           const token = await currentUser.getIdToken();
           setIdToken(token);
+          void syncServerSession(false);
         } catch (err) {
-          console.error("[StudioWorkspaceProvider] Failed to get initial token:", err);
+          console.error("[StudioWorkspaceProvider] Failed to get fresh token:", err);
           setIdToken(null);
         }
       } else if (isDemo) {

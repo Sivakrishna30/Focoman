@@ -4,6 +4,54 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-043 — OMS Order Creation Polish, Unique Task ID Sequences & Advance Validation
+
+- **Task:** CHG-043 — Fix Task ID Collision, Add Predefined Event Types, Phone Code Preset, Advance Validation & Bottom PIN Box
+- **Date:** 2026-10-07
+- **Area:** `apps/web/src/actions/orderActions.ts`, `apps/web/src/app/[studioSlug]/dashboard/oms/page.tsx`
+- **Change:**
+  1. **Fixed Task ID Collision**:
+     - Appended a zero-padded sequence counter (`-01`, `-02`, etc.) to generated task IDs in `orderActions.ts` (`TSK-${studioPrefix}-${dateStamp}-${timeStamp}-${seqSuffix}`), eliminating React key collision errors and duplicate task ID overwrites in Firestore.
+     - Added an index fallback key safeguard in `oms/page.tsx` (`key={task.id ? `${task.id}-${idx}` : `task-${idx}`}`).
+  2. **Professional English Predefined Event Types**:
+     - Replaced free-text event type with a curated dropdown (Wedding, Reception, Engagement, Housewarming Ceremony, Ear Piercing Ceremony, Baby Shower, Birthday Celebration, Traditional Occasion, Corporate Event, Pre-Wedding / Outdoor Shoot, Other).
+     - Added conditional input for specifying custom event type when "Other" is selected.
+  3. **Phone Number Country Code Preset & Customer Updates Checkbox**:
+     - Added a country code selector with `+91 (IN)` preset by default, supporting international codes (+1, +971, +65, etc.).
+     - Marked phone and email as `(Optional)` with clean placeholder `e.g. Ramesh & Ananya`.
+     - Added a compact opt-in checkbox below contact info: `Send automated order updates to customer via WhatsApp & SMS` (checked by default).
+  4. **Advance Amount vs. Confirmed Price Validation**:
+     - Added client-side financial validation preventing advance amount from exceeding the final confirmed price.
+     - Form displays an inline error warning and disables the submit button if advance > confirmed price.
+  5. **Reorganized 6-Digit Guest PIN Section**:
+     - Moved the Guest PIN section to the bottom of the order registration modal.
+     - If client email is omitted, displays a clear security explanation and PIN field for client guest tracking. If email is provided, displays confirmation that client will authenticate via email.
+- **Verification:** Unit tests passed 28/28 (`npm test`), `npx tsc --noEmit` passed with 0 errors, ESLint passed with 0 warnings/errors.
+
+---
+
+## CHG-042 — Automatic Client-to-Server Session Synchronization
+
+- **Task:** CHG-042 — Eliminate Manual Re-login and Premature 404s via Automatic Background Session Sync
+- **Date:** 2026-10-07
+- **Area:** `apps/web/src/lib/serverAuth.ts`, `apps/web/src/lib/firebaseAuth.ts`, `apps/web/src/components/SessionSyncProvider.tsx`, `apps/web/src/app/layout.tsx`, `apps/web/src/app/workspaces/page.tsx`, `apps/web/src/app/onboarding/register-studio/page.tsx`, `apps/web/src/app/dashboard/page.tsx`
+- **Change:**
+  1. **Removed Artificial 5-Minute `auth_time` Restriction (`createSessionCookieFromIdToken`)**:
+     - Removed `decoded.auth_time < fiveMinutesAgo` check in `serverAuth.ts` which was causing `/api/session` to reject valid Google ID tokens with HTTP 401 whenever a session was synced more than 5 minutes after original login.
+  2. **Core Client Session Synchronizer (`syncServerSession`)**:
+     - Added idempotent `syncServerSession()` helper in `firebaseAuth.ts` that detects active client-side Firebase users and synchronizes the secure HTTP `__session` cookie via `/api/session`.
+     - Added in-flight promise deduplication and token freshness checks to prevent redundant API calls.
+     - Added `subscribeToTokenChange` listener wrapper (`onIdTokenChanged`).
+  3. **Global Background Synchronizer (`SessionSyncProvider`)**:
+     - Mounted `<SessionSyncProvider />` at root layout to automatically sync server session on tab mount, page refresh, and automatic token refresh.
+  4. **Guaranteed Pre-Navigation Synchronization**:
+     - Ensured `syncServerSession()` is awaited in `/workspaces` before workspace actions, eliminating 404s on `[Launch Workspace →]`.
+     - Ensured `syncServerSession()` is awaited in `/onboarding/register-studio` before redirecting to the newly registered studio dashboard.
+     - Ensured `syncServerSession()` is awaited in `/dashboard` before global redirect routing.
+- **Verification:** Unit tests passed 28/28 (`npm test`), `npx tsc --noEmit` passed with 0 errors, ESLint passed with 0 warnings/errors.
+
+---
+
 ## CHG-041 — Resolve Container Reverse-Proxy Mismatches for Google Sign-In Session Creation
 
 - **Task:** CHG-041 — Resolve Google Sign-In Session Proxy Mismatch & Invalidate Webpack Cache

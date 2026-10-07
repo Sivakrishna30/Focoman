@@ -485,6 +485,8 @@ export interface Order extends SoftDeletable {
   cancellationInfo?: CancellationInfo;
   trackingPasskey: string;
   notifyWhatsApp?: boolean;
+  notifySms?: boolean;
+  notifyEmail?: boolean;
   collaborators?: OrderCollaborator[];
   createdAt: string;
   updatedAt: string;

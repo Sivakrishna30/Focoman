@@ -13,6 +13,8 @@ export const CreateOrderSchema = z.object({
   customerEmail: z.string().email().optional().or(z.literal('')),
   passkeyPin: z.string().optional().or(z.literal('')),
   notifyWhatsApp: z.boolean().optional(),
+  notifySms: z.boolean().optional(),
+  notifyEmail: z.boolean().optional(),
   eventType: z.string().min(1, 'Event type is required'),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Event date must be YYYY-MM-DD'),
   eventLocation: z.string().optional().or(z.literal('')),
@@ -21,6 +23,9 @@ export const CreateOrderSchema = z.object({
   estimatedPrice: z.number().nonnegative(),
   finalConfirmedPrice: z.number().nonnegative(),
   advanceAmount: z.number().nonnegative()
+}).refine(data => data.advanceAmount <= data.finalConfirmedPrice, {
+  message: 'Advance amount cannot exceed the confirmed total price.',
+  path: ['advanceAmount']
 });
 
 export type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
@@ -46,9 +51,21 @@ export const UpdateTaskStatusSchema = z.object({
 export type UpdateTaskStatusInput = z.infer<typeof UpdateTaskStatusSchema>;
 
 export const UpdatePaymentSchema = z.object({
+  idToken: z.string().optional(),
+  studioId: z.string().optional(),
   orderId: z.string().min(1, 'Order ID is required'),
   advanceAmount: z.number().nonnegative().optional(),
-  paymentStatus: z.enum(['PAYMENT_PENDING', 'PAYMENT_CONFIRMATION_REQUIRED', 'PAYMENT_COMPLETED'])
+  paymentStatus: z.enum([
+    'PENDING',
+    'PAYMENT_SUBMITTED',
+    'PENDING_VERIFICATION',
+    'PARTIAL',
+    'PAID',
+    'OVERDUE',
+    'PAYMENT_PENDING',
+    'PAYMENT_CONFIRMATION_REQUIRED',
+    'PAYMENT_COMPLETED'
+  ])
 });
 
 export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema>;

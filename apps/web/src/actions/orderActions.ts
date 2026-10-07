@@ -131,16 +131,19 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       assignedResources: [],
       trackingPasskey: finalPasskey,
       ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
+      ...(validated.notifySms !== undefined ? { notifySms: validated.notifySms } : {}),
+      ...(validated.notifyEmail !== undefined ? { notifyEmail: validated.notifyEmail } : {}),
       isDeleted: false,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
 
     const workflowTasks = generateWorkflowTasks(orderId, validated.studioId, validated.services).map((t, idx) => {
-      const { dateStamp, timeStamp } = generateTimestampDigits(new Date(now.getTime() + idx));
+      const { dateStamp, timeStamp } = generateTimestampDigits(now);
+      const seqSuffix = String(idx + 1).padStart(2, "0");
       return {
         ...t,
-        id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}`,
+        id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}-${seqSuffix}`,
         createdAt: nowIso,
         updatedAt: nowIso,
         isDeleted: false,
@@ -589,11 +592,12 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
     }
 
     const currentPricing = existingOrder.pricing;
-    const newAdvance = validated.advanceAmount !== undefined ? validated.advanceAmount : currentPricing.advanceAmount;
-    const newRemaining = Math.max(0, currentPricing.finalConfirmedPrice - newAdvance);
-
     let calculatedStatus: PaymentStatus = validated.paymentStatus as PaymentStatus;
-    if (!calculatedStatus) {
+    let newAdvance = validated.advanceAmount !== undefined ? validated.advanceAmount : currentPricing.advanceAmount;
+    
+    if (calculatedStatus === "PAID") {
+      newAdvance = currentPricing.finalConfirmedPrice;
+    } else if (!calculatedStatus) {
       if (newAdvance >= currentPricing.finalConfirmedPrice && currentPricing.finalConfirmedPrice > 0) {
         calculatedStatus = "PAID";
       } else if (newAdvance > 0) {
@@ -602,6 +606,8 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
         calculatedStatus = "PENDING";
       }
     }
+
+    const newRemaining = Math.max(0, currentPricing.finalConfirmedPrice - newAdvance);
 
     const updatedOrder = await updateOrder(validated.orderId, {
       paymentStatus: calculatedStatus,
@@ -776,7 +782,7 @@ export async function cancelOrderAction(input: {
     const updated = await updateOrder(input.orderId, {
       orderStatus: "CANCELLED",
       cancellationInfo: {
-        cancellationReason: input.cancellationReason,
+        cancellationReason: input.cancellationReason?.trim() || "Cancelled by studio owner",
         cancelledBy: decoded.uid,
         cancelledAt: new Date().toISOString(),
         refundNotes: input.refundNotes,

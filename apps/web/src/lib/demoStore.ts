@@ -308,9 +308,11 @@ export function updateDemoPaymentStatus(
   const currentOrders = getDemoOrders();
   const orderIndex = currentOrders.findIndex((o) => o.id === orderId);
   if (orderIndex === -1) return { success: false };
-
   const order = currentOrders[orderIndex];
-  const newAdvance = advanceAmount !== undefined ? advanceAmount : order.pricing.advanceAmount;
+
+  const newAdvance = paymentStatus === "PAID"
+    ? order.pricing.finalConfirmedPrice
+    : (advanceAmount !== undefined ? advanceAmount : order.pricing.advanceAmount);
   const remaining = Math.max(0, order.pricing.finalConfirmedPrice - newAdvance);
 
   const updatedOrder: Order = {
@@ -405,6 +407,39 @@ export function confirmDemoResourceAvailability(
   saveDemoOrders(updatedOrders);
 
   return { success: true, order: updatedOrder };
+}
+
+export function cancelDemoOrder(
+  orderId: string,
+  cancellationReason?: string
+): { success: boolean; order?: Order } {
+  const currentOrders = getDemoOrders();
+  const orderIndex = currentOrders.findIndex((o) => o.id === orderId);
+  if (orderIndex === -1) return { success: false };
+
+  const order = currentOrders[orderIndex];
+  const updatedOrder: Order = {
+    ...order,
+    orderStatus: "CANCELLED",
+    cancellationInfo: {
+      cancellationReason: cancellationReason || "Cancelled by studio owner",
+      cancelledAt: new Date().toISOString(),
+      cancelledBy: "demo-owner",
+    },
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updatedOrders = [...currentOrders];
+  updatedOrders[orderIndex] = updatedOrder;
+  saveDemoOrders(updatedOrders);
+  return { success: true, order: updatedOrder };
+}
+
+export function deleteDemoOrder(orderId: string): { success: boolean } {
+  const currentOrders = getDemoOrders();
+  const nextOrders = currentOrders.filter((o) => o.id !== orderId);
+  saveDemoOrders(nextOrders);
+  return { success: true };
 }
 
 // ==========================================

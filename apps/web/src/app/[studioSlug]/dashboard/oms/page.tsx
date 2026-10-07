@@ -20,6 +20,8 @@ import {
   createDemoOrder,
   updateDemoTaskStatus,
   updateDemoPaymentStatus,
+  cancelDemoOrder,
+  deleteDemoOrder,
   subscribeToDemoStore,
 } from "@/lib/demoStore";
 
@@ -78,25 +80,102 @@ export default function OmsPage({
     (studio as any)?.capabilities?.some((c: string) => c.startsWith("WHATSAPP"))
   );
 
+const PRESET_EVENT_TYPES = [
+  "Wedding",
+  "Reception",
+  "Engagement",
+  "Housewarming Ceremony",
+  "Ear Piercing Ceremony",
+  "Baby Shower",
+  "Birthday Celebration",
+  "Traditional Occasion",
+  "Corporate Event",
+  "Pre-Wedding / Outdoor Shoot",
+  "Other",
+] as const;
+
+const PRESET_STUDIO_SERVICES = [
+  "Traditional Photography",
+  "Candid Photography",
+  "Traditional Videography",
+  "Cinematic Video / Teaser",
+  "Drone Aerial Shoots",
+  "Pre-Wedding Photoshoot",
+  "Post-Wedding Photoshoot",
+  "Premium Photobook Album",
+] as const;
+
+const DEFAULT_ORDER_FORM = {
+  customerName: "",
+  countryCode: "+91",
+  customerPhone: "",
+  customerEmail: "",
+  passkeyPin: "",
+  notifyWhatsApp: true,
+  notifySms: true,
+  notifyEmail: true,
+  eventType: "Wedding",
+  customEventType: "",
+  eventDate: "",
+  eventLocation: "",
+  services: [
+    "Traditional Photography",
+    "Candid Photography",
+    "Traditional Videography",
+    "Premium Photobook Album",
+  ] as string[],
+  customServiceInput: "",
+  finalConfirmedPrice: "" as unknown as number,
+  advanceAmount: "" as unknown as number,
+};
+
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [newOrderForm, setNewOrderForm] = useState({
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
-    notifyWhatsApp: true,
-    eventType: "Wedding Reception",
-    eventDate: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0],
-    eventLocation: "City Hall",
-    services: ["Photography", "Videography", "Album"],
-    finalConfirmedPrice: 75000,
-    advanceAmount: 25000,
-  });
+  const [newOrderForm, setNewOrderForm] = useState(DEFAULT_ORDER_FORM);
+
+  // In-App Cancellation Dialog State
+  const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // In-App Soft-Delete Dialog State
+  const [deleteTargetOrder, setDeleteTargetOrder] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isDemo = isDemoStudio(studioSlug);
+
+  const handleOpenCreateModal = () => {
+    setNewOrderForm({
+      ...DEFAULT_ORDER_FORM,
+      passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
+    });
+    setFormError(null);
+    setShowCreateModal(true);
+  };
+
+  const toggleService = (svc: string) => {
+    setNewOrderForm((prev) => {
+      const exists = prev.services.includes(svc);
+      const next = exists
+        ? prev.services.filter((s) => s !== svc)
+        : [...prev.services, svc];
+      return { ...prev, services: next };
+    });
+  };
+
+  const handleAddCustomService = (e: React.FormEvent) => {
+    e.preventDefault();
+    const custom = newOrderForm.customServiceInput.trim();
+    if (custom && !newOrderForm.services.includes(custom)) {
+      setNewOrderForm((prev) => ({
+        ...prev,
+        services: [...prev.services, custom],
+        customServiceInput: "",
+      }));
+    }
+  };
 
   const loadOrders = useCallback(async (tokenOverride?: string | null) => {
     try {
@@ -106,7 +185,7 @@ export default function OmsPage({
         setLoading(false);
         return;
       }
-      const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
+      const token = tokenOverride ?? (await getIdToken(false)) ?? workspaceToken;
       if (!token) {
         setLoading(false);
         return;
@@ -150,25 +229,63 @@ export default function OmsPage({
     setIsSubmitting(true);
     setFormError(null);
 
-    if (isDemo) {
-      const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
-      const hasValid10DigitPhone = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
+    const parsedFinalPrice = Number(newOrderForm.finalConfirmedPrice) || 0;
+    const parsedAdvance = Number(newOrderForm.advanceAmount) || 0;
 
+    if (!newOrderForm.customerName.trim()) {
+      setFormError("Customer full name is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!newOrderForm.eventDate) {
+      setFormError("Event date is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (newOrderForm.services.length === 0) {
+      setFormError("Please select at least one service.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (parsedAdvance > parsedFinalPrice) {
+      setFormError("Advance amount cannot exceed the confirmed total price.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const resolvedEventType =
+      newOrderForm.eventType === "Other"
+        ? (newOrderForm.customEventType.trim() || "Special Occasion")
+        : newOrderForm.eventType;
+
+    const trimmedPhone = newOrderForm.customerPhone.trim();
+    const resolvedPhone = trimmedPhone
+      ? (trimmedPhone.startsWith("+") ? trimmedPhone : `${newOrderForm.countryCode.trim() || "+91"} ${trimmedPhone}`)
+      : undefined;
+
+    if (isDemo) {
       const res = createDemoOrder({
         customerName: newOrderForm.customerName,
-        customerPhone: newOrderForm.customerPhone || undefined,
+        customerPhone: resolvedPhone,
         customerEmail: newOrderForm.customerEmail || undefined,
-        eventType: newOrderForm.eventType,
+        eventType: resolvedEventType,
         eventDate: newOrderForm.eventDate,
-        eventLocation: newOrderForm.eventLocation,
+        eventLocation: newOrderForm.eventLocation.trim() || undefined,
         services: newOrderForm.services,
-        finalConfirmedPrice: newOrderForm.finalConfirmedPrice,
-        advanceAmount: newOrderForm.advanceAmount,
+        finalConfirmedPrice: parsedFinalPrice,
+        advanceAmount: parsedAdvance,
       });
 
       setIsSubmitting(false);
       if (res.success && res.order) {
         setShowCreateModal(false);
+        setNewOrderForm({
+          ...DEFAULT_ORDER_FORM,
+          passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
+        });
         setOrders(getDemoOrders());
         setSelectedId(res.order.id);
         if (res.tasks) setSelectedTasks(res.tasks);
@@ -186,29 +303,33 @@ export default function OmsPage({
       return;
     }
 
-    const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
-    const hasValid10DigitPhone = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
-
     const res = await createOrderAction({
       idToken: token,
       studioId: studioSlug,
       customerName: newOrderForm.customerName,
-      customerPhone: newOrderForm.customerPhone || undefined,
+      customerPhone: resolvedPhone,
       customerEmail: newOrderForm.customerEmail || undefined,
-      notifyWhatsApp: hasWhatsappPlan && hasValid10DigitPhone ? newOrderForm.notifyWhatsApp : false,
-      eventType: newOrderForm.eventType,
+      passkeyPin: newOrderForm.passkeyPin,
+      notifyWhatsApp: Boolean(newOrderForm.notifyWhatsApp && resolvedPhone),
+      notifySms: Boolean(newOrderForm.notifySms && resolvedPhone),
+      notifyEmail: Boolean(newOrderForm.notifyEmail && newOrderForm.customerEmail.trim()),
+      eventType: resolvedEventType,
       eventDate: newOrderForm.eventDate,
-      eventLocation: newOrderForm.eventLocation,
+      eventLocation: newOrderForm.eventLocation.trim() || undefined,
       services: newOrderForm.services,
-      estimatedPrice: newOrderForm.finalConfirmedPrice,
-      finalConfirmedPrice: newOrderForm.finalConfirmedPrice,
-      advanceAmount: newOrderForm.advanceAmount,
+      estimatedPrice: parsedFinalPrice,
+      finalConfirmedPrice: parsedFinalPrice,
+      advanceAmount: parsedAdvance,
     });
 
     setIsSubmitting(false);
 
     if (res.success && res.order) {
       setShowCreateModal(false);
+      setNewOrderForm({
+        ...DEFAULT_ORDER_FORM,
+        passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
+      });
       await loadOrders();
       setSelectedId(res.order.id);
       if (res.tasks) setSelectedTasks(res.tasks);
@@ -228,7 +349,7 @@ export default function OmsPage({
       return;
     }
 
-    const token = workspaceToken ?? (await getIdToken(false));
+    const token = (await getIdToken(false)) ?? workspaceToken;
     if (!selected || !token) return;
     const res = await updateTaskStatusAction({
       idToken: token,
@@ -244,7 +365,9 @@ export default function OmsPage({
   };
 
   const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
-    if (isDemo && selected) {
+    if (!selected) return;
+
+    if (isDemo) {
       const res = updateDemoPaymentStatus(selected.id, newPaymentStatus);
       if (res.success && res.order) {
         setOrders(getDemoOrders());
@@ -252,8 +375,8 @@ export default function OmsPage({
       return;
     }
 
-    const token = workspaceToken ?? (await getIdToken(false));
-    if (!selected || !token) return;
+    const token = (await getIdToken(false)) ?? workspaceToken;
+    if (!token) return;
     const res = await updatePaymentStatusAction({
       idToken: token,
       studioId: studioSlug,
@@ -262,12 +385,15 @@ export default function OmsPage({
     });
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+      await loadOrders();
+    } else {
+      alert(res.error || "Failed to update payment status");
     }
   };
 
   const handleConfirmSuggestion = async (sug: ResourceSuggestion) => {
     if (!selected) return;
-    const token = workspaceToken ?? (await getIdToken(false));
+    const token = (await getIdToken(false)) ?? workspaceToken;
     if (!token) return;
 
     const res = await assignResourceAction({
@@ -286,42 +412,80 @@ export default function OmsPage({
     }
   };
 
-  const handleCancelOrder = async () => {
-    if (!selected) return;
-    const reason = prompt("Enter cancellation reason for business history records:");
-    if (!reason) return;
-    const token = workspaceToken ?? (await getIdToken(false));
-    if (!token) return;
+  const handleConfirmCancelOrder = async () => {
+    if (!cancelTargetOrder) return;
+    setIsCancelling(true);
+
+    if (isDemo) {
+      const res = cancelDemoOrder(cancelTargetOrder.id, cancelReason.trim() || "Cancelled by studio owner");
+      setIsCancelling(false);
+      if (res.success && res.order) {
+        setOrders(getDemoOrders());
+        setCancelTargetOrder(null);
+        setCancelReason("");
+      }
+      return;
+    }
+
+    const token = (await getIdToken(false)) ?? workspaceToken;
+    if (!token) {
+      setIsCancelling(false);
+      return;
+    }
 
     const res = await cancelOrderAction({
-      orderId: selected.id,
+      orderId: cancelTargetOrder.id,
       studioId: studioSlug,
-      cancellationReason: reason,
+      cancellationReason: cancelReason.trim() || "Cancelled by studio owner",
       idToken: token,
     });
 
+    setIsCancelling(false);
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+      setCancelTargetOrder(null);
+      setCancelReason("");
     } else {
       alert(res.error || "Failed to cancel order");
     }
   };
 
-  const handleDeleteOrder = async () => {
-    if (!selected) return;
-    if (!confirm("Soft delete this order? It can be restored within 14 days.")) return;
-    const token = workspaceToken ?? (await getIdToken(false));
-    if (!token) return;
+  const handleConfirmDeleteOrder = async () => {
+    if (!deleteTargetOrder) return;
+    setIsDeleting(true);
+
+    if (isDemo) {
+      const res = deleteDemoOrder(deleteTargetOrder.id);
+      setIsDeleting(false);
+      if (res.success) {
+        setOrders(getDemoOrders());
+        if (selectedId === deleteTargetOrder.id) {
+          setSelectedId(null);
+        }
+        setDeleteTargetOrder(null);
+      }
+      return;
+    }
+
+    const token = (await getIdToken(false)) ?? workspaceToken;
+    if (!token) {
+      setIsDeleting(false);
+      return;
+    }
 
     const res = await deleteOrderAction({
-      orderId: selected.id,
+      orderId: deleteTargetOrder.id,
       studioId: studioSlug,
       idToken: token,
     });
 
+    setIsDeleting(false);
     if (res.success) {
-      setOrders((prev) => prev.filter((o) => o.id !== selected.id));
-      setSelectedId(null);
+      setOrders((prev) => prev.filter((o) => o.id !== deleteTargetOrder.id));
+      if (selectedId === deleteTargetOrder.id) {
+        setSelectedId(null);
+      }
+      setDeleteTargetOrder(null);
     } else {
       alert(res.error || "Failed to delete order");
     }
@@ -344,7 +508,7 @@ export default function OmsPage({
     <div className="flex h-full bg-surface-app">
       <div
         className={`flex h-full flex-col ${
-          selected ? "w-1/2 border-r border-border-default" : "w-full"
+          selected ? "hidden lg:flex lg:w-1/2 border-r border-border-default" : "w-full"
         }`}
       >
         <header className="header-brand-blue">
@@ -367,10 +531,7 @@ export default function OmsPage({
               </p>
             </div>
             <button
-              onClick={() => {
-                setShowCreateModal(true);
-                setFormError(null);
-              }}
+              onClick={handleOpenCreateModal}
               className="btn-brand-blue"
             >
               + Register Confirmed Order
@@ -459,17 +620,32 @@ export default function OmsPage({
 
       {/* Selected Order Detail Drawer */}
       {selected && (
-        <aside className="h-full w-1/2 overflow-y-auto bg-white p-6 border-l border-border-default space-y-6">
+        <aside className="h-full w-full lg:w-1/2 overflow-y-auto bg-white p-6 border-l border-border-default space-y-6">
           <div className="flex justify-between items-center pb-4 border-b border-border-default">
-            <div>
-              <span className="font-mono text-xs font-bold text-brand-blue-primary">{selected.orderNumber}</span>
-              <h2 className="text-lg font-extrabold text-text-primary">{selected.customer.name}</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="lg:hidden rounded-lg p-1.5 text-text-tertiary hover:bg-surface-app hover:text-text-primary mr-1 shrink-0"
+                aria-label="Back to order list"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div className="min-w-0">
+                <span className="font-mono text-xs font-bold text-brand-blue-primary block">{selected.orderNumber}</span>
+                <h2 className="text-lg font-extrabold text-text-primary truncate">{selected.customer.name}</h2>
+              </div>
             </div>
             <button
               onClick={() => setSelectedId(null)}
-              className="rounded-full p-2 text-text-tertiary hover:bg-surface-app hover:text-text-primary transition"
+              className="rounded-full p-2 text-text-tertiary hover:bg-surface-app hover:text-text-primary transition shrink-0"
+              aria-label="Close details"
             >
-              ✕
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
@@ -665,9 +841,9 @@ export default function OmsPage({
               {selectedTasks.length === 0 ? (
                 <p className="text-xs text-text-tertiary">No tasks generated for this order.</p>
               ) : (
-                selectedTasks.map((task) => (
+                selectedTasks.map((task, idx) => (
                   <div
-                    key={task.id}
+                    key={task.id ? `${task.id}-${idx}` : `task-${idx}`}
                     className="flex items-center justify-between rounded-xl border border-border-default bg-white p-3 text-xs"
                   >
                     <div>
@@ -694,58 +870,6 @@ export default function OmsPage({
                   </div>
                 ))
               )}
-            </div>
-          </div>
-
-          {/* Google Drive Integration & In-App Preview */}
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
-                  ▲
-                </span>
-                <div>
-                  <h4 className="text-xs font-bold text-text-primary">Google Drive Order Folder</h4>
-                  <p className="text-[10px] text-text-secondary">RAW photos & final album deliverables</p>
-                </div>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                Connected
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border-default bg-white p-3 text-xs space-y-2">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-text-secondary truncate">
-                  drive.google.com/drive/folders/{selected.orderNumber.toLowerCase()}...
-                </span>
-                <span className="font-mono text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                  In-App Preview Active
-                </span>
-              </div>
-
-              {/* Sample Embedded Preview Grid */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {[
-                  { name: "RAW_0142.CR3", tag: "Selected", color: "bg-brand-blue-50 text-brand-blue-primary border-brand-blue-soft" },
-                  { name: "RAW_0188.CR3", tag: "Selected", color: "bg-brand-blue-50 text-brand-blue-primary border-brand-blue-soft" },
-                  { name: "Album_v1.pdf", tag: "Proof Ready", color: "bg-purple-50 text-purple-700 border-purple-200" },
-                ].map((item) => (
-                  <div key={item.name} className="flex flex-col items-center justify-center rounded-lg border border-border-default bg-surface-app p-2 text-center">
-                    <div className="h-8 w-8 rounded bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 font-mono mb-1">
-                      IMG
-                    </div>
-                    <span className="text-[9px] font-semibold text-text-primary truncate w-full">{item.name}</span>
-                    <span className={`mt-1 text-[8px] font-bold px-1.5 py-0.2 rounded border ${item.color}`}>
-                      {item.tag}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              
-              <p className="text-[10px] text-text-tertiary text-center pt-1">
-                Previewing directly inside Focoman · Zero external tabs required
-              </p>
             </div>
           </div>
 
@@ -824,7 +948,7 @@ export default function OmsPage({
 
                       {isAssigned ? (
                         <span className="text-[10px] font-bold text-status-success bg-green-50 px-2 py-1 rounded-lg border border-green-200">
-                          Assigned ✓
+                          Assigned
                         </span>
                       ) : (
                         <button
@@ -845,14 +969,17 @@ export default function OmsPage({
           <div className="border-t border-border-divider pt-4 flex items-center justify-between gap-2">
             {selected.orderStatus !== "CANCELLED" && (
               <button
-                onClick={handleCancelOrder}
+                onClick={() => {
+                  setCancelTargetOrder(selected);
+                  setCancelReason("");
+                }}
                 className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
               >
                 Cancel Order
               </button>
             )}
             <button
-              onClick={handleDeleteOrder}
+              onClick={() => setDeleteTargetOrder(selected)}
               className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-status-error hover:bg-red-100 transition ml-auto"
             >
               Delete Order (14-day Recovery)
@@ -863,9 +990,10 @@ export default function OmsPage({
 
       {/* New Order Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-border-default animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-border-default">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl bg-white shadow-2xl border border-border-default animate-in fade-in zoom-in duration-150 my-auto">
+            {/* Modal Header (Pinned at Top) */}
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-border-default shrink-0">
               <div>
                 <div className="badge-brand-blue mb-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
@@ -875,67 +1003,330 @@ export default function OmsPage({
                 <p className="text-xs text-text-secondary">Begins automated 3-state production workflow</p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-text-tertiary hover:text-text-primary font-bold"
+                className="text-text-tertiary hover:text-text-primary p-1.5 rounded-lg hover:bg-surface-app transition"
+                aria-label="Close dialog"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            {formError && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 font-medium">
-                {formError}
-              </div>
-            )}
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleCreateOrder} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="overflow-y-auto p-6 space-y-4 flex-1">
+                {formError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 font-medium">
+                    {formError}
+                  </div>
+                )}
 
-            <form onSubmit={handleCreateOrder} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-text-primary">Customer Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh & Priya"
-                  value={newOrderForm.customerName}
-                  onChange={(e) => setNewOrderForm({ ...newOrderForm, customerName: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-text-primary">Phone Number</label>
+                  <label className="block text-xs font-bold text-text-primary">Customer Full Name *</label>
                   <input
-                    type="tel"
-                    placeholder="+91 98765 43210"
-                    value={newOrderForm.customerPhone}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customerPhone: e.target.value })}
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh & Ananya"
+                    value={newOrderForm.customerName}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customerName: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">
+                      Phone Number <span className="font-normal text-text-tertiary">(Optional)</span>
+                    </label>
+                    <div className="mt-1 flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="+91"
+                        value={newOrderForm.countryCode}
+                        onChange={(e) => setNewOrderForm({ ...newOrderForm, countryCode: e.target.value })}
+                        className="w-20 rounded-xl border border-border-default bg-surface-app px-2 py-2 text-xs font-semibold text-text-primary text-center outline-none focus:border-brand-blue-primary"
+                        title="Country Code (e.g. +91, +1, +44)"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="98765 43210"
+                        value={newOrderForm.customerPhone}
+                        onChange={(e) => setNewOrderForm({ ...newOrderForm, customerPhone: e.target.value })}
+                        className="flex-1 min-w-0 rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">
+                      Customer Email <span className="font-normal text-text-tertiary">(Optional)</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="client@gmail.com"
+                      value={newOrderForm.customerEmail}
+                      onChange={(e) => setNewOrderForm({ ...newOrderForm, customerEmail: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Automated Customer Notifications (displayed only when phone or email is provided) */}
+                {(Boolean(newOrderForm.customerPhone.trim()) || Boolean(newOrderForm.customerEmail.trim())) && (
+                  <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 p-3.5 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-950">
+                        Automated Client Notifications
+                      </span>
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                        Live Dispatch
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 pt-0.5">
+                      {Boolean(newOrderForm.customerPhone.trim()) && (
+                        <>
+                          <label className="flex items-center gap-2.5 select-none cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newOrderForm.notifyWhatsApp}
+                              onChange={(e) =>
+                                setNewOrderForm({ ...newOrderForm, notifyWhatsApp: e.target.checked })
+                              }
+                              className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary"
+                            />
+                            <span className="text-xs font-medium text-text-primary">
+                              Send automated order updates via <strong>WhatsApp</strong>
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-2.5 select-none cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newOrderForm.notifySms}
+                              onChange={(e) =>
+                                setNewOrderForm({ ...newOrderForm, notifySms: e.target.checked })
+                              }
+                              className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary"
+                            />
+                            <span className="text-xs font-medium text-text-primary">
+                              Send automated order updates via <strong>SMS</strong>
+                            </span>
+                          </label>
+                        </>
+                      )}
+
+                      {Boolean(newOrderForm.customerEmail.trim()) && (
+                        <label className="flex items-center gap-2.5 select-none cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newOrderForm.notifyEmail}
+                            onChange={(e) =>
+                              setNewOrderForm({ ...newOrderForm, notifyEmail: e.target.checked })
+                            }
+                            className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary"
+                          />
+                          <span className="text-xs font-medium text-text-primary">
+                            Send automated order updates via <strong>Email</strong>
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Event Type Dropdown & Custom Type */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">Event Type *</label>
+                    <select
+                      value={newOrderForm.eventType}
+                      onChange={(e) => setNewOrderForm({ ...newOrderForm, eventType: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-border-default bg-white px-3.5 py-2 text-xs font-medium text-text-primary outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    >
+                      {PRESET_EVENT_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    {newOrderForm.eventType === "Other" && (
+                      <input
+                        type="text"
+                        placeholder="Specify event type (Optional)"
+                        value={newOrderForm.customEventType}
+                        onChange={(e) => setNewOrderForm({ ...newOrderForm, customEventType: e.target.value })}
+                        className="mt-2 w-full rounded-xl border border-border-default px-3 py-1.5 text-xs outline-none focus:border-brand-blue-primary"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">Event Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={newOrderForm.eventDate}
+                      onChange={(e) => setNewOrderForm({ ...newOrderForm, eventDate: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-text-primary">Customer Email</label>
+                  <label className="block text-xs font-bold text-text-primary">
+                    Event Location <span className="font-normal text-text-tertiary">(Optional)</span>
+                  </label>
                   <input
-                    type="email"
-                    placeholder="client@gmail.com (Optional)"
-                    value={newOrderForm.customerEmail}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customerEmail: e.target.value })}
+                    type="text"
+                    placeholder="e.g. Chennai, Bangalore"
+                    value={newOrderForm.eventLocation}
+                    onChange={(e) => setNewOrderForm({ ...newOrderForm, eventLocation: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
                   />
                 </div>
-              </div>
 
-              {/* Conditional 6-Digit PIN Passkey Section */}
-              {newOrderForm.customerEmail.trim() ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs">
-                  <span className="font-bold text-emerald-900 block">Email-Based Authentication Enabled</span>
-                  <span className="text-[11px] text-emerald-700 block mt-0.5">
-                    Customer will track directly by logging in with <strong className="font-mono">{newOrderForm.customerEmail}</strong>. No 6-digit PIN required.
-                  </span>
+                {/* Studio Services & Deliverables Multi-Select */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-text-primary">
+                      Studio Services &amp; Deliverables *
+                    </label>
+                    <span className="text-[10px] text-text-tertiary">
+                      {newOrderForm.services.length} Selected
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_STUDIO_SERVICES.map((svc) => {
+                      const isSvcSelected = newOrderForm.services.includes(svc);
+                      return (
+                        <button
+                          key={svc}
+                          type="button"
+                          onClick={() => toggleService(svc)}
+                          className={`rounded-xl px-2.5 py-1 text-xs font-semibold border transition ${
+                            isSvcSelected
+                              ? "bg-brand-blue-50 text-brand-blue-primary border-brand-blue-soft ring-1 ring-brand-blue-soft"
+                              : "bg-surface-app text-text-secondary border-border-default hover:bg-slate-100"
+                          }`}
+                        >
+                          {svc}
+                        </button>
+                      );
+                    })}
+                    {newOrderForm.services
+                      .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
+                      .map((customSvc) => (
+                        <button
+                          key={customSvc}
+                          type="button"
+                          onClick={() => toggleService(customSvc)}
+                          className="rounded-xl px-2.5 py-1 text-xs font-semibold bg-brand-blue-50 text-brand-blue-primary border border-brand-blue-soft ring-1 ring-brand-blue-soft flex items-center gap-1.5"
+                        >
+                          <span>{customSvc}</span>
+                          <span className="text-[10px] text-brand-blue-primary font-bold">×</span>
+                        </button>
+                      ))}
+                  </div>
+
+                  {/* Add Custom Service Input */}
+                  <div className="mt-2 flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Add custom service (e.g. Traditional LED Wall)"
+                      value={newOrderForm.customServiceInput}
+                      onChange={(e) =>
+                        setNewOrderForm({ ...newOrderForm, customServiceInput: e.target.value })
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const custom = newOrderForm.customServiceInput.trim();
+                          if (custom && !newOrderForm.services.includes(custom)) {
+                            setNewOrderForm({
+                              ...newOrderForm,
+                              services: [...newOrderForm.services, custom],
+                              customServiceInput: "",
+                            });
+                          }
+                        }
+                      }}
+                      className="flex-1 rounded-xl border border-border-default px-3 py-1.5 text-xs outline-none focus:border-brand-blue-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const custom = newOrderForm.customServiceInput.trim();
+                        if (custom && !newOrderForm.services.includes(custom)) {
+                          setNewOrderForm({
+                            ...newOrderForm,
+                            services: [...newOrderForm.services, custom],
+                            customServiceInput: "",
+                          });
+                        }
+                      }}
+                      className="rounded-xl bg-surface-app px-3 py-1.5 text-xs font-bold text-text-primary border border-border-default hover:bg-slate-100"
+                    >
+                      + Add
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-border-default bg-surface-app p-3 space-y-2">
+
+                {/* Pricing & Advance with Validation */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">Confirmed Total Price (₹) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      required
+                      placeholder="e.g. 75,000"
+                      value={newOrderForm.finalConfirmedPrice ?? ""}
+                      onChange={(e) =>
+                        setNewOrderForm({
+                          ...newOrderForm,
+                          finalConfirmedPrice: e.target.value === "" ? ("" as unknown as number) : Number(e.target.value),
+                        })
+                      }
+                      className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-text-primary">Advance Received (₹) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      required
+                      placeholder="e.g. 25,000"
+                      value={newOrderForm.advanceAmount ?? ""}
+                      onChange={(e) =>
+                        setNewOrderForm({
+                          ...newOrderForm,
+                          advanceAmount: e.target.value === "" ? ("" as unknown as number) : Number(e.target.value),
+                        })
+                      }
+                      className={`mt-1 w-full rounded-xl border px-3.5 py-2 text-xs outline-none focus:ring-1 ${
+                        Number(newOrderForm.advanceAmount) > Number(newOrderForm.finalConfirmedPrice) && Number(newOrderForm.finalConfirmedPrice) > 0
+                          ? "border-status-error bg-red-50/50 text-status-error focus:ring-red-400"
+                          : "border-border-default focus:border-brand-blue-primary focus:ring-brand-blue-primary"
+                      }`}
+                    />
+                  </div>
+                  {Number(newOrderForm.advanceAmount) > Number(newOrderForm.finalConfirmedPrice) && Number(newOrderForm.finalConfirmedPrice) > 0 && (
+                    <div className="col-span-2 rounded-xl border border-red-200 bg-red-50 p-2.5 text-[11px] font-semibold text-status-error">
+                      Advance amount cannot exceed the confirmed total price.
+                    </div>
+                  )}
+                </div>
+
+                {/* 6-Digit Guest Access PIN & Tracking Passkey */}
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-text-primary block">6-Digit Guest Access PIN *</label>
+                    <span className="text-xs font-bold text-amber-950">
+                      6-Digit Guest Access PIN
+                    </span>
                     <button
                       type="button"
                       onClick={() =>
@@ -944,120 +1335,41 @@ export default function OmsPage({
                           passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
                         })
                       }
-                      className="text-[10px] font-bold text-brand-blue-primary hover:underline"
+                      className="text-[11px] font-bold text-brand-blue-primary hover:underline"
                     >
                       Regenerate PIN
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="e.g. 492015"
-                    value={newOrderForm.passkeyPin}
-                    onChange={(e) =>
-                      setNewOrderForm({ ...newOrderForm, passkeyPin: e.target.value.replace(/\D/g, "").slice(0, 6) })
-                    }
-                    className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none focus:border-brand-blue-primary"
-                  />
-                  <p className="text-[11px] text-text-tertiary">
-                    No customer email provided. Share this 6-digit PIN with your customer for guest order tracking.
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    {newOrderForm.customerEmail.trim() ? (
+                      <>
+                        Order tracking link will be sent to <strong className="font-semibold text-amber-950">{newOrderForm.customerEmail.trim()}</strong>. Your customer can track with their email or access instantly as a guest using this 6-digit PIN.
+                      </>
+                    ) : (
+                      <>
+                        No customer email provided. Share this 6-digit PIN with your customer for guest order tracking.
+                      </>
+                    )}
                   </p>
-                </div>
-              )}
-
-              {/* WhatsApp Notification Note & Opt-in */}
-              {(() => {
-                const phoneDigits = newOrderForm.customerPhone.replace(/\D/g, "");
-                const hasValid10DigitPhoneForm = phoneDigits.length === 10 || (phoneDigits.length === 12 && phoneDigits.startsWith("91"));
-                return hasWhatsappPlan ? (
-                  <div className={`rounded-xl border p-3 text-xs transition ${
-                    hasValid10DigitPhoneForm
-                      ? "border-emerald-200 bg-emerald-50/70"
-                      : "border-slate-200 bg-slate-50/80 opacity-80"
-                  }`}>
-                    <label className={`flex items-start gap-2.5 select-none ${hasValid10DigitPhoneForm ? "cursor-pointer" : "cursor-not-allowed"}`}>
-                      <input
-                        type="checkbox"
-                        disabled={!hasValid10DigitPhoneForm}
-                        checked={hasValid10DigitPhoneForm && newOrderForm.notifyWhatsApp}
-                        onChange={(e) =>
-                          setNewOrderForm({ ...newOrderForm, notifyWhatsApp: e.target.checked })
-                        }
-                        className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-40"
-                      />
-                      <div className="space-y-0.5">
-                        <span className={`font-semibold block ${hasValid10DigitPhoneForm ? "text-emerald-900" : "text-slate-600"}`}>
-                          Send order updates via WhatsApp
-                        </span>
-                        <span className={`text-[11px] block ${hasValid10DigitPhoneForm ? "text-emerald-700" : "text-slate-500"}`}>
-                          {hasValid10DigitPhoneForm
-                            ? "Valid 10-digit mobile number provided. Check box to send automated WhatsApp updates."
-                            : "Enter a valid 10-digit mobile number above to enable automated WhatsApp updates."}
-                        </span>
-                      </div>
-                    </label>
+                  <div className="flex items-center gap-3 pt-1">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={newOrderForm.passkeyPin}
+                      onChange={(e) =>
+                        setNewOrderForm({ ...newOrderForm, passkeyPin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                      }
+                      className="w-32 rounded-xl border border-amber-300 bg-white px-3.5 py-1.5 font-mono text-sm font-extrabold tracking-widest text-text-primary text-center outline-none focus:border-brand-blue-primary"
+                    />
+                    <span className="text-[11px] text-amber-900/80">
+                      Tracking Code: <span className="font-mono font-bold">FOC-{studioSlug.slice(0, 4).toUpperCase()}-{newOrderForm.passkeyPin}</span>
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-[11px] text-text-tertiary">
-                    Phone number is optional. Enter a 10-digit mobile number to receive updates related to the order in WhatsApp (available when WhatsApp plan is active).
-                  </p>
-                );
-              })()}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-text-primary">Event Type *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Wedding Reception"
-                    value={newOrderForm.eventType}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, eventType: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-primary">Event Date (YYYY-MM-DD) *</label>
-                  <input
-                    type="date"
-                    required
-                    value={newOrderForm.eventDate}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, eventDate: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-text-primary">Confirmed Price (₹) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={newOrderForm.finalConfirmedPrice}
-                    onChange={(e) =>
-                      setNewOrderForm({ ...newOrderForm, finalConfirmedPrice: Number(e.target.value) })
-                    }
-                    className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-primary">Advance Received (₹) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={newOrderForm.advanceAmount}
-                    onChange={(e) =>
-                      setNewOrderForm({ ...newOrderForm, advanceAmount: Number(e.target.value) })
-                    }
-                    className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex gap-3 justify-end">
+              {/* Modal Footer (Pinned at Bottom) */}
+              <div className="p-4 sm:px-6 border-t border-border-default bg-surface-app/40 shrink-0 flex gap-3 justify-end rounded-b-3xl">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -1067,13 +1379,135 @@ export default function OmsPage({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="btn-brand-blue"
+                  disabled={
+                    isSubmitting ||
+                    (Number(newOrderForm.advanceAmount) > Number(newOrderForm.finalConfirmedPrice) &&
+                      Number(newOrderForm.finalConfirmedPrice) > 0)
+                  }
+                  className="btn-brand-blue disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Creating..." : "Confirm & Save Order"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Cancellation Dialog */}
+      {cancelTargetOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-border-default animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border-default">
+              <div>
+                <h3 className="text-base font-bold text-text-primary">Cancel Order</h3>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Order #{cancelTargetOrder.orderNumber} · {cancelTargetOrder.customer.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelTargetOrder(null)}
+                className="text-text-tertiary hover:text-text-primary p-1.5 rounded-lg hover:bg-surface-app transition"
+                aria-label="Close dialog"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3">
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Cancelling this order will mark it as Cancelled in the production pipeline and stop automated notifications.
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-text-primary mb-1">
+                  Cancellation Reason <span className="font-normal text-text-tertiary">(Optional)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Client postponed indefinitely or requested cancellation"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full rounded-xl border border-border-default p-3 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-default">
+              <button
+                type="button"
+                onClick={() => setCancelTargetOrder(null)}
+                className="btn-brand-outline"
+                disabled={isCancelling}
+              >
+                Keep Order
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelOrder}
+                disabled={isCancelling}
+                className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-50 transition"
+              >
+                {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Soft-Delete Dialog */}
+      {deleteTargetOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-border-default animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border-default">
+              <div>
+                <h3 className="text-base font-bold text-status-error">Delete Order</h3>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Order #{deleteTargetOrder.orderNumber} · {deleteTargetOrder.customer.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteTargetOrder(null)}
+                className="text-text-tertiary hover:text-text-primary p-1.5 rounded-lg hover:bg-surface-app transition"
+                aria-label="Close dialog"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="py-4 space-y-2">
+              <p className="text-xs text-text-primary font-semibold">
+                Are you sure you want to soft-delete this order?
+              </p>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                This order will be removed from your active dashboard. It can be fully recovered from the studio archives within 14 days before permanent purge.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-default">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetOrder(null)}
+                className="btn-brand-outline"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteOrder}
+                disabled={isDeleting}
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 transition"
+              >
+                {isDeleting ? "Deleting..." : "Delete Order"}
+              </button>
+            </div>
           </div>
         </div>
       )}

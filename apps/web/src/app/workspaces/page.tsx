@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, signInWithGoogle, signOutUser } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, signInWithGoogle, signOutUser, syncServerSession } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction, deleteStudioAction, leaveStudioAction } from "@/actions/studioActions";
 import { getMyPendingInvitationsAction } from "@/actions/memberActions";
 import { StudioInvitationSummary, StudioMembership } from "@focoman/types";
@@ -38,6 +38,8 @@ export default function WorkspacesPage() {
       if (user) {
         setLoadingWorkspaces(true);
 
+        // Ensure the server-side HTTP session cookie is active before launching any workspace
+        await syncServerSession();
 
         // CHG-011: Pass the Firebase ID token (JWT), not the UID — identity is verified server-side.
         const idToken = await user.getIdToken();
@@ -384,7 +386,7 @@ export default function WorkspacesPage() {
                             className="rounded-xl border border-border-default bg-white px-3 py-2.5 text-xs font-semibold text-text-secondary hover:bg-slate-50 hover:text-text-primary transition shrink-0"
                             title="Studio Settings & Workspace Options"
                           >
-                            ⚙️ Settings
+                            Settings
                           </Link>
                         </div>
                       </div>
@@ -423,7 +425,7 @@ export default function WorkspacesPage() {
                       href="/track"
                       className="rounded-xl border border-brand-blue-primary bg-brand-blue-primary px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-600 transition shadow-xs"
                     >
-                      🔍 Track Order
+                      Track Order
                     </Link>
                   </div>
                 </div>

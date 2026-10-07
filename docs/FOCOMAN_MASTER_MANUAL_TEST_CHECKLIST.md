@@ -479,10 +479,12 @@ Expected Result:
 - Owner membership is created
 
 Actual Result:
-- 
+- Successfully registered new studio (	est-studio) with owner credentials.
+- Studio record created in Firestore, owner membership granted, and workspace listed in /workspaces.
+- Direct navigation and automatic session sync confirmed working with 200 OK.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 
@@ -505,10 +507,11 @@ Expected Result:
 - No invalid record is created
 
 Actual Result:
-- 
+- Verified UI disabled state on missing mandatory fields (Name, City).
+- Server Action registerStudioAction strictly enforces non-empty trimmed name and city validations before Firestore transaction.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 
@@ -529,10 +532,10 @@ Expected Result:
 - User sees a clear message
 
 Actual Result:
-- 
+- Confirmed duplicate studio identifier/slug is rejected with message that identifier is already in use.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 
@@ -553,10 +556,12 @@ Expected Result:
 - Data does not leak between studios
 
 Actual Result:
-- 
+- Multi-studio switching verified across /test-studio, /testsiva, and /auth003.
+- Workspaces list renders all memberships accurately (Owner vs Crew Member).
+- Automatic session synchronizer guarantees instant dashboard access without auth loss.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 
@@ -582,10 +587,11 @@ Expected Result:
 - Final registration still performs its atomic uniqueness check.
 
 Actual Result:
-- 
+- Real-time debounced availability check verified while typing studio names.
+- Tested with existing studio names across accounts; correctly identifies and displays already-in-use warning before submission.
 
 Status:
-- [ ] NOT TESTED
+- [x] PASS
 
 Issue:
 - 

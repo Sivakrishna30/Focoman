@@ -522,8 +522,8 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
           {isStaffMatch && (
             <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4 px-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-purple-950 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-200 text-purple-900 font-bold shrink-0 text-sm">
-                  ⚡
+                <span className="flex h-7 px-2 items-center justify-center rounded-xl bg-purple-200 text-purple-900 font-extrabold shrink-0 text-[10px] uppercase tracking-wider">
+                  Staff
                 </span>
                 <div>
                   <p className="font-bold">
@@ -549,9 +549,6 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
           {!isStaffMatch && !hasCustomerEmail && !order.customerUid && !syncSuccess && (
             <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4.5 sm:p-5 text-amber-950 space-y-3">
               <div className="flex items-start gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-200 text-amber-900 font-bold shrink-0 text-base">
-                  ⚠️
-                </span>
                 <div className="space-y-1">
                   <h3 className="text-xs sm:text-sm font-bold text-amber-950">
                     Important Security Notice: Claim Your Order Before Sharing
@@ -591,7 +588,7 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
           {/* BANNER 2: Claim Success Notice */}
           {syncSuccess && (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">
-              ✓ Order successfully claimed and synced to your account ({currentUser?.email})! This order is now protected with email authentication. You can now invite family and friends with Can View or Can Edit permissions below.
+              Order successfully claimed and synced to your account ({currentUser?.email}). This order is now protected with email authentication. You can now invite family and friends with Can View or Can Edit permissions below.
             </div>
           )}
 
@@ -599,12 +596,12 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
           {!isStaffMatch && (
             <div className="rounded-2xl border border-border-default bg-white p-3.5 px-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
               <div className="flex items-center gap-2.5">
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
                   isCustomerOwnerMatch ? "bg-emerald-100 text-emerald-800" :
                   canEdit ? "bg-blue-100 text-brand-blue-primary" :
                   "bg-slate-100 text-slate-700"
                 }`}>
-                  {isCustomerOwnerMatch ? "★" : canEdit ? "✎" : "👁"}
+                  {isCustomerOwnerMatch ? "OWN" : canEdit ? "EDT" : "GST"}
                 </span>
                 <div>
                   <p className="font-bold text-text-primary">
@@ -625,7 +622,7 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
                   onClick={() => setShowShareModal(!showShareModal)}
                   className="rounded-xl border border-brand-blue-primary bg-brand-blue-background/60 px-3.5 py-1.5 text-xs font-bold text-brand-blue-primary hover:bg-brand-blue-primary hover:text-white transition shrink-0"
                 >
-                  👥 {showShareModal ? "Hide Sharing Options" : "Share with Family & Friends"}
+                  {showShareModal ? "Hide Sharing Options" : "Share with Family & Friends"}
                 </button>
               )}
             </div>
@@ -636,8 +633,8 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
             <div className="rounded-3xl border border-brand-blue-soft bg-white p-6 shadow-sm space-y-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between border-b border-border-divider pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-blue-primary text-white text-xs font-bold">
-                    👥
+                  <div className="flex h-7 px-2 items-center justify-center rounded-xl bg-brand-blue-primary text-white text-[10px] font-bold uppercase tracking-wider">
+                    Share
                   </div>
                   <div>
                     <h2 className="text-sm sm:text-base font-bold text-text-primary">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { subscribeToAuthState } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, syncServerSession } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction } from "@/actions/studioActions";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
@@ -16,6 +16,7 @@ export default function GlobalDashboardRedirect() {
       if (user) {
         try {
           setStatus("Finding your default studio...");
+          await syncServerSession();
           const idToken = await user.getIdToken();
           const workspaces = await getUserWorkspacesAction(idToken);
           

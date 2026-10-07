@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, getCurrentUserIdToken } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, getCurrentUserIdToken, syncServerSession } from "@/lib/firebaseAuth";
 import { registerStudioAction, checkStudioSlugAvailabilityAction } from "@/actions/studioActions";
 import { User } from "firebase/auth";
 
@@ -112,6 +112,7 @@ export default function RegisterStudioPage() {
     setIsSubmitting(false);
 
     if (res.success && res.studio) {
+      await syncServerSession();
       router.push(`/${res.studio.id}/dashboard`);
     } else {
       setErrorMessage(res.error || "Failed to register studio. Please choose another name.");
