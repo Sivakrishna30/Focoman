@@ -12,6 +12,8 @@ import {
   restoreCustomer,
 } from "@focoman/db";
 import { Customer } from "@focoman/types";
+import { CreateCustomerSchema, UpdateCustomerSchema } from "@focoman/validation";
+import { isContactMatch } from "@focoman/domain";
 import { requireVerifiedUser, requireStudioOwner } from "@/lib/serverAuth";
 
 /**
@@ -64,14 +66,31 @@ export async function createCustomerAction(input: {
   idToken: string;
 }): Promise<{ success: boolean; customer?: Customer; error?: string }> {
   try {
-    const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioOwner(decoded.uid, input.studioId);
+    const validated = CreateCustomerSchema.parse({
+      studioId: input.studioId,
+      name: input.name,
+      phone: input.phone || undefined,
+      email: input.email || undefined,
+      address: input.address || undefined,
+    });
 
-    if (!input.name || input.name.trim().length === 0) {
-      return { success: false, error: "Customer name is required." };
-    }
-    if (!input.studioId) {
-      return { success: false, error: "Studio ID is required." };
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioOwner(decoded.uid, validated.studioId);
+
+    // Duplicate detection check
+    const existingCustomers = await getCustomersByStudio(validated.studioId);
+    const duplicate = existingCustomers.find((c) =>
+      isContactMatch(
+        { phone: validated.phone, email: validated.email },
+        { phone: c.phone, email: c.email }
+      )
+    );
+
+    if (duplicate) {
+      return {
+        success: false,
+        error: `A client with matching contact details already exists (${duplicate.name}).`,
+      };
     }
 
     const customerId = `CUS-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
@@ -79,11 +98,11 @@ export async function createCustomerAction(input: {
 
     const customer: Customer = {
       id: customerId,
-      studioId: input.studioId.toLowerCase(),
-      name: input.name.trim(),
-      phone: input.phone?.trim() || undefined,
-      email: input.email?.trim() || undefined,
-      address: input.address?.trim() || undefined,
+      studioId: validated.studioId.toLowerCase(),
+      name: validated.name.trim(),
+      phone: validated.phone?.trim() || undefined,
+      email: validated.email?.trim() || undefined,
+      address: validated.address?.trim() || undefined,
       isDeleted: false,
       createdAt: now,
       updatedAt: now,
@@ -93,7 +112,10 @@ export async function createCustomerAction(input: {
     return { success: true, customer };
   } catch (err: unknown) {
     console.error("[createCustomerAction] Error:", err);
-    return { success: false, error: err instanceof Error ? err.message : "Failed to create customer" };
+    return {
+      success: false,
+      error: (err as any)?.errors?.[0]?.message || (err instanceof Error ? err.message : "Failed to create customer"),
+    };
   }
 }
 
@@ -109,29 +131,59 @@ export async function updateCustomerAction(input: {
   idToken: string;
 }): Promise<{ success: boolean; customer?: Customer; error?: string }> {
   try {
-    const decoded = await requireVerifiedUser(input.idToken);
-    await requireStudioOwner(decoded.uid, input.studioId);
+    const validated = UpdateCustomerSchema.parse({
+      customerId: input.customerId,
+      studioId: input.studioId,
+      name: input.updates.name,
+      phone: input.updates.phone,
+      email: input.updates.email,
+      address: input.updates.address,
+    });
 
-    const existing = await getCustomerById(input.customerId);
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioOwner(decoded.uid, validated.studioId);
+
+    const existing = await getCustomerById(validated.customerId);
     if (!existing) {
       return { success: false, error: "Customer not found." };
     }
     // Resource ownership validation
-    if (existing.studioId !== input.studioId.toLowerCase()) {
+    if (existing.studioId !== validated.studioId.toLowerCase()) {
       return { success: false, error: "Unauthorized: Customer does not belong to this studio." };
     }
 
-    const updated = await updateCustomer(input.customerId, {
-      ...(input.updates.name ? { name: input.updates.name.trim() } : {}),
-      ...(input.updates.phone !== undefined ? { phone: input.updates.phone.trim() || undefined } : {}),
-      ...(input.updates.email !== undefined ? { email: input.updates.email.trim() || undefined } : {}),
-      ...(input.updates.address !== undefined ? { address: input.updates.address.trim() || undefined } : {}),
+    // Check for conflicting contact details on another customer
+    if (validated.phone || validated.email) {
+      const allCustomers = await getCustomersByStudio(validated.studioId);
+      const conflict = allCustomers.find((c) =>
+        c.id !== validated.customerId &&
+        isContactMatch(
+          { phone: validated.phone, email: validated.email },
+          { phone: c.phone, email: c.email }
+        )
+      );
+      if (conflict) {
+        return {
+          success: false,
+          error: `Contact details already belong to another client (${conflict.name}).`,
+        };
+      }
+    }
+
+    const updated = await updateCustomer(validated.customerId, {
+      ...(validated.name ? { name: validated.name.trim() } : {}),
+      ...(validated.phone !== undefined ? { phone: validated.phone.trim() || undefined } : {}),
+      ...(validated.email !== undefined ? { email: validated.email.trim() || undefined } : {}),
+      ...(validated.address !== undefined ? { address: validated.address.trim() || undefined } : {}),
     });
 
     return { success: true, customer: updated || undefined };
   } catch (err: unknown) {
     console.error("[updateCustomerAction] Error:", err);
-    return { success: false, error: err instanceof Error ? err.message : "Failed to update customer" };
+    return {
+      success: false,
+      error: (err as any)?.errors?.[0]?.message || (err instanceof Error ? err.message : "Failed to update customer"),
+    };
   }
 }
 

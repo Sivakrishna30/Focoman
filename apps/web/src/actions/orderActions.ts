@@ -7,7 +7,7 @@ import {
   UpdateTaskStatusSchema,
   UpdatePaymentSchema,
 } from "@focoman/validation";
-import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate } from "@focoman/domain";
+import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate, isContactMatch } from "@focoman/domain";
 import { DEMO_ORDERS, DEMO_TASKS } from "@/lib/demoData";
 import {
   getOrdersByStudio,
@@ -34,6 +34,8 @@ import {
   getMembershipsByStudio,
   getMembershipByUidAndStudio,
   saveCustomer,
+  getCustomersByStudio,
+  updateCustomer,
 } from "@focoman/db";
 import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus, OrderCollaborator } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember, requireStudioOwner, getAdminAuthInstance } from "@/lib/serverAuth";
@@ -109,12 +111,22 @@ export async function createOrderAction(rawInput: unknown): Promise<{
     const initialOrderStatus: OrderStatus =
       validated.eventDate < todayStr ? "POST_EVENT_IN_PROGRESS" : "AWAITING_EVENT";
 
+    // Deduplicate/link customer by phone or email
+    const existingCustomers = await getCustomersByStudio(validated.studioId);
+    const matchedCustomer = existingCustomers.find((c) =>
+      isContactMatch(
+        { phone: customerPhone, email: customerEmail },
+        { phone: c.phone, email: c.email }
+      )
+    );
+    const effectiveCustomerId = matchedCustomer ? matchedCustomer.id : customerId;
+
     const newOrder: Order = {
       id: orderId,
       studioId: validated.studioId.toLowerCase(),
       orderNumber: orderId,
       customer: {
-        id: customerId,
+        id: effectiveCustomerId,
         name: validated.customerName,
         ...(customerPhone ? { phone: customerPhone } : {}),
         ...(customerEmail ? { email: customerEmail } : {}),
@@ -154,19 +166,28 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       };
     });
 
+    const customerPersistence = matchedCustomer
+      ? updateCustomer(matchedCustomer.id, {
+          ...(customerPhone && !matchedCustomer.phone ? { phone: customerPhone } : {}),
+          ...(customerEmail && !matchedCustomer.email ? { email: customerEmail } : {}),
+          ...(validated.eventLocation && !matchedCustomer.address ? { address: validated.eventLocation } : {}),
+        })
+      : saveCustomer({
+          id: customerId,
+          studioId: validated.studioId.toLowerCase(),
+          name: validated.customerName,
+          ...(customerPhone ? { phone: customerPhone } : {}),
+          ...(customerEmail ? { email: customerEmail } : {}),
+          ...(validated.eventLocation ? { address: validated.eventLocation } : {}),
+          isDeleted: false,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        });
+
     await Promise.all([
       saveOrder(newOrder),
       saveTasks(workflowTasks),
-      saveCustomer({
-        id: customerId,
-        studioId: validated.studioId.toLowerCase(),
-        name: validated.customerName,
-        ...(customerPhone ? { phone: customerPhone } : {}),
-        ...(customerEmail ? { email: customerEmail } : {}),
-        isDeleted: false,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }),
+      customerPersistence,
     ]);
 
     return { success: true, order: newOrder, tasks: workflowTasks };

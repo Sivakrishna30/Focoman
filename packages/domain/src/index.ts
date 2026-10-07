@@ -3,6 +3,7 @@ import type {
   Task,
   SoftDeletable,
   Order,
+  Customer,
   StudioMember,
   PreflightConflictReport,
   ResourceSuggestion,
@@ -465,4 +466,182 @@ export function applyRestore<T extends SoftDeletable>(entity: T): T {
     updatedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Normalizes contact phone numbers to last 10 digits for accurate duplicate and matching checks.
+ */
+export function normalizeContactPhone(phone?: string | null): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+/**
+ * Checks whether two contact profiles match by 10-digit phone or email.
+ */
+export function isContactMatch(
+  a: { phone?: string | null; email?: string | null },
+  b: { phone?: string | null; email?: string | null }
+): boolean {
+  const phoneA = normalizeContactPhone(a.phone);
+  const phoneB = normalizeContactPhone(b.phone);
+  if (phoneA && phoneB && phoneA.length === 10 && phoneA === phoneB) {
+    return true;
+  }
+  const emailA = a.email?.trim().toLowerCase();
+  const emailB = b.email?.trim().toLowerCase();
+  if (emailA && emailB && emailA === emailB) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Checks if an order belongs to a customer, either via explicit customer ID or matching contact info.
+ */
+export function isOrderForCustomer(
+  order: Order,
+  customer: { id: string; phone?: string | null; email?: string | null }
+): boolean {
+  if (order.customer.id === customer.id) return true;
+  return isContactMatch(order.customer, customer);
+}
+
+/**
+ * Calculates customer Lifetime Value (LTV), total orders, and pending receivables.
+ * Excludes cancelled orders from uncollected pending dues.
+ */
+export function calculateCustomerLTV(orders: Order[]): {
+  totalOrders: number;
+  completedOrders: number;
+  lifetimeValue: number;
+  pendingReceivables: number;
+  latestOrderDate: string | null;
+} {
+  let totalOrders = 0;
+  let completedOrders = 0;
+  let lifetimeValue = 0;
+  let pendingReceivables = 0;
+  let latestOrderDate: string | null = null;
+
+  for (const o of orders) {
+    if (o.isDeleted) continue;
+    totalOrders += 1;
+    if (o.orderStatus === 'COMPLETED') completedOrders += 1;
+
+    // Cancelled orders do not accumulate pending receivables
+    if (o.orderStatus !== 'CANCELLED') {
+      lifetimeValue += o.pricing.finalConfirmedPrice || 0;
+      if (o.paymentStatus !== 'PAID') {
+        pendingReceivables += o.pricing.remainingAmount || 0;
+      }
+    }
+
+    const orderDate = o.createdAt || o.eventDate;
+    if (orderDate) {
+      if (!latestOrderDate || new Date(orderDate) > new Date(latestOrderDate)) {
+        latestOrderDate = orderDate;
+      }
+    }
+  }
+
+  return {
+    totalOrders,
+    completedOrders,
+    lifetimeValue,
+    pendingReceivables,
+    latestOrderDate,
+  };
+}
+
+export interface CustomerMilestone {
+  orderId: string;
+  orderNumber: string;
+  eventType: string;
+  eventDate: string;
+  type: 'UPCOMING_EVENT' | 'ANNUAL_ANNIVERSARY';
+  title: string;
+  targetDate: string;
+  daysRemaining: number;
+  yearsCount?: number;
+}
+
+function getOrdinalSuffix(n: number): string {
+  const j = n % 10;
+  const k = n % 100;
+  if (j === 1 && k !== 11) return 'st';
+  if (j === 2 && k !== 12) return 'nd';
+  if (j === 3 && k !== 13) return 'rd';
+  return 'th';
+}
+
+/**
+ * Computes authentic customer milestones & upcoming annual anniversaries.
+ * Driven strictly by actual order event dates (no fake / placeholder data).
+ */
+export function calculateCustomerMilestones(
+  orders: Order[],
+  referenceDateStr?: string
+): CustomerMilestone[] {
+  const todayStr = referenceDateStr || getStudioCalendarDate();
+  const [refYear, refMonth, refDay] = todayStr.split('-').map(Number);
+  const refDate = new Date(refYear, refMonth - 1, refDay);
+
+  const milestones: CustomerMilestone[] = [];
+
+  for (const order of orders) {
+    if (order.isDeleted || order.orderStatus === 'CANCELLED') continue;
+    if (!order.eventDate) continue;
+
+    const [evYear, evMonth, evDay] = order.eventDate.split('-').map(Number);
+    if (!evYear || !evMonth || !evDay) continue;
+
+    const eventDateObj = new Date(evYear, evMonth - 1, evDay);
+
+    if (order.eventDate >= todayStr) {
+      // Future event shoot
+      const diffMs = eventDateObj.getTime() - refDate.getTime();
+      const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      milestones.push({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        eventType: order.eventType,
+        eventDate: order.eventDate,
+        type: 'UPCOMING_EVENT',
+        title: `Upcoming: ${order.eventType}`,
+        targetDate: order.eventDate,
+        daysRemaining: Math.max(0, days),
+      });
+    } else {
+      // Past event: calculate next annual anniversary
+      let targetYear = refYear;
+      let nextAnniv = new Date(targetYear, evMonth - 1, evDay);
+      if (nextAnniv.getTime() < refDate.getTime()) {
+        targetYear += 1;
+        nextAnniv = new Date(targetYear, evMonth - 1, evDay);
+      }
+      const yearsCount = targetYear - evYear;
+      if (yearsCount > 0) {
+        const diffMs = nextAnniv.getTime() - refDate.getTime();
+        const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const targetDateStr = `${targetYear}-${String(evMonth).padStart(2, '0')}-${String(evDay).padStart(2, '0')}`;
+        milestones.push({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          eventType: order.eventType,
+          eventDate: order.eventDate,
+          type: 'ANNUAL_ANNIVERSARY',
+          title: `${yearsCount}${getOrdinalSuffix(yearsCount)} Anniversary: ${order.eventType}`,
+          targetDate: targetDateStr,
+          daysRemaining: Math.max(0, days),
+          yearsCount,
+        });
+      }
+    }
+  }
+
+  // Sort upcoming milestones by daysRemaining ascending
+  return milestones.sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+
 

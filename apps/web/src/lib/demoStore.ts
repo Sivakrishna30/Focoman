@@ -1,7 +1,7 @@
 "use client";
 
 import { Order, Customer, StudioMember, Task, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
-import { generateWorkflowTasks, getStudioCalendarDate } from "@focoman/domain";
+import { generateWorkflowTasks, getStudioCalendarDate, isContactMatch } from "@focoman/domain";
 import {
   DEMO_STUDIO_SLUG,
   DEMO_STUDIO,
@@ -138,6 +138,16 @@ export function createDemoOrder(input: {
   const now = new Date().toISOString();
   const todayStr = getStudioCalendarDate();
 
+  // Deduplicate and link to existing customer if contact info matches
+  const existingCustomer = currentCustomers.find((c) =>
+    !c.isDeleted &&
+    isContactMatch(
+      { phone: input.customerPhone, email: input.customerEmail },
+      { phone: c.phone, email: c.email }
+    )
+  );
+  const resolvedCustomerId = existingCustomer ? existingCustomer.id : customerId;
+
   const remainingAmount = Math.max(0, input.finalConfirmedPrice - input.advanceAmount);
   const paymentStatus: PaymentStatus =
     input.advanceAmount >= input.finalConfirmedPrice && input.finalConfirmedPrice > 0
@@ -154,9 +164,10 @@ export function createDemoOrder(input: {
     studioId: DEMO_STUDIO_SLUG,
     orderNumber: orderId,
     customer: {
-      id: customerId,
+      id: resolvedCustomerId,
       name: input.customerName,
       phone: input.customerPhone,
+      email: input.customerEmail,
     },
     eventType: input.eventType,
     eventDate: input.eventDate,
@@ -194,21 +205,37 @@ export function createDemoOrder(input: {
     isDeleted: false,
   }));
 
-  // Create Customer record
-  const newCustomer: Customer = {
-    id: customerId,
-    studioId: DEMO_STUDIO_SLUG,
-    name: input.customerName,
-    phone: input.customerPhone,
-    email: input.customerEmail,
-    address: input.eventLocation,
-    createdAt: now,
-    updatedAt: now,
-  };
+  // Update or create Customer record
+  let updatedCustomers = currentCustomers;
+  if (existingCustomer) {
+    updatedCustomers = currentCustomers.map((c) =>
+      c.id === existingCustomer.id
+        ? {
+            ...c,
+            phone: input.customerPhone || c.phone,
+            email: input.customerEmail || c.email,
+            address: input.eventLocation || c.address,
+            updatedAt: now,
+          }
+        : c
+    );
+  } else {
+    const newCustomer: Customer = {
+      id: customerId,
+      studioId: DEMO_STUDIO_SLUG,
+      name: input.customerName,
+      phone: input.customerPhone,
+      email: input.customerEmail,
+      address: input.eventLocation,
+      createdAt: now,
+      updatedAt: now,
+    };
+    updatedCustomers = [newCustomer, ...currentCustomers];
+  }
 
   saveDemoOrders([newOrder, ...currentOrders]);
   saveDemoTasks([...currentTasks, ...newTasks]);
-  saveDemoCustomers([newCustomer, ...currentCustomers]);
+  saveDemoCustomers(updatedCustomers);
 
   return { success: true, order: newOrder, tasks: newTasks };
 }
@@ -442,8 +469,23 @@ export function createDemoCustomer(input: {
   phone?: string;
   email?: string;
   address?: string;
-}): { success: boolean; customer: Customer } {
+}): { success: boolean; customer?: Customer; error?: string } {
   const currentCustomers = getDemoCustomers();
+  const duplicate = currentCustomers.find((c) =>
+    !c.isDeleted &&
+    isContactMatch(
+      { phone: input.phone, email: input.email },
+      { phone: c.phone, email: c.email }
+    )
+  );
+
+  if (duplicate) {
+    return {
+      success: false,
+      error: `A client with matching contact details already exists (${duplicate.name}).`,
+    };
+  }
+
   const id = `CUS-LUM-${String(100 + currentCustomers.length + 1).padStart(3, "0")}`;
   const now = new Date().toISOString();
 
@@ -465,8 +507,25 @@ export function createDemoCustomer(input: {
 export function updateDemoCustomer(
   customerId: string,
   updates: Partial<Customer>
-): { success: boolean; customer?: Customer } {
+): { success: boolean; customer?: Customer; error?: string } {
   const current = getDemoCustomers();
+  if (updates.phone || updates.email) {
+    const conflict = current.find((c) =>
+      c.id !== customerId &&
+      !c.isDeleted &&
+      isContactMatch(
+        { phone: updates.phone, email: updates.email },
+        { phone: c.phone, email: c.email }
+      )
+    );
+    if (conflict) {
+      return {
+        success: false,
+        error: `Contact details already in use by another client (${conflict.name}).`,
+      };
+    }
+  }
+
   let updatedCustomer: Customer | undefined;
   const next = current.map((c) => {
     if (c.id === customerId) {
@@ -479,7 +538,7 @@ export function updateDemoCustomer(
     saveDemoCustomers(next);
     return { success: true, customer: updatedCustomer };
   }
-  return { success: false };
+  return { success: false, error: "Customer not found." };
 }
 
 export function softDeleteDemoCustomer(customerId: string): boolean {
