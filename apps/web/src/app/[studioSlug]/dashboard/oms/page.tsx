@@ -1265,9 +1265,7 @@ const DEFAULT_ORDER_FORM = {
                     <span className="text-[10px] font-semibold text-text-tertiary">
                       {newOrderForm.services.length} Selected
                     </span>
-                  </div>
-
-                  {/* Combobox Input Field Trigger */}
+                               {/* Combobox Input Field Trigger */}
                   <div className="relative">
                     <input
                       type="text"
@@ -1306,31 +1304,6 @@ const DEFAULT_ORDER_FORM = {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-                  </div>
-
-                  {/* Selected Options Displayed Below the Input Field */}
-                  {newOrderForm.services.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {newOrderForm.services.map((svc) => (
-                        <span
-                          key={svc}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue-primary border border-brand-blue-soft"
-                        >
-                          <span>{svc}</span>
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleService(svc);
-                            }}
-                            className="text-xs font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5 leading-none"
-                            title={`Remove ${svc}`}
-                          >
-                            ×
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
 
                     {/* Dropdown Options Popup */}
                     {showServicesDropdown && (
@@ -1408,8 +1381,32 @@ const DEFAULT_ORDER_FORM = {
                         </div>
                       </div>
                     )}
-                </div>
+                  </div>
 
+                  {/* Selected Options Displayed Below the Input Field */}
+                  {newOrderForm.services.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {newOrderForm.services.map((svc) => (
+                        <span
+                          key={svc}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue-primary border border-brand-blue-soft"
+                        >
+                          <span>{svc}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleService(svc);
+                            }}
+                            className="text-xs font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5 leading-none"
+                            title={`Remove ${svc}`}
+                          >
+                            ×
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {/* Pricing & Advance with Validation */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
