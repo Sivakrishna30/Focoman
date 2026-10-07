@@ -1267,21 +1267,38 @@ const DEFAULT_ORDER_FORM = {
                     </span>
                   </div>
 
-                  {/* Clean Input Field Selector Trigger */}
-                  <div
-                    onClick={() => setShowServicesDropdown((prev) => !prev)}
-                    className="w-full h-10 rounded-xl border border-border-default bg-white px-3.5 py-2 flex items-center justify-between cursor-pointer hover:border-brand-blue-primary focus-within:border-brand-blue-primary transition select-none"
-                    title="Click to choose or modify studio services"
-                  >
-                    <span className={`text-xs ${newOrderForm.services.length === 0 ? "text-text-tertiary" : "font-medium text-text-primary"}`}>
-                      {newOrderForm.services.length === 0
-                        ? "Select studio services & deliverables..."
-                        : `${newOrderForm.services.length} studio service${newOrderForm.services.length > 1 ? "s" : ""} selected — click to change`}
-                    </span>
-
-                    <div className="flex items-center gap-1 shrink-0 text-text-tertiary">
+                  {/* Combobox Input Field Trigger */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Select or type custom service & press Enter..."
+                      value={newOrderForm.customServiceInput}
+                      onChange={(e) => {
+                        setNewOrderForm({ ...newOrderForm, customServiceInput: e.target.value });
+                        if (!showServicesDropdown) setShowServicesDropdown(true);
+                      }}
+                      onFocus={() => setShowServicesDropdown(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const custom = newOrderForm.customServiceInput.trim();
+                          if (custom && !newOrderForm.services.includes(custom)) {
+                            setNewOrderForm({
+                              ...newOrderForm,
+                              services: [...newOrderForm.services, custom],
+                              customServiceInput: "",
+                            });
+                          }
+                        }
+                      }}
+                      className="w-full rounded-xl border border-border-default px-3.5 py-2 pr-10 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                    <div 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-text-tertiary hover:text-brand-blue-primary"
+                      onClick={() => setShowServicesDropdown((prev) => !prev)}
+                    >
                       <svg
-                        className={`w-4 h-4 transition-transform ${showServicesDropdown ? "rotate-180 text-brand-blue-primary" : ""}`}
+                        className={`w-4 h-4 transition-transform ${showServicesDropdown ? "rotate-180" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1330,7 +1347,9 @@ const DEFAULT_ORDER_FORM = {
                       </div>
 
                       <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
-                        {PRESET_STUDIO_SERVICES.map((svc) => {
+                        {PRESET_STUDIO_SERVICES
+                          .filter((svc) => svc.toLowerCase().includes(newOrderForm.customServiceInput.toLowerCase()))
+                          .map((svc) => {
                           const isSvcSelected = newOrderForm.services.includes(svc);
                           return (
                             <label
@@ -1377,48 +1396,15 @@ const DEFAULT_ORDER_FORM = {
                               <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Custom</span>
                             </label>
                           ))}
-                      </div>
-
-                      {/* Add Custom Service Input */}
-                      <div className="pt-2 border-t border-border-default flex gap-1.5">
-                        <input
-                          type="text"
-                          placeholder="Add custom service (e.g. Traditional LED Wall)"
-                          value={newOrderForm.customServiceInput}
-                          onChange={(e) =>
-                            setNewOrderForm({ ...newOrderForm, customServiceInput: e.target.value })
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const custom = newOrderForm.customServiceInput.trim();
-                              if (custom && !newOrderForm.services.includes(custom)) {
-                                setNewOrderForm({
-                                  ...newOrderForm,
-                                  services: [...newOrderForm.services, custom],
-                                  customServiceInput: "",
-                                });
-                              }
-                            }
-                          }}
-                          className="flex-1 rounded-xl border border-border-default px-2.5 py-1.5 text-xs outline-none focus:border-brand-blue-primary"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const custom = newOrderForm.customServiceInput.trim();
-                            if (custom && !newOrderForm.services.includes(custom)) {
-                              setNewOrderForm({
-                                ...newOrderForm,
-                                services: [...newOrderForm.services, custom],
-                                customServiceInput: "",
-                              });
-                            }
-                          }}
-                          className="rounded-xl bg-surface-app px-3 py-1.5 text-xs font-bold text-text-primary border border-border-default hover:bg-slate-100"
-                        >
-                          + Add
-                        </button>
+                          
+                        {/* Prompt to press enter if typing custom that doesn't match presets */}
+                        {newOrderForm.customServiceInput.trim() && 
+                         !PRESET_STUDIO_SERVICES.some(s => s.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
+                         !newOrderForm.services.includes(newOrderForm.customServiceInput.trim()) && (
+                          <div className="px-2.5 py-1.5 text-[10px] font-medium text-text-tertiary italic">
+                            Press Enter to add "{newOrderForm.customServiceInput.trim()}"
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
