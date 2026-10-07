@@ -1265,7 +1265,9 @@ const DEFAULT_ORDER_FORM = {
                     <span className="text-[10px] font-semibold text-text-tertiary">
                       {newOrderForm.services.length} Selected
                     </span>
-                               {/* Combobox Input Field Trigger */}
+                  </div>
+
+                  {/* Combobox Input Field Trigger */}
                   <div className="relative">
                     <input
                       type="text"
