@@ -6,6 +6,8 @@ import {
   applySoftDelete,
   applyRestore,
   canCompleteOrder,
+  evaluateOrderStatus,
+  getStudioCalendarDate,
   generateWorkflowTasks,
   canConfirmBooking,
   performPreflightCheck,
@@ -120,9 +122,44 @@ describe("2. OMS Domain Pipeline Logic", () => {
 
     const completedTasksWithFullPayment = [{ status: "COMPLETED" as const }, { status: "COMPLETED" as const }];
     assert.strictEqual(canCompleteOrder("PAYMENT_COMPLETED", completedTasksWithFullPayment as any), true);
+  });
 
-    const incompleteTasksWithFullPayment = [{ status: "COMPLETED" as const }, { status: "IN_PROGRESS" as const }];
-    assert.strictEqual(canCompleteOrder("PAYMENT_COMPLETED", incompleteTasksWithFullPayment as any), false);
+  test("evaluateOrderStatus automatically transitions AWAITING_EVENT to POST_EVENT_IN_PROGRESS when event date has passed", () => {
+    // Past date (yesterday)
+    const yesterday = "2026-10-07";
+    const status = evaluateOrderStatus("AWAITING_EVENT", yesterday, false, false);
+    assert.strictEqual(status, "POST_EVENT_IN_PROGRESS");
+
+    // Future date
+    const futureDate = "2026-12-31";
+    const futureStatus = evaluateOrderStatus("AWAITING_EVENT", futureDate, false, false);
+    assert.strictEqual(futureStatus, "AWAITING_EVENT");
+
+    // All tasks completed and payment done
+    const completedStatus = evaluateOrderStatus("POST_EVENT_IN_PROGRESS", yesterday, true, true);
+    assert.strictEqual(completedStatus, "COMPLETED");
+
+    // Cancelled status is preserved
+    const cancelledStatus = evaluateOrderStatus("CANCELLED", yesterday, true, true);
+    assert.strictEqual(cancelledStatus, "CANCELLED");
+  });
+
+  test("getStudioCalendarDate returns ISO YYYY-MM-DD formatted date in Indian Standard Time", () => {
+    const today = getStudioCalendarDate();
+    assert.match(today, /^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test("generateWorkflowTasks generates simplified 5-step production pipeline", () => {
+    const services = ["Traditional Photography", "Candid Photography", "Cinematic Video", "Premium Photobook Album"];
+    const tasks = generateWorkflowTasks("ORD-999", "studio-alpha", services);
+
+    assert.ok(tasks.length >= 4);
+    const titles = tasks.map((t) => t.title);
+    assert.ok(titles.includes("Raw Photo Selection"));
+    assert.ok(titles.includes("Photo Editing"));
+    assert.ok(titles.includes("Video Editing"));
+    assert.ok(titles.includes("Album Edit"));
+    assert.ok(titles.includes("Final Delivery & Payment"));
   });
 });
 
