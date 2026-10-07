@@ -105,6 +105,10 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       ? `FOC-${studioPrefix}-${passkeyPin}`
       : passkey;
 
+    const todayStr = now.toISOString().split("T")[0];
+    const initialOrderStatus: OrderStatus =
+      validated.eventDate < todayStr ? "POST_EVENT_IN_PROGRESS" : "AWAITING_EVENT";
+
     const newOrder: Order = {
       id: orderId,
       studioId: validated.studioId.toLowerCase(),
@@ -127,7 +131,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
         remainingAmount,
       },
       paymentStatus: initialPaymentStatus,
-      orderStatus: "AWAITING_EVENT",
+      orderStatus: initialOrderStatus,
       assignedResources: [],
       trackingPasskey: finalPasskey,
       ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
@@ -181,7 +185,25 @@ export async function getStudioOrdersAction(
 ): Promise<Order[]> {
   const decoded = await requireVerifiedUser(idToken);
   await requireStudioOwner(decoded.uid, studioSlug);
-  return await getOrdersByStudio(studioSlug);
+  const orders = await getOrdersByStudio(studioSlug);
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const updatedOrders: Order[] = [];
+  for (const order of orders) {
+    if (order.orderStatus === "AWAITING_EVENT" && order.eventDate < todayStr) {
+      const transitioned: Order = {
+        ...order,
+        orderStatus: "POST_EVENT_IN_PROGRESS",
+        updatedAt: new Date().toISOString(),
+      };
+      void updateOrder(order.id, { orderStatus: "POST_EVENT_IN_PROGRESS" });
+      updatedOrders.push(transitioned);
+    } else {
+      updatedOrders.push(order);
+    }
+  }
+
+  return updatedOrders;
 }
 
 export async function getDeletedStudioOrdersAction(
@@ -207,8 +229,18 @@ export async function getOrderAction(
     if (order.studioId.toLowerCase() !== studioSlug.toLowerCase()) {
       return { order: null, tasks: [] };
     }
+    const todayStr = new Date().toISOString().split("T")[0];
+    let currentOrder = order;
+    if (order.orderStatus === "AWAITING_EVENT" && order.eventDate < todayStr) {
+      currentOrder = {
+        ...order,
+        orderStatus: "POST_EVENT_IN_PROGRESS",
+        updatedAt: new Date().toISOString(),
+      };
+      void updateOrder(order.id, { orderStatus: "POST_EVENT_IN_PROGRESS" });
+    }
     const tasks = await getTasksByOrder(order.id);
-    return { order, tasks };
+    return { order: currentOrder, tasks };
   } catch (err) {
     console.error("[getOrderAction] Error:", err);
     return { order: null, tasks: [] };

@@ -1,6 +1,7 @@
 "use client";
 
 import { Order, Customer, StudioMember, Task, OrderStatus, TaskStatus, PaymentStatus } from "@focoman/types";
+import { generateWorkflowTasks } from "@focoman/domain";
 import {
   DEMO_STUDIO_SLUG,
   DEMO_STUDIO,
@@ -87,7 +88,27 @@ function setItem<T>(key: string, value: T): void {
 // 1. ORDERS
 // ==========================================
 export function getDemoOrders(): Order[] {
-  return getItem<Order[]>(STORAGE_KEYS.ORDERS, DEMO_ORDERS);
+  const orders = getItem<Order[]>(STORAGE_KEYS.ORDERS, DEMO_ORDERS);
+  const todayStr = new Date().toISOString().split("T")[0];
+  let changed = false;
+
+  const evaluated = orders.map((order) => {
+    if (order.orderStatus === "AWAITING_EVENT" && order.eventDate < todayStr) {
+      changed = true;
+      return {
+        ...order,
+        orderStatus: "POST_EVENT_IN_PROGRESS" as OrderStatus,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return order;
+  });
+
+  if (changed) {
+    saveDemoOrders(evaluated);
+  }
+
+  return evaluated;
 }
 
 export function saveDemoOrders(orders: Order[]): void {
@@ -115,6 +136,7 @@ export function createDemoOrder(input: {
   const customerId = `CUS-LUM-${nextNum}`;
   const passkey = `FOC-DEMO-${String(nextNum).padStart(2, "0")}`;
   const now = new Date().toISOString();
+  const todayStr = now.split("T")[0];
 
   const remainingAmount = Math.max(0, input.finalConfirmedPrice - input.advanceAmount);
   const paymentStatus: PaymentStatus =
@@ -123,6 +145,9 @@ export function createDemoOrder(input: {
       : input.advanceAmount > 0
       ? "PARTIAL"
       : "PENDING";
+
+  const initialOrderStatus: OrderStatus =
+    input.eventDate < todayStr ? "POST_EVENT_IN_PROGRESS" : "AWAITING_EVENT";
 
   const newOrder: Order = {
     id: orderId,
@@ -145,7 +170,7 @@ export function createDemoOrder(input: {
       remainingAmount,
     },
     paymentStatus,
-    orderStatus: "AWAITING_EVENT",
+    orderStatus: initialOrderStatus,
     assignedResources: [
       {
         memberId: "demo-user-arjun",
@@ -159,71 +184,15 @@ export function createDemoOrder(input: {
     updatedAt: now,
   };
 
-  // Generate dynamic tasks
-  const newTasks: Task[] = [];
-  let seq = 1;
-  const servicesLower = input.services.map((s) => s.toLowerCase());
-
-  if (servicesLower.some((s) => s.includes("photo"))) {
-    newTasks.push({
-      id: `TSK-${orderId}-${seq}`,
-      orderId,
-      studioId: DEMO_STUDIO_SLUG,
-      title: "RAW Photos Review & Selection",
-      serviceCategory: "PHOTOGRAPHY",
-      assignedMemberId: "demo-user-priya",
-      assignedMemberName: "Priya Nair",
-      status: "ASSIGNED",
-      sequenceOrder: seq++,
-      createdAt: now,
-      updatedAt: now,
-    });
-    newTasks.push({
-      id: `TSK-${orderId}-${seq}`,
-      orderId,
-      studioId: DEMO_STUDIO_SLUG,
-      title: "Photo Retouching & Color Grading",
-      serviceCategory: "PHOTOGRAPHY",
-      assignedMemberId: "demo-user-rohan",
-      assignedMemberName: "Rohan Mehta",
-      status: "ASSIGNED",
-      sequenceOrder: seq++,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
-  if (servicesLower.some((s) => s.includes("video"))) {
-    newTasks.push({
-      id: `TSK-${orderId}-${seq}`,
-      orderId,
-      studioId: DEMO_STUDIO_SLUG,
-      title: "Cinematic Highlight Video Editing",
-      serviceCategory: "VIDEOGRAPHY",
-      assignedMemberId: "demo-user-aisha",
-      assignedMemberName: "Aisha Khan",
-      status: "ASSIGNED",
-      sequenceOrder: seq++,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
-
-  if (servicesLower.some((s) => s.includes("album"))) {
-    newTasks.push({
-      id: `TSK-${orderId}-${seq}`,
-      orderId,
-      studioId: DEMO_STUDIO_SLUG,
-      title: "Album Design & Photo Selection",
-      serviceCategory: "ALBUM",
-      assignedMemberId: "demo-user-deepak",
-      assignedMemberName: "Deepak Verma",
-      status: "ASSIGNED",
-      sequenceOrder: seq++,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  // Generate dynamic tasks using standardized domain workflow
+  const domainTasks = generateWorkflowTasks(orderId, DEMO_STUDIO_SLUG, input.services);
+  const newTasks: Task[] = domainTasks.map((t, idx) => ({
+    ...t,
+    id: `TSK-${orderId}-${idx + 1}`,
+    createdAt: now,
+    updatedAt: now,
+    isDeleted: false,
+  }));
 
   // Create Customer record
   const newCustomer: Customer = {
