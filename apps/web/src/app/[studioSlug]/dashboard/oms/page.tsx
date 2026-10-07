@@ -134,6 +134,7 @@ const DEFAULT_ORDER_FORM = {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [newOrderForm, setNewOrderForm] = useState(DEFAULT_ORDER_FORM);
+  const [showServicesDropdown, setShowServicesDropdown] = useState(false);
 
   // In-App Cancellation Dialog State
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
@@ -152,6 +153,7 @@ const DEFAULT_ORDER_FORM = {
       passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
     });
     setFormError(null);
+    setShowServicesDropdown(false);
     setShowCreateModal(true);
   };
 
@@ -1188,90 +1190,167 @@ const DEFAULT_ORDER_FORM = {
                   />
                 </div>
 
-                {/* Studio Services & Deliverables Multi-Select */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                {/* Studio Services & Deliverables Dropdown with Multi-Select */}
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-text-primary">
                       Studio Services &amp; Deliverables *
                     </label>
-                    <span className="text-[10px] text-text-tertiary">
+                    <span className="text-[10px] font-semibold text-text-tertiary">
                       {newOrderForm.services.length} Selected
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {PRESET_STUDIO_SERVICES.map((svc) => {
-                      const isSvcSelected = newOrderForm.services.includes(svc);
-                      return (
-                        <button
-                          key={svc}
-                          type="button"
-                          onClick={() => toggleService(svc)}
-                          className={`rounded-xl px-2.5 py-1 text-xs font-semibold border transition ${
-                            isSvcSelected
-                              ? "bg-brand-blue-50 text-brand-blue-primary border-brand-blue-soft ring-1 ring-brand-blue-soft"
-                              : "bg-surface-app text-text-secondary border-border-default hover:bg-slate-100"
-                          }`}
-                        >
-                          {svc}
-                        </button>
-                      );
-                    })}
-                    {newOrderForm.services
-                      .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
-                      .map((customSvc) => (
-                        <button
-                          key={customSvc}
-                          type="button"
-                          onClick={() => toggleService(customSvc)}
-                          className="rounded-xl px-2.5 py-1 text-xs font-semibold bg-brand-blue-50 text-brand-blue-primary border border-brand-blue-soft ring-1 ring-brand-blue-soft flex items-center gap-1.5"
-                        >
-                          <span>{customSvc}</span>
-                          <span className="text-[10px] text-brand-blue-primary font-bold">×</span>
-                        </button>
-                      ))}
+
+                  {/* Single Display Field Trigger */}
+                  <div
+                    onClick={() => setShowServicesDropdown((prev) => !prev)}
+                    className="w-full min-h-[42px] rounded-xl border border-border-default bg-white px-3 py-2 flex items-center justify-between gap-2 cursor-pointer hover:border-brand-blue-primary focus-within:border-brand-blue-primary transition select-none"
+                    title="Click to choose or modify studio services"
+                  >
+                    <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                      {newOrderForm.services.length === 0 ? (
+                        <span className="text-xs text-text-tertiary">Select studio services &amp; deliverables...</span>
+                      ) : (
+                        newOrderForm.services.map((svc) => (
+                          <span
+                            key={svc}
+                            className="inline-flex items-center gap-1 rounded-lg bg-brand-blue-50 px-2 py-0.5 text-[11px] font-semibold text-brand-blue-primary border border-brand-blue-soft"
+                          >
+                            <span>{svc}</span>
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleService(svc);
+                              }}
+                              className="text-[11px] font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5"
+                              title={`Remove ${svc}`}
+                            >
+                              ×
+                            </span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0 text-text-tertiary">
+                      <svg
+                        className={`w-4 h-4 transition-transform ${showServicesDropdown ? "rotate-180 text-brand-blue-primary" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
 
-                  {/* Add Custom Service Input */}
-                  <div className="mt-2 flex gap-1.5">
-                    <input
-                      type="text"
-                      placeholder="Add custom service (e.g. Traditional LED Wall)"
-                      value={newOrderForm.customServiceInput}
-                      onChange={(e) =>
-                        setNewOrderForm({ ...newOrderForm, customServiceInput: e.target.value })
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const custom = newOrderForm.customServiceInput.trim();
-                          if (custom && !newOrderForm.services.includes(custom)) {
-                            setNewOrderForm({
-                              ...newOrderForm,
-                              services: [...newOrderForm.services, custom],
-                              customServiceInput: "",
-                            });
+                  {/* Dropdown Options Popup */}
+                  {showServicesDropdown && (
+                    <div className="absolute z-20 left-0 right-0 mt-1.5 rounded-2xl border border-border-default bg-white shadow-xl p-2.5 space-y-1.5 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                        <span>Select Services ({newOrderForm.services.length} selected)</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowServicesDropdown(false)}
+                          className="text-brand-blue-primary hover:underline lowercase font-semibold"
+                        >
+                          done
+                        </button>
+                      </div>
+
+                      <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
+                        {PRESET_STUDIO_SERVICES.map((svc) => {
+                          const isSvcSelected = newOrderForm.services.includes(svc);
+                          return (
+                            <label
+                              key={svc}
+                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition select-none ${
+                                isSvcSelected
+                                  ? "bg-brand-blue-50/80 text-brand-blue-primary"
+                                  : "text-text-primary hover:bg-surface-app"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={isSvcSelected}
+                                  onChange={() => toggleService(svc)}
+                                  className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
+                                />
+                                <span className="truncate">{svc}</span>
+                              </div>
+                              {isSvcSelected && (
+                                <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Selected</span>
+                              )}
+                            </label>
+                          );
+                        })}
+
+                        {/* Custom Services Added by User */}
+                        {newOrderForm.services
+                          .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
+                          .map((customSvc) => (
+                            <label
+                              key={customSvc}
+                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-brand-blue-50/80 text-brand-blue-primary cursor-pointer transition select-none"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={true}
+                                  onChange={() => toggleService(customSvc)}
+                                  className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
+                                />
+                                <span className="truncate">{customSvc}</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Custom</span>
+                            </label>
+                          ))}
+                      </div>
+
+                      {/* Add Custom Service Input */}
+                      <div className="pt-2 border-t border-border-default flex gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="Add custom service (e.g. Traditional LED Wall)"
+                          value={newOrderForm.customServiceInput}
+                          onChange={(e) =>
+                            setNewOrderForm({ ...newOrderForm, customServiceInput: e.target.value })
                           }
-                        }
-                      }}
-                      className="flex-1 rounded-xl border border-border-default px-3 py-1.5 text-xs outline-none focus:border-brand-blue-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const custom = newOrderForm.customServiceInput.trim();
-                        if (custom && !newOrderForm.services.includes(custom)) {
-                          setNewOrderForm({
-                            ...newOrderForm,
-                            services: [...newOrderForm.services, custom],
-                            customServiceInput: "",
-                          });
-                        }
-                      }}
-                      className="rounded-xl bg-surface-app px-3 py-1.5 text-xs font-bold text-text-primary border border-border-default hover:bg-slate-100"
-                    >
-                      + Add
-                    </button>
-                  </div>
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const custom = newOrderForm.customServiceInput.trim();
+                              if (custom && !newOrderForm.services.includes(custom)) {
+                                setNewOrderForm({
+                                  ...newOrderForm,
+                                  services: [...newOrderForm.services, custom],
+                                  customServiceInput: "",
+                                });
+                              }
+                            }
+                          }}
+                          className="flex-1 rounded-xl border border-border-default px-2.5 py-1.5 text-xs outline-none focus:border-brand-blue-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const custom = newOrderForm.customServiceInput.trim();
+                            if (custom && !newOrderForm.services.includes(custom)) {
+                              setNewOrderForm({
+                                ...newOrderForm,
+                                services: [...newOrderForm.services, custom],
+                                customServiceInput: "",
+                              });
+                            }
+                          }}
+                          className="rounded-xl bg-surface-app px-3 py-1.5 text-xs font-bold text-text-primary border border-border-default hover:bg-slate-100"
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pricing & Advance with Validation */}
