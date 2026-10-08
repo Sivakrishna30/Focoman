@@ -12,9 +12,26 @@ import { User } from "firebase/auth";
 
 function UserDropdownMenu({ user }: { user: User }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [defaultStudio, setDefaultStudio] = useState<string | null>(null);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && user) {
+      const checkDefault = () => {
+        const stored = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
+        if (stored && stored !== "__cleared__" && stored.trim() !== "") {
+          setDefaultStudio(stored);
+        } else {
+          setDefaultStudio(null);
+        }
+      };
+      checkDefault();
+      window.addEventListener("storage", checkDefault);
+      return () => window.removeEventListener("storage", checkDefault);
+    }
+  }, [user, isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,13 +65,15 @@ function UserDropdownMenu({ user }: { user: User }) {
             <p className="text-[10px] text-text-tertiary truncate">{user.email}</p>
           </div>
           
-          <Link
-            href="/dashboard"
-            onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-xs font-semibold text-brand-blue-primary hover:bg-brand-blue-background/40 transition"
-          >
-            {t("nav.dashboard", "Studio Dashboard")}
-          </Link>
+          {defaultStudio && (
+            <Link
+              href={`/${defaultStudio}/dashboard`}
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2 text-xs font-semibold text-brand-blue-primary hover:bg-brand-blue-background/40 transition"
+            >
+              {t("nav.dashboard", "Studio Dashboard")}
+            </Link>
+          )}
           <Link
             href="/workspaces"
             onClick={() => setIsOpen(false)}

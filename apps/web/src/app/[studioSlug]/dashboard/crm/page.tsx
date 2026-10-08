@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, use, useMemo } from "react";
 import Link from "next/link";
 import { Customer, Order } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
-import { getStudioOrdersAction } from "@/actions/orderActions";
+import { getStudioOrdersAction, getDeletedStudioOrdersAction, restoreOrderAction } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import {
   isDemoStudio,
@@ -31,6 +31,8 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [deletedOrders, setDeletedOrders] = useState<Order[]>([]);
+  const [restoringOrderId, setRestoringOrderId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Customer | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
       if (isDemo) {
         setCustomers(getDemoCustomers());
         setOrders(getDemoOrders());
+        setDeletedOrders([]);
         setLoading(false);
         return;
       }
@@ -62,18 +65,49 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
         setLoading(false);
         return;
       }
-      const [customersData, ordersData] = await Promise.all([
+      const [customersData, ordersData, deletedOrdersData] = await Promise.all([
         getStudioCustomersAction(studioSlug, token),
-        getStudioOrdersAction(studioSlug, token)
+        getStudioOrdersAction(studioSlug, token),
+        getDeletedStudioOrdersAction(studioSlug, token).catch(() => [] as Order[]),
       ]);
       setCustomers(customersData);
       setOrders(ordersData);
+      setDeletedOrders(deletedOrdersData);
     } catch (err) {
       console.error("[CrmPage] Failed to load data:", err);
     } finally {
       setLoading(false);
     }
   }, [studioSlug, isDemo, workspaceToken, getIdToken]);
+
+  const handleRestoreOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to restore this order back to active OMS workflows?")) {
+      return;
+    }
+    try {
+      setRestoringOrderId(orderId);
+      const token = workspaceToken ?? (await getIdToken(false));
+      if (!token) {
+        alert("Authentication session missing. Please refresh.");
+        return;
+      }
+      const res = await restoreOrderAction({
+        orderId,
+        studioId: studioSlug,
+        idToken: token,
+      });
+      if (res.success) {
+        await loadData(token);
+      } else {
+        alert(res.error || "Failed to restore order");
+      }
+    } catch (err) {
+      console.error("[CrmPage] Restore order error:", err);
+      alert("Failed to restore order");
+    } finally {
+      setRestoringOrderId(null);
+    }
+  };
 
   useEffect(() => {
     if (isDemo) {
@@ -337,26 +371,82 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
             </div>
 
             <div className="rounded-2xl border border-border-default p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary mb-3">Order History</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">Order History</h3>
+                <span className="text-[10px] font-semibold text-text-tertiary">
+                  {orders.filter(o => o.customer.id === selected.id).length} Active
+                  {deletedOrders.filter(o => o.customer.id === selected.id || (o.customer.phone && o.customer.phone === selected.phone)).length > 0 && 
+                    ` · ${deletedOrders.filter(o => o.customer.id === selected.id || (o.customer.phone && o.customer.phone === selected.phone)).length} Deleted`}
+                </span>
+              </div>
+
               <div className="space-y-2.5">
-                {orders.filter(o => o.customer.id === selected.id).length > 0 ? (
-                  orders.filter(o => o.customer.id === selected.id).map(order => (
-                    <div key={order.id} className="flex justify-between items-center p-3.5 rounded-xl border border-border-default bg-surface-app/50">
-                      <div>
-                        <p className="text-sm font-bold text-text-primary">{order.eventType}</p>
-                        <p className="text-[11px] text-text-secondary mt-0.5 font-mono">
-                          <span className="font-bold text-brand-blue-primary">{order.orderNumber}</span> · {new Date(order.eventDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-text-primary">₹{order.pricing.finalConfirmedPrice.toLocaleString()}</p>
-                        <span className={`mt-1 inline-block ${STATUS_COLORS[order.orderStatus] || "badge-status-neutral"}`}>
-                          {STATUS_LABELS[order.orderStatus] || order.orderStatus.replace(/_/g, ' ')}
-                        </span>
-                      </div>
+                {/* Active Orders */}
+                {orders.filter(o => o.customer.id === selected.id).map(order => (
+                  <div key={order.id} className="flex justify-between items-center p-3.5 rounded-xl border border-border-default bg-surface-app/50">
+                    <div>
+                      <p className="text-sm font-bold text-text-primary">{order.eventType}</p>
+                      <p className="text-[11px] text-text-secondary mt-0.5 font-mono">
+                        <span className="font-bold text-brand-blue-primary">{order.orderNumber}</span> · {new Date(order.eventDate).toLocaleDateString()}
+                      </p>
                     </div>
-                  ))
-                ) : (
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-text-primary">₹{order.pricing.finalConfirmedPrice.toLocaleString()}</p>
+                      <span className={`mt-1 inline-block ${STATUS_COLORS[order.orderStatus] || "badge-status-neutral"}`}>
+                        {STATUS_LABELS[order.orderStatus] || order.orderStatus.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Deleted Orders (14-Day Recovery View) */}
+                {deletedOrders
+                  .filter(o => o.customer.id === selected.id || (o.customer.phone && o.customer.phone === selected.phone) || (o.customer.email && o.customer.email === selected.email))
+                  .map(delOrder => {
+                    const deletedTimestamp = delOrder.deletedAt ? new Date(delOrder.deletedAt).getTime() : Date.now();
+                    const daysElapsed = Math.floor((Date.now() - deletedTimestamp) / (1000 * 60 * 60 * 24));
+                    const daysRemaining = Math.max(0, 14 - daysElapsed);
+                    const isRecoverable = daysElapsed <= 14;
+
+                    return (
+                      <div key={delOrder.id} className="p-3.5 rounded-xl border border-dashed border-red-200 bg-red-50/40 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded">
+                                {isRecoverable ? `Deleted (${daysRemaining}d to recover)` : "Archived / Expired"}
+                              </span>
+                            </div>
+                            <p className="text-sm font-bold text-text-primary">{delOrder.eventType}</p>
+                            <p className="text-[11px] text-text-secondary font-mono">
+                              <span className="font-semibold text-text-tertiary">{delOrder.orderNumber}</span> · {delOrder.eventDate ? new Date(delOrder.eventDate).toLocaleDateString() : "No date"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-text-secondary">₹{delOrder.pricing?.finalConfirmedPrice?.toLocaleString() || 0}</p>
+                            {isRecoverable && (
+                              <button
+                                type="button"
+                                disabled={restoringOrderId === delOrder.id}
+                                onClick={() => handleRestoreOrder(delOrder.id)}
+                                className="mt-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition"
+                              >
+                                {restoringOrderId === delOrder.id ? "Restoring..." : "Restore Order"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {!isRecoverable && (
+                          <p className="text-[10px] text-text-tertiary italic">
+                            14-day recovery window expired. Retained as archival reference only.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                {orders.filter(o => o.customer.id === selected.id).length === 0 &&
+                 deletedOrders.filter(o => o.customer.id === selected.id || (o.customer.phone && o.customer.phone === selected.phone)).length === 0 && (
                   <p className="text-xs text-text-tertiary">No orders found.</p>
                 )}
               </div>

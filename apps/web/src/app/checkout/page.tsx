@@ -11,14 +11,6 @@ export default function PricingCheckoutPage() {
       {/* Page Hero */}
       <section className="border-b border-border-divider bg-gradient-to-b from-white to-surface-app px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Link
-              href="/pricing"
-              className="text-xs font-bold text-brand-blue-primary hover:underline flex items-center gap-1"
-            >
-              ← Back to Pricing Overview
-            </Link>
-          </div>
           <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-4 py-1 text-xs font-bold uppercase tracking-widest text-brand-orange-primary">
             Modular Modules Checkout
           </span>
@@ -39,26 +31,11 @@ export default function PricingCheckoutPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border-default bg-white py-8">
+      <footer className="border-t border-border-divider bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="text-xs text-text-tertiary">
-              © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
-            </div>
-            <div className="flex items-center gap-6">
-              <Link href="/features" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                Features
-              </Link>
-              <Link href="/pricing" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                Pricing
-              </Link>
-              <Link href="/about" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                About Us
-              </Link>
-              <Link href="/#faq" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                FAQs
-              </Link>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+            <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
+            <p>Built for professional photography studios.</p>
           </div>
         </div>
       </footer>

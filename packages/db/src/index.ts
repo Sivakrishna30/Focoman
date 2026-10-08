@@ -1451,4 +1451,42 @@ export async function getCustomerOrdersHistory(customerId: string): Promise<Orde
 
 export * from './studioPlan';
 
+// ============================================================================
+// 13. PLATFORM PUBLIC STATS
+// ============================================================================
+
+export interface PlatformPublicStats {
+  marketplaceStudiosCount: number;
+  marketplaceLeadsCount: number;
+  activeStudiosCount: number;
+  registeredOrdersCount: number;
+}
+
+export async function getPlatformPublicStats(): Promise<PlatformPublicStats> {
+  try {
+    const db = getFirestoreServerInstance();
+    const [marketplaceSnap, leadsSnap, studiosSnap, ordersSnap] = await Promise.all([
+      db.collection('marketplace_profiles').where('isVisible', '==', true).count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('booking_requests').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('studios').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('orders').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+    ]);
+
+    return {
+      marketplaceStudiosCount: marketplaceSnap.data().count,
+      marketplaceLeadsCount: leadsSnap.data().count,
+      activeStudiosCount: studiosSnap.data().count,
+      registeredOrdersCount: ordersSnap.data().count,
+    };
+  } catch (err) {
+    console.warn('[getPlatformPublicStats] Error querying stats:', err);
+    return {
+      marketplaceStudiosCount: 0,
+      marketplaceLeadsCount: 0,
+      activeStudiosCount: 0,
+      registeredOrdersCount: 0,
+    };
+  }
+}
+
 

@@ -40,6 +40,11 @@ export default async function DashboardLayout({
     notFound();
   }
 
+  const isProPlan =
+    studio.planInfo?.plan === "COMPLETE" ||
+    studio.planInfo?.plan === "PROFESSIONAL" ||
+    (studio.planInfo?.selectedCapabilities && studio.planInfo.selectedCapabilities.length > 0);
+
   const serializedStudio: Studio = {
     id: studio.id,
     name: studio.name,
@@ -49,6 +54,7 @@ export default async function DashboardLayout({
     ownerEmail: access?.membership.role === "STUDIO_OWNER" ? studio.ownerEmail : "",
     ownerPhone: studio.ownerPhone || undefined,
     features: studio.features,
+    planInfo: studio.planInfo,
     createdAt: studio.createdAt || new Date().toISOString(),
     updatedAt: studio.updatedAt || new Date().toISOString(),
   };
@@ -59,14 +65,14 @@ export default async function DashboardLayout({
         <DashboardSidebar
           studioSlug={studioSlug}
           role={access?.membership.role || "STUDIO_OWNER"}
-          plan="complete"
+          plan={isProPlan ? "complete" : "basic"}
           studioName={serializedStudio.name}
           ownerName={serializedStudio.ownerName}
           features={serializedStudio.features}
           appEnv={APP_ENV}
         />
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">
-          <DashboardTopNav role={access?.membership.role || "STUDIO_OWNER"} />
+          <DashboardTopNav role={access?.membership.role || "STUDIO_OWNER"} planInfo={studio.planInfo} />
           {isDemo && <DemoBanner studioSlug={studioSlug} />}
           <div id="dashboard-main-content" className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>

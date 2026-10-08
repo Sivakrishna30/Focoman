@@ -4,6 +4,79 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-046 — Account Settings Redesign, Minimal Customer Order History & Conditional Studio Dashboard Dropdown
+
+- **Task:** CHG-046 — Dedicated Account Settings page, minimal personal customer order history panel, and conditional Studio Dashboard in profile dropdown
+- **Date:** 2026-10-08
+- **Area:** `apps/web/src/app/account-settings/page.tsx`, `apps/web/src/components/Navbar.tsx`, `apps/web/src/components/DashboardTopNav.tsx`
+- **Change:**
+  1. **Account Settings Page Redesign (`account-settings/page.tsx`)**:
+     - Retitled page from *"Account & Order History"* to *"Account Settings"* with focus on user profile management and credentials.
+     - Added inline profile name editing with Firebase Auth `updateProfile` synchronization.
+     - Added default studio workspace indicator linking directly to workspace management.
+  2. **Minimal Separate Customer Orders Panel (`account-settings/page.tsx`)**:
+     - Separated personal customer booking history into its own compact, minimal card titled *"Customer Orders & Bookings (Personal Customer History)"*.
+     - Added clear contextual explanation: specifically for sessions the user booked as a client/customer with studios on Focoman, kept strictly isolated from studio workspace operations.
+     - Clean empty state with compact icon, guidance, and quick marketplace link.
+  3. **Conditional Studio Dashboard in Profile Dropdown (`Navbar.tsx`, `DashboardTopNav.tsx`)**:
+     - Updated `UserDropdownMenu` in `Navbar.tsx` to inspect active default workspace preference (`focoman_default_workspace_${uid}`).
+     - The *"Studio Dashboard"* link is rendered only if the user has an active default studio set; otherwise, only *"My Workspaces"* is shown.
+     - Ensured *"Account Settings"* in `DashboardTopNav.tsx` is accessible to all studio members regardless of owner role.
+- **Verification:** Unit tests passed 31/31 (`npm test`), ESLint clean with 0 warnings/errors (`npm run lint`).
+
+---
+
+## CHG-045 — Checkout Dynamic Pricing Engine, Per-Module Strikethrough Pricing & Smart Studio Page Navigation
+
+- **Task:** CHG-045 — Dynamic Checkout Formula Calculation, Card Strikethrough Pricing, and Contextual Studio/Pricing Navigation
+- **Date:** 2026-10-08
+- **Area:** `apps/web/src/components/public/CheckoutBuilder.tsx`, `apps/web/src/app/checkout/page.tsx`, `apps/web/src/components/DashboardTopNav.tsx`
+- **Change:**
+  1. **Dynamic Formula Calculation Engine (`CheckoutBuilder.tsx`)**:
+     - Introduced extensible `computeCartPricing` and `computeModuleCardPrice` mathematical formula models rather than hardcoded checkout figures.
+     - Dynamically calculates regular subtotal, promo discount amount (100% MVP Launch), and net payable total (`finalPayableTotal`).
+     - Fixed proceed button calculation: When payable is `₹0`, dynamically displays `Activate Selected Modules (100% Free MVP Launch — ₹0/mo) →` instead of the previous standard sum of `₹3194/mo`.
+  2. **Per-Module Card Strikethrough Pricing (`CheckoutBuilder.tsx`)**:
+     - Every add-on module card (CRM, ERP, Reports, Drive, WhatsApp, Marketplace) now displays strikethrough pricing (`~~₹299~~`, `~~₹499~~`, `~~₹999~~`) alongside `₹0/mo` and an emerald `100% Free (MVP Launch)` badge.
+     - WhatsApp Notifications displays `Included in Bot · ₹0` when WhatsApp Bot is active.
+  3. **Contextual Studio & Pricing Navigation (`CheckoutBuilder.tsx`, `checkout/page.tsx`, `DashboardTopNav.tsx`)**:
+     - Removed static `/pricing` back link from the checkout page hero.
+     - Added an intelligent top navigation header: When navigating from a studio (e.g. `?studio=test-studio`), displays `← Back to test-studio Studio Dashboard` with browser history and fallback handling, plus direct links to the studio dashboard and pricing overview.
+     - Updated top navigation dropdown in `DashboardTopNav.tsx` to preserve `studioSlug` when linking to `/checkout`.
+     - Next Page Navigation: Upon activating modules, provides a direct CTA `Return to test-studio Studio Dashboard →` linking directly to `/${studioSlug}/dashboard`.
+  4. **Landing Page Banner & Badge Cleanup (`PricingTwoPanels.tsx`)**:
+     - Removed the *"🎉 Limited Time MVP Launch Offer"* announcement banner and the *"Free for Limited Period"* badge from the PROFESSIONAL pricing panel per user request.
+- **Verification:**
+  - Automated browser verification via browser subagent confirmed card strikethrough pricing, formula-calculated CTA button (`₹0/mo`), contextual back navigation, and success screen with direct studio dashboard return link.
+  - Tests passed (31/31), ESLint passed with 0 errors/warnings.
+
+---
+
+## CHG-044 — Top Nav Cleanup, Customer CRM Autocomplete, 14-Day Recovery View, Free MVP Pricing & Brand Logo Alignment
+
+- **Task:** CHG-044 — Header cleanup, OMS customer suggestion & non-blocking warning, 14-day soft-delete recovery in CRM, MVP free pricing, and authentic brand logo integration
+- **Date:** 2026-10-08
+- **Area:** `apps/web/src/components/DashboardTopNav.tsx`, `apps/web/src/components/DashboardSidebar.tsx`, `apps/web/src/components/FocomanLogo.tsx`, `apps/web/src/components/public/PricingTwoPanels.tsx`, `apps/web/src/components/public/CheckoutBuilder.tsx`, `apps/web/src/app/[studioSlug]/dashboard/oms/page.tsx`, `apps/web/src/app/[studioSlug]/dashboard/crm/page.tsx`
+- **Change:**
+  1. **Top Header Cleanup (`DashboardTopNav.tsx`)**:
+     - Removed `Studio OS` label and `Plan & Capabilities` link (`/checkout`) from the studio dashboard top bar for a cleaner layout.
+  2. **OMS Customer Autocomplete & Soft Duplication Warning (`oms/page.tsx`)**:
+     - Converted Customer Full Name into a smart combobox that suggests existing studio CRM customers on focus and typing.
+     - Selecting an existing client automatically populates their contact number (with country code separation), email, and address.
+     - Added an inline non-blocking notice (`ℹ️ Existing CRM Customer Match`) when name or phone matches an existing customer, confirming the order will link to their profile without blocking submission.
+  3. **14-Day Recovery View & Order Restoration in CRM (`crm/page.tsx`)**:
+     - Integrated `getDeletedStudioOrdersAction` and `restoreOrderAction` into Customer profile drawer under Order History.
+     - Orders soft-deleted within 14 days display a countdown badge (`Deleted (X days left to recover)`) with an active `[Restore Order]` action button that immediately restores the order to active OMS workflows.
+     - Orders past 14 days render as archival summary cards without deep workflow tasks or asset previews.
+  4. **MVP Launch Pricing & 100% Free Capabilities (`PricingTwoPanels.tsx`, `CheckoutBuilder.tsx`)**:
+     - Struck through monthly plan and module prices (`~~₹299~~ ₹0 / month`, `~~₹499~~ ₹0`) with a prominent *"Limited Time MVP Launch — All Modules 100% Free"* banner.
+     - Kept "PRO" tier access enabled for all studio workspaces during early access.
+  5. **Original Brand Logo Preserved Across Landing Page & Dashboard (`FocomanLogo.tsx`, `DashboardSidebar.tsx`)**:
+     - Preserved the clean vector brand logo on the landing page and unified it across all views (including desktop and mobile dashboard sidebars) with transparent background rendering.
+- **Verification:** Unit tests passed 31/31 (`npm test`), dev server running cleanly on `http://localhost:3000` with 0 runtime errors.
+
+---
+
 ## CHG-043 — OMS Order Creation Polish, Unique Task ID Sequences & Advance Validation
 
 - **Task:** CHG-043 — Fix Task ID Collision, Add Predefined Event Types, Phone Code Preset, Advance Validation & Bottom PIN Box

@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { getCustomerAuthorizedOrdersHistoryAction } from "@/actions/customerActions";
 import { getCustomerBookingRequestsAction } from "@/actions/marketplaceActions";
-import { CustomerOrderView, BookingRequest } from "@focoman/types";
-import { User } from "firebase/auth";
+import { CustomerOrderView, BookingRequest, StudioMembership, Studio } from "@focoman/types";
+import { User, updateProfile } from "firebase/auth";
+import { getUserWorkspacesAction, getStudioAction } from "@/actions/studioActions";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
@@ -18,6 +18,18 @@ export default function AccountSettingsPage() {
   const [orders, setOrders] = useState<CustomerOrderView[]>([]);
   const [bookings, setBookings] = useState<BookingRequest[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [defaultStudio, setDefaultStudio] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<StudioMembership[]>([]);
+  const [defaultStudioDetails, setDefaultStudioDetails] = useState<Studio | null>(null);
+  const [selectedDefaultStudio, setSelectedDefaultStudio] = useState<string>("");
+  const [defaultSaveLoading, setDefaultSaveLoading] = useState(false);
+  const [defaultSaveSuccess, setDefaultSaveSuccess] = useState(false);
+
+  // Profile editing
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [nameSaveLoading, setNameSaveLoading] = useState(false);
+  const [nameSaveSuccess, setNameSaveSuccess] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(async (currentUser) => {
@@ -28,12 +40,17 @@ export default function AccountSettingsPage() {
         return;
       }
 
+      setDisplayNameInput(currentUser.displayName || "");
+
+      // Handle default studio fetching later
+
       setHistoryLoading(true);
       try {
         const token = await currentUser.getIdToken();
-        const [ordersRes, bookingsRes] = await Promise.all([
+        const [ordersRes, bookingsRes, workspacesData] = await Promise.all([
           getCustomerAuthorizedOrdersHistoryAction(token),
           getCustomerBookingRequestsAction(token),
+          getUserWorkspacesAction(token),
         ]);
 
         if (ordersRes.success && ordersRes.history) {
@@ -41,6 +58,31 @@ export default function AccountSettingsPage() {
         }
         if (bookingsRes.success && bookingsRes.bookingRequests) {
           setBookings(bookingsRes.bookingRequests);
+        }
+        if (workspacesData) {
+          setWorkspaces(workspacesData);
+        }
+        
+        let initialDefault = null;
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem(`focoman_default_workspace_${currentUser.uid}`);
+          if (stored && stored !== "__cleared__" && stored.trim() !== "") {
+            initialDefault = stored;
+            setDefaultStudio(stored);
+            setSelectedDefaultStudio(stored);
+          } else {
+            setDefaultStudio(null);
+            if (workspacesData && workspacesData.length > 0) {
+              setSelectedDefaultStudio(workspacesData[0].studioId);
+            }
+          }
+        }
+        
+        if (initialDefault) {
+           const studioRes = await getStudioAction(initialDefault, token);
+           if (studioRes.success && studioRes.studio) {
+              setDefaultStudioDetails(studioRes.studio);
+           }
         }
       } catch (err) {
         console.error("Failed to load customer order history", err);
@@ -51,9 +93,75 @@ export default function AccountSettingsPage() {
     return () => unsubscribe();
   }, [router]);
 
+  const handleSaveName = async () => {
+    if (!user || !displayNameInput.trim()) return;
+    setNameSaveLoading(true);
+    setNameSaveSuccess(false);
+    try {
+      await updateProfile(user, { displayName: displayNameInput.trim() });
+      setNameSaveSuccess(true);
+      setIsEditingName(false);
+      setTimeout(() => setNameSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to update profile name:", err);
+    } finally {
+      setNameSaveLoading(false);
+    }
+  };
+
+  const handleSetDefault = async (studioId: string) => {
+    if (!user) return;
+    if (studioId === "") {
+      localStorage.setItem(`focoman_default_workspace_${user.uid}`, "__cleared__");
+      setDefaultStudio(null);
+      setDefaultStudioDetails(null);
+    } else {
+      localStorage.setItem(`focoman_default_workspace_${user.uid}`, studioId);
+      setDefaultStudio(studioId);
+      const token = await user.getIdToken();
+      const studioRes = await getStudioAction(studioId, token);
+      if (studioRes.success && studioRes.studio) {
+         setDefaultStudioDetails(studioRes.studio);
+      }
+    }
+  };
+
+  const handleSaveDefault = async () => {
+    if (!user || !selectedDefaultStudio) return;
+    setDefaultSaveLoading(true);
+    setDefaultSaveSuccess(false);
+    try {
+      await handleSetDefault(selectedDefaultStudio);
+      setDefaultSaveSuccess(true);
+      setTimeout(() => setDefaultSaveSuccess(false), 2500);
+    } finally {
+      setDefaultSaveLoading(false);
+    }
+  };
+
+  const handleClearDefault = async () => {
+    if (!user) return;
+    setDefaultSaveLoading(true);
+    try {
+      await handleSetDefault("");
+    } finally {
+      setDefaultSaveLoading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOutUser();
     router.push("/");
+  };
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else if (defaultStudio) {
+      router.push(`/${defaultStudio}/dashboard`);
+    } else {
+      router.push("/workspaces");
+    }
   };
 
   if (loading) {
@@ -74,19 +182,44 @@ export default function AccountSettingsPage() {
       <Navbar />
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-        <div>
-          <BackButton fallbackHref="/dashboard" />
+        {/* Navigation Breadcrumb / Back button */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-text-secondary hover:text-text-primary transition group cursor-pointer"
+          >
+            <span className="text-brand-blue-primary font-bold">←</span>
+            <span>{defaultStudio ? `Back to ${defaultStudio} Dashboard` : "Back to Workspaces"}</span>
+          </button>
+
+          <div className="flex items-center gap-3 text-xs">
+            {defaultStudio && (
+              <Link
+                href={`/${defaultStudio}/dashboard`}
+                className="text-text-secondary hover:text-brand-blue-primary font-medium transition"
+              >
+                {defaultStudio} Dashboard
+              </Link>
+            )}
+            <Link
+              href="/workspaces"
+              className="text-text-secondary hover:text-brand-blue-primary font-medium transition"
+            >
+              My Workspaces
+            </Link>
+          </div>
         </div>
 
-        {/* Profile Card */}
-        <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8">
+        {/* Panel 1: Profile & Account Settings */}
+        <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border-divider pb-6">
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
-                Account & Order History
+                Account Settings
               </h1>
               <p className="mt-1 text-sm text-text-secondary">
-                Manage your personal profile and view your booked studio sessions across Focoman.
+                Manage your personal profile, credentials, and customer bookings across Focoman.
               </p>
             </div>
             <div className="h-14 w-14 flex-shrink-0 rounded-full bg-brand-blue-primary text-white flex items-center justify-center text-xl font-bold shadow-sm">
@@ -98,53 +231,237 @@ export default function AccountSettingsPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Full Name */}
             <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1">Full Name</label>
-              <div className="w-full rounded-xl border border-border-default bg-surface-app px-4 py-2 text-sm font-medium text-text-primary">
-                {user.displayName || "Not provided"}
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-text-secondary">Full Name</label>
+                {!isEditingName ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(true)}
+                    className="text-[11px] font-bold text-brand-blue-primary hover:underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingName(false);
+                      setDisplayNameInput(user.displayName || "");
+                    }}
+                    className="text-[11px] font-semibold text-text-tertiary hover:underline cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={displayNameInput}
+                    onChange={(e) => setDisplayNameInput(e.target.value)}
+                    className="w-full rounded-xl border border-brand-blue-primary px-3.5 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-blue-primary/20"
+                    placeholder="Your full name"
+                  />
+                  <button
+                    type="button"
+                    disabled={nameSaveLoading}
+                    onClick={handleSaveName}
+                    className="rounded-xl bg-brand-blue-primary px-4 py-2 text-xs font-bold text-white hover:bg-brand-blue-hover transition shrink-0 cursor-pointer"
+                  >
+                    {nameSaveLoading ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full rounded-xl border border-border-default bg-surface-app px-4 py-2 text-sm font-medium text-text-primary flex items-center justify-between">
+                  <span>{user.displayName || "Not provided"}</span>
+                  {nameSaveSuccess && (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Updated
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Email Address */}
             <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1">Email Address</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-text-secondary">Email Address</label>
+                {user.emailVerified && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Verified
+                  </span>
+                )}
+              </div>
               <div className="w-full rounded-xl border border-border-default bg-surface-app px-4 py-2 text-sm font-medium text-text-primary">
                 {user.email}
+              </div>
+            </div>
+
+            {/* Default Workspace Preference & Quick Switch */}
+            <div className="sm:col-span-2 pt-2 border-t border-border-divider/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-text-primary">Default Studio Workspace</span>
+                    {defaultStudio && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-800">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-text-secondary text-[11px] block mt-0.5">
+                    {defaultStudio
+                      ? `Currently configured to "${defaultStudio} Studio".`
+                      : "No default studio configured. Choose a workspace to enable quick dashboard launching."}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {workspaces.length > 0 ? (
+                    <>
+                      <select
+                        value={selectedDefaultStudio || (defaultStudio || workspaces[0]?.studioId || "")}
+                        onChange={(e) => setSelectedDefaultStudio(e.target.value)}
+                        className="rounded-xl border border-brand-blue-primary/40 bg-white px-3 py-1.5 text-xs font-semibold text-text-primary focus:outline-none focus:border-brand-blue-primary shrink-0 cursor-pointer"
+                      >
+                        {workspaces.map((w) => (
+                          <option key={w.studioId} value={w.studioId}>
+                            {w.studioName || w.studioId}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleSaveDefault}
+                        disabled={
+                          defaultSaveLoading ||
+                          !selectedDefaultStudio ||
+                          selectedDefaultStudio === defaultStudio
+                        }
+                        className="rounded-xl bg-brand-blue-primary px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-blue-hover transition cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Save Default Workspace"
+                      >
+                        {defaultSaveLoading ? "Saving..." : defaultSaveSuccess ? "Saved ✓" : "Save"}
+                      </button>
+                      {defaultStudio && (
+                        <button
+                          type="button"
+                          onClick={handleClearDefault}
+                          disabled={defaultSaveLoading}
+                          className="rounded-xl border border-border-default bg-white px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-red-600 hover:border-red-200 transition cursor-pointer shadow-2xs"
+                          title="Clear Default Studio"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-text-tertiary text-[11px]">No workspaces found</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Customer Order History (Strict Data Isolation) */}
-        <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-6">
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">Your Studio Bookings & Orders</h2>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Authorized history of your confirmed sessions. Internal studio notes and crew records are strictly protected.
-            </p>
+        {/* Panel 1.5: Plan Subscription (Shown if default studio selected) */}
+        {defaultStudioDetails && (
+          <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-divider pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-text-primary">Subscription Plan Details</h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Current active plan for <b>{defaultStudioDetails.name}</b>.
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                (defaultStudioDetails.planInfo?.selectedCapabilities && defaultStudioDetails.planInfo.selectedCapabilities.length > 0) ||
+                defaultStudioDetails.planInfo?.plan === 'COMPLETE' ||
+                defaultStudioDetails.planInfo?.plan === 'PROFESSIONAL'
+                  ? 'bg-brand-blue-primary text-white'
+                  : 'bg-slate-100 text-slate-700'
+              }`}>
+                {(defaultStudioDetails.planInfo?.selectedCapabilities && defaultStudioDetails.planInfo.selectedCapabilities.length > 0) ||
+                defaultStudioDetails.planInfo?.plan === 'COMPLETE' ||
+                defaultStudioDetails.planInfo?.plan === 'PROFESSIONAL'
+                  ? 'PRO PLAN'
+                  : 'FREE PLAN'}
+              </span>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-text-primary">Selected Modules</h3>
+              <div className="flex flex-wrap gap-2">
+                {defaultStudioDetails.planInfo?.selectedCapabilities && defaultStudioDetails.planInfo.selectedCapabilities.length > 0 ? (
+                  defaultStudioDetails.planInfo.selectedCapabilities.map(cap => (
+                    <span key={cap} className="rounded-md bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700 border border-green-200">
+                      {cap.replace(/_/g, " ")}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-text-tertiary">
+                    No extra modules selected. Core Order Management (OMS) is included free.
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="pt-2 flex items-center gap-4">
+              <Link
+                href={`/checkout?studio=${defaultStudioDetails.id}`}
+                className="text-xs font-bold text-brand-blue-primary hover:underline inline-flex items-center gap-1"
+              >
+                <span>
+                  {(defaultStudioDetails.planInfo?.selectedCapabilities && defaultStudioDetails.planInfo.selectedCapabilities.length > 0)
+                    ? "Manage & Unselect Modules →"
+                    : "Upgrade Plan →"}
+                </span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Panel 2: Leads and Orders as customer */}
+        <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-divider pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-text-primary">Leads and Orders as customer</h2>
+              </div>
+              <p className="text-xs text-text-secondary mt-0.5">
+                History of leads and orders you placed as a customer.
+              </p>
+            </div>
+            <Link
+              href="/studios"
+              className="text-xs font-bold text-brand-blue-primary hover:underline shrink-0 inline-flex items-center gap-1"
+            >
+              <span>Browse Studios</span>
+              <span>→</span>
+            </Link>
           </div>
 
           {historyLoading ? (
-            <div className="text-sm text-text-secondary py-6 text-center">Loading your order history...</div>
+            <div className="text-xs text-text-secondary py-4 text-center">Loading your customer orders...</div>
           ) : orders.length === 0 && bookings.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border-default p-8 text-center bg-surface-app">
-              <p className="text-sm font-semibold text-text-secondary">No studio orders found.</p>
-              <p className="text-xs text-text-tertiary mt-1">
-                Explore our verified studios on the{" "}
-                <Link href="/studios" className="text-brand-blue-primary font-semibold hover:underline">
-                  Studio Marketplace
-                </Link>{" "}
-                to book your next photography session.
+            <div className="rounded-2xl border border-dashed border-border-default p-5 text-center bg-surface-app/50">
+              <p className="text-xs font-bold text-text-primary">No personal customer bookings found</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5 max-w-sm mx-auto">
+                When you send an inquiry via studio marketplace or a studio adds you as part of a confirmed order, they will appear here.
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Confirmed Orders */}
               {orders.map((ord) => (
                 <div
                   key={ord.id}
-                  className="rounded-2xl border border-border-default bg-surface-app p-5 text-xs space-y-3"
+                  className="rounded-2xl border border-border-default bg-surface-app p-4 text-xs space-y-2.5"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-divider pb-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-divider pb-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-brand-blue-primary">{ord.orderNumber}</span>
@@ -152,14 +469,13 @@ export default function AccountSettingsPage() {
                           {ord.orderStatus}
                         </span>
                       </div>
-                      <h3 className="text-sm font-bold text-text-primary mt-1">
+                      <h3 className="text-xs font-bold text-text-primary mt-0.5">
                         {ord.studioName} — {ord.eventType}
                       </h3>
                     </div>
 
                     <div className="text-left sm:text-right">
-                      <span className="text-[10px] text-text-tertiary uppercase">Amount</span>
-                      <p className="text-base font-extrabold text-text-primary">
+                      <p className="text-xs font-extrabold text-text-primary">
                         ₹{ord.totalAmount.toLocaleString("en-IN")}
                       </p>
                       <p className="text-[10px] text-text-secondary">
@@ -168,55 +484,52 @@ export default function AccountSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-text-secondary">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-secondary">
                     <div>
-                      <span className="text-text-tertiary">Event Date:</span>{" "}
+                      <span className="text-text-tertiary">Date:</span>{" "}
                       <span className="font-semibold text-text-primary">{ord.eventDate}</span>
+                      {ord.eventLocation && (
+                        <>
+                          <span className="text-text-tertiary mx-1.5">•</span>
+                          <span className="text-text-tertiary">Location:</span>{" "}
+                          <span className="font-semibold text-text-primary">{ord.eventLocation}</span>
+                        </>
+                      )}
                     </div>
-                    <div>
-                      <span className="text-text-tertiary">Location:</span>{" "}
-                      <span className="font-semibold text-text-primary">{ord.eventLocation || "In Studio"}</span>
-                    </div>
-                  </div>
-
-                  {ord.trackingPasskey && (
-                    <div className="pt-2 border-t border-border-divider flex justify-between items-center">
-                      <span className="text-[11px] text-text-tertiary">
-                        Access Code: <strong className="font-mono text-text-primary">{ord.trackingPasskey}</strong>
-                      </span>
+                    {ord.trackingPasskey && (
                       <Link
                         href={`/track/${ord.trackingPasskey}`}
-                        className="rounded-xl bg-text-primary px-3 py-1.5 text-[11px] font-bold text-white hover:bg-black transition"
+                        className="rounded-lg bg-text-primary px-2.5 py-1 text-[10px] font-bold text-white hover:bg-black transition"
                       >
-                        Track Deliverables & Progress →
+                        Track Deliverables →
                       </Link>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
 
-              {/* Pending / In-Negotiation Bookings */}
+              {/* Pending Booking Requests */}
               {bookings.map((b) => (
                 <div
                   key={b.id}
-                  className="rounded-2xl border border-border-default bg-white p-5 text-xs space-y-2 border-l-4 border-l-brand-blue-primary"
+                  className="rounded-2xl border border-border-default bg-white p-4 text-xs space-y-2 border-l-4 border-l-brand-blue-primary"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="font-mono text-[11px] font-bold text-brand-blue-primary">{b.id}</span>
-                      <h3 className="text-sm font-bold text-text-primary mt-0.5">
+                      <span className="font-mono text-[10px] font-bold text-brand-blue-primary">{b.id}</span>
+                      <h3 className="text-xs font-bold text-text-primary mt-0.5">
                         {b.packageName || b.eventType} (Booking Request)
                       </h3>
-                      <p className="text-text-secondary mt-0.5">Event Date: {b.eventDate}</p>
+                      <p className="text-text-secondary text-[11px] mt-0.5">Event Date: {b.eventDate}</p>
                     </div>
-                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase text-brand-blue-primary border border-blue-200">
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold uppercase text-brand-blue-primary border border-blue-200">
                       {b.bookingStatus}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center pt-2 border-t border-border-divider text-text-secondary">
-                    <span>Requested Price: ₹{b.agreedPrice.toLocaleString("en-IN")}</span>
-                    <span className="text-[11px] font-medium text-text-tertiary">
+                  <div className="flex justify-between items-center pt-1.5 border-t border-border-divider text-[11px] text-text-secondary">
+                    <span>Requested: ₹{b.agreedPrice.toLocaleString("en-IN")}</span>
+                    <span className="text-[10px] text-text-tertiary">
                       {b.bookingStatus === "OPEN_FOR_NEGOTIATION"
                         ? "Under review with studio owner"
                         : "Awaiting studio confirmation"}
@@ -228,22 +541,32 @@ export default function AccountSettingsPage() {
           )}
         </div>
 
-        {/* Sign Out Card */}
+        {/* Panel 3: Session Security & Sign Out */}
         <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-bold text-text-primary">Sign Out</h3>
+            <h3 className="text-sm font-bold text-text-primary">Session Security</h3>
             <p className="text-xs text-text-secondary mt-0.5">
-              Sign out of your account on this device.
+              Signed in as <span className="font-semibold">{user.email}</span>. Sign out from this device session.
             </p>
           </div>
           <button
             onClick={handleSignOut}
-            className="rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-xs font-bold text-red-600 hover:bg-red-100 transition whitespace-nowrap"
+            className="rounded-xl border border-red-200 bg-red-50 px-5 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition whitespace-nowrap cursor-pointer"
           >
             Sign Out
           </button>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border-divider bg-white py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+            <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
+            <p>Built for professional photography studios.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback, use } from "react";
-import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion } from "@focoman/types";
+import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion, Customer } from "@focoman/types";
 import {
   getStudioOrdersAction,
   getOrderTasksAction,
@@ -12,10 +12,12 @@ import {
   cancelOrderAction,
   deleteOrderAction,
 } from "@/actions/orderActions";
+import { getStudioCustomersAction } from "@/actions/customerActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import {
   isDemoStudio,
   getDemoOrders,
+  getDemoCustomers,
   getDemoTasksByOrder,
   createDemoOrder,
   updateDemoTaskStatus,
@@ -148,6 +150,9 @@ const DEFAULT_ORDER_FORM = {
 
   const isDemo = isDemoStudio(studioSlug);
 
+  const [studioCustomers, setStudioCustomers] = useState<Customer[]>([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
   const handleOpenCreateModal = () => {
     setNewOrderForm({
       ...DEFAULT_ORDER_FORM,
@@ -155,7 +160,58 @@ const DEFAULT_ORDER_FORM = {
     });
     setFormError(null);
     setShowServicesDropdown(false);
+    setShowCustomerDropdown(false);
     setShowCreateModal(true);
+  };
+
+  const matchingCustomers = useMemo(() => {
+    const q = newOrderForm.customerName.trim().toLowerCase();
+    if (!q) return studioCustomers.slice(0, 5);
+    return studioCustomers
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.phone && c.phone.includes(q)) ||
+          (c.email && c.email.toLowerCase().includes(q))
+      )
+      .slice(0, 8);
+  }, [studioCustomers, newOrderForm.customerName]);
+
+  const duplicateCustomerWarning = useMemo(() => {
+    const name = newOrderForm.customerName.trim().toLowerCase();
+    const phone = newOrderForm.customerPhone.trim().replace(/\D/g, "");
+    if (!name && !phone) return null;
+    return (
+      studioCustomers.find((c) => {
+        const cName = c.name.trim().toLowerCase();
+        const cPhone = (c.phone || "").replace(/\D/g, "");
+        return (
+          (name && cName === name) ||
+          (phone && cPhone && (cPhone === phone || cPhone.endsWith(phone) || phone.endsWith(cPhone)))
+        );
+      }) || null
+    );
+  }, [studioCustomers, newOrderForm.customerName, newOrderForm.customerPhone]);
+
+  const selectExistingCustomer = (c: Customer) => {
+    let code = "+91";
+    let phoneNum = c.phone || "";
+    if (phoneNum.startsWith("+")) {
+      const parts = phoneNum.split(" ");
+      if (parts.length > 1) {
+        code = parts[0];
+        phoneNum = parts.slice(1).join(" ");
+      }
+    }
+    setNewOrderForm((prev) => ({
+      ...prev,
+      customerName: c.name,
+      countryCode: code,
+      customerPhone: phoneNum,
+      customerEmail: c.email || prev.customerEmail,
+      eventLocation: c.address || prev.eventLocation,
+    }));
+    setShowCustomerDropdown(false);
   };
 
   const toggleService = (svc: string) => {
@@ -185,6 +241,7 @@ const DEFAULT_ORDER_FORM = {
       if (isDemo) {
         const data = getDemoOrders();
         setOrders(data);
+        setStudioCustomers(getDemoCustomers());
         setLoading(false);
         return;
       }
@@ -193,8 +250,12 @@ const DEFAULT_ORDER_FORM = {
         setLoading(false);
         return;
       }
-      const data = await getStudioOrdersAction(studioSlug, token);
+      const [data, customersData] = await Promise.all([
+        getStudioOrdersAction(studioSlug, token),
+        getStudioCustomersAction(studioSlug, token),
+      ]);
       setOrders(data);
+      setStudioCustomers(customersData);
     } catch (err) {
       console.error("[OmsPage] Failed to load orders:", err);
     } finally {
@@ -1097,16 +1158,78 @@ const DEFAULT_ORDER_FORM = {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold text-text-primary">Customer Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Ramesh & Ananya"
-                    value={newOrderForm.customerName}
-                    onChange={(e) => setNewOrderForm({ ...newOrderForm, customerName: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
+                {/* Customer Full Name with Autocomplete */}
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-text-primary">Customer Full Name *</label>
+                    {studioCustomers.length > 0 && (
+                      <span className="text-[10px] text-text-tertiary">
+                        {studioCustomers.length} registered in CRM
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative mt-1">
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Ramesh & Ananya (Search existing or type new)"
+                      value={newOrderForm.customerName}
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      onChange={(e) => {
+                        setNewOrderForm({ ...newOrderForm, customerName: e.target.value });
+                        setShowCustomerDropdown(true);
+                      }}
+                      className="w-full rounded-xl border border-border-default px-3.5 py-2 pr-10 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    />
+                    {studioCustomers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerDropdown((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-brand-blue-primary p-0.5"
+                        tabIndex={-1}
+                        title="Toggle customer list"
+                      >
+                        <svg className={`w-3.5 h-3.5 transition-transform ${showCustomerDropdown ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Customer Autocomplete Dropdown */}
+                  {showCustomerDropdown && matchingCustomers.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-2xl border border-border-default bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 max-h-48 overflow-y-auto">
+                      <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                        <span>Select Existing Client or Type New</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomerDropdown(false)}
+                          className="text-brand-blue-primary hover:underline lowercase font-semibold"
+                        >
+                          close
+                        </button>
+                      </div>
+                      <div className="space-y-0.5 pt-1">
+                        {matchingCustomers.map((c) => (
+                          <div
+                            key={c.id}
+                            onClick={() => selectExistingCustomer(c)}
+                            className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-bold text-text-primary truncate">{c.name}</p>
+                              <p className="text-[10px] text-text-secondary truncate">
+                                {c.phone || "No phone"} {c.email ? `· ${c.email}` : ""}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                              CRM Link
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1146,6 +1269,22 @@ const DEFAULT_ORDER_FORM = {
                     />
                   </div>
                 </div>
+
+                {/* Non-Blocking Duplicate Match Notice */}
+                {duplicateCustomerWarning && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-3 text-xs text-amber-950 flex items-start gap-2.5 animate-in fade-in duration-150">
+                    <span className="text-base leading-none shrink-0 mt-0.5">ℹ️</span>
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="font-bold">
+                        Existing CRM Customer Match: <span className="underline">{duplicateCustomerWarning.name}</span>
+                        {duplicateCustomerWarning.phone ? ` (${duplicateCustomerWarning.phone})` : ""}
+                      </p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        This order will be automatically linked to their existing customer profile and lifetime bookings in CRM. You can continue without changing the name.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Dynamic Automated Customer Notifications (displayed only when phone or email is provided) */}
                 {(Boolean(newOrderForm.customerPhone.trim()) || Boolean(newOrderForm.customerEmail.trim())) && (
@@ -1383,7 +1522,7 @@ const DEFAULT_ORDER_FORM = {
                            !PRESET_STUDIO_SERVICES.some(s => s.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
                            !newOrderForm.services.includes(newOrderForm.customServiceInput.trim()) && (
                             <div className="px-2.5 py-1.5 text-[10px] font-medium text-text-tertiary italic">
-                              Press Enter to add "{newOrderForm.customServiceInput.trim()}"
+                              Press Enter to add &quot;{newOrderForm.customServiceInput.trim()}&quot;
                             </div>
                           )}
                         </div>

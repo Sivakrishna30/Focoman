@@ -10,6 +10,7 @@ interface PricingTwoPanelsProps {
 export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsProps) {
   return (
     <div className="space-y-12">
+
       {/* Multi-Studio Workspace Notice (Only shown if user has multiple studio profiles) */}
       {hasMultiStudios && (
         <div className="rounded-2xl border border-brand-blue-primary/30 bg-brand-blue-background/30 p-4 text-center max-w-2xl mx-auto shadow-xs">
@@ -103,13 +104,14 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
               </p>
             </div>
 
-            {/* Price */}
+            {/* Price with Strike-Through */}
             <div className="rounded-2xl border border-brand-orange-primary/20 bg-brand-orange-background/30 p-4 flex items-baseline justify-between">
               <div>
                 <span className="text-xs font-semibold text-text-tertiary block">Modular Pricing Starting From</span>
-                <div className="mt-0.5 flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">₹299</span>
-                  <span className="text-xs text-text-secondary font-medium">/month</span>
+                <div className="mt-0.5 flex items-baseline gap-2">
+                  <span className="text-lg line-through text-text-tertiary font-bold">₹299</span>
+                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-brand-orange-primary">₹0</span>
+                  <span className="text-xs text-brand-orange-primary font-bold">/limited time</span>
                 </div>
               </div>
             </div>

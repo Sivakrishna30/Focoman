@@ -165,26 +165,11 @@ export default function AboutPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border-default bg-white py-8">
+      <footer className="border-t border-border-divider bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="text-xs text-text-tertiary">
-              © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Made in India
-            </div>
-            <div className="flex items-center gap-6">
-              <Link href="/features" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                Features
-              </Link>
-              <Link href="/pricing" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                Pricing
-              </Link>
-              <Link href="/about" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                About Us
-              </Link>
-              <Link href="/#faq" className="text-xs font-semibold text-text-secondary hover:text-text-primary">
-                FAQs
-              </Link>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+            <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
+            <p>Built for professional photography studios.</p>
           </div>
         </div>
       </footer>

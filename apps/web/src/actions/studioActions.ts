@@ -11,7 +11,7 @@ import {
   leaveStudioMembership,
   restoreStudio,
 } from "@focoman/db";
-import { Studio, StudioMembership } from "@focoman/types";
+import { Studio, StudioMembership, StudioPlan } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
 
 /**
@@ -107,6 +107,18 @@ export async function registerStudioAction(input: {
 export async function getUserWorkspacesAction(idToken: string): Promise<StudioMembership[]> {
   const decoded = await requireVerifiedUser(idToken);
   return await getMembershipsByUid(decoded.uid);
+}
+
+export async function getStudioAction(studioSlug: string, idToken: string): Promise<{ success: boolean; studio?: Studio; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+    const studio = await getStudioBySlug(studioSlug);
+    if (!studio) return { success: false, error: "Studio not found" };
+    return { success: true, studio };
+  } catch (err: unknown) {
+    return { success: false, error: "Failed to fetch studio." };
+  }
 }
 
 export async function updateStudioAction(input: {

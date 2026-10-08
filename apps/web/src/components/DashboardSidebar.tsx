@@ -130,7 +130,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("nav.settings", "Studio Settings"),
+      label: t("nav.studio_settings", "Studio Settings"),
       sublabel: "Preferences & Danger Zone",
       key: "settings",
       href: (slug: string) => `/${slug}/dashboard/settings`,

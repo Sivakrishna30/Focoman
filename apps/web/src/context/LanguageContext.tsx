@@ -116,6 +116,12 @@ const translations: Record<string, Record<LanguageMode, string>> = {
     ta_easy: "கணக்கு அமைப்புகள்",
     ta_pure: "கணக்கு அமைப்புகள்",
   },
+  "nav.studio_settings": {
+    en: "Studio Settings",
+    thanglish: "Studio Settings",
+    ta_easy: "ஸ்டுடியோ அமைப்புகள்",
+    ta_pure: "பணிமனை அமைப்புகள்",
+  },
   "nav.explore_modules": {
     en: "Explore Detailed Module Breakdown →",
     thanglish: "Explore Detailed Module Breakdown →",

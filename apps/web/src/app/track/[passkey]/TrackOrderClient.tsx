@@ -499,9 +499,13 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
           </div>
         </main>
 
-        <footer className="border-t border-border-default bg-white py-8">
-          <div className="mx-auto max-w-7xl px-4 text-center text-xs text-text-tertiary sm:px-6 lg:px-8">
-            © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
+        {/* Footer */}
+        <footer className="border-t border-border-divider bg-white py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+              <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
+              <p>Built for professional photography studios.</p>
+            </div>
           </div>
         </footer>
       </div>
@@ -904,9 +908,13 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
         </div>
       </main>
 
-      <footer className="border-t border-border-default bg-white py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center text-xs text-text-tertiary sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} ThreadSafe Focoman. All rights reserved. | Focus beyond the frames
+      {/* Footer */}
+      <footer className="border-t border-border-divider bg-white py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-tertiary">
+            <p>© {new Date().getFullYear()} Focoman. All rights reserved.</p>
+            <p>Built for professional photography studios.</p>
+          </div>
         </div>
       </footer>
     </div>

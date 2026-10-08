@@ -7,6 +7,7 @@ import { PricingTwoPanels } from "@/components/public/PricingTwoPanels";
 import { ValueAddedServices } from "@/components/public/ValueAddedServices";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import { StructuredData } from "@/components/public/StructuredData";
+import { getPlatformPublicStats } from "@focoman/db";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://focoman.web.app";
 
@@ -34,7 +35,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const stats = await getPlatformPublicStats();
+
   return (
     <div className="min-h-screen bg-surface-app text-text-primary selection:bg-brand-blue-soft">
       {/* JSON-LD Structured Data */}
@@ -47,7 +50,7 @@ export default function HomePage() {
         {/* 2. Hero Section */}
         <section
           id="home"
-          className="relative overflow-hidden border-b border-border-divider bg-gradient-to-b from-white via-brand-blue-background/25 to-surface-app px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
+          className="relative overflow-hidden bg-gradient-to-b from-surface-app via-white to-surface-app px-4 pt-16 pb-20 sm:px-6 sm:pt-20 sm:pb-24 lg:px-8"
         >
           <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[52%] h-[480px] w-[480px] sm:h-[520px] sm:w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
 
@@ -82,8 +85,6 @@ export default function HomePage() {
                 <span className="text-text-tertiary">↓</span>
               </Link>
             </div>
-
-
           </div>
         </section>
 
@@ -208,16 +209,37 @@ export default function HomePage() {
                 Showcase packages, pricing, and live date availability for booking inquiries, while your client records, orders, and studio financials remain completely private.
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+              {/* Metric Counts Panels (Above the buttons) */}
+              <div className="mt-8 mb-8 grid grid-cols-2 gap-4 sm:gap-6 max-w-md sm:max-w-lg mx-auto">
+                <div className="rounded-3xl border border-orange-200/90 bg-white/95 backdrop-blur-xs p-5 sm:p-6 text-center shadow-xs flex flex-col justify-center items-center">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-secondary">
+                    Total Studios Listed
+                  </span>
+                  <span className="mt-2 text-4xl sm:text-5xl font-black text-brand-orange-primary tracking-tight">
+                    {stats.marketplaceStudiosCount}
+                  </span>
+                </div>
+                <div className="rounded-3xl border border-orange-200/90 bg-white/95 backdrop-blur-xs p-5 sm:p-6 text-center shadow-xs flex flex-col justify-center items-center">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-secondary">
+                    Total Collective Leads
+                  </span>
+                  <span className="mt-2 text-4xl sm:text-5xl font-black text-amber-600 tracking-tight">
+                    {stats.marketplaceLeadsCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/studios"
-                  className="w-full sm:w-auto rounded-xl bg-brand-orange-primary px-6 py-3 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-orange-600"
+                  className="w-full sm:w-auto rounded-xl bg-brand-orange-primary px-7 py-3.5 text-center text-xs sm:text-sm font-bold text-white shadow-xs transition hover:bg-orange-600"
                 >
                   Explore Studio Marketplace
                 </Link>
                 <Link
                   href="/sign-in"
-                  className="w-full sm:w-auto rounded-xl border border-brand-orange-primary/30 bg-white px-6 py-3 text-center text-xs sm:text-sm font-bold text-brand-orange-primary shadow-xs transition hover:bg-orange-50"
+                  className="w-full sm:w-auto rounded-xl border border-brand-orange-primary/30 bg-white px-7 py-3.5 text-center text-xs sm:text-sm font-bold text-brand-orange-primary shadow-xs transition hover:bg-orange-50"
                 >
                   Publish Your Studio
                 </Link>
@@ -280,7 +302,28 @@ export default function HomePage() {
                 Join photography studios running their orders, crew workflows, and deliveries with peace of mind. Start your 30-day full trial with zero risk.
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              {/* Metric Counts Panels (Above the buttons) */}
+              <div className="mt-8 mb-8 grid grid-cols-2 gap-4 sm:gap-6 max-w-md sm:max-w-lg mx-auto">
+                <div className="rounded-3xl border border-white/25 bg-white/15 backdrop-blur-md p-5 sm:p-6 text-center shadow-xs flex flex-col justify-center items-center">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white/90">
+                    Total Studios Active
+                  </span>
+                  <span className="mt-2 text-4xl sm:text-5xl font-black text-white tracking-tight">
+                    {stats.activeStudiosCount}
+                  </span>
+                </div>
+                <div className="rounded-3xl border border-white/25 bg-white/15 backdrop-blur-md p-5 sm:p-6 text-center shadow-xs flex flex-col justify-center items-center">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white/90">
+                    Total Orders Registered
+                  </span>
+                  <span className="mt-2 text-4xl sm:text-5xl font-black text-emerald-300 tracking-tight">
+                    {stats.registeredOrdersCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/sign-in"
                   className="w-full sm:w-auto rounded-xl bg-white px-8 py-3.5 text-xs sm:text-sm font-bold text-brand-blue-primary shadow-sm transition hover:bg-slate-50"
@@ -288,7 +331,8 @@ export default function HomePage() {
                   Start 30-Day Free Trial
                 </Link>
               </div>
-              <p className="mt-3 text-[11px] text-white/80">
+
+              <p className="mt-4 text-[11px] text-white/80">
                 No credit card required
               </p>
             </div>

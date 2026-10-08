@@ -510,3 +510,22 @@ export async function getStudioPaymentsAction(studioId: string, idToken: string)
     return { success: false, error: error instanceof Error ? error.message : "Failed to fetch studio payments" };
   }
 }
+
+export async function fetchPlatformPublicStatsAction() {
+  try {
+    const { getPlatformPublicStats } = await import("@focoman/db");
+    const stats = await getPlatformPublicStats();
+    return { success: true, stats };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      stats: {
+        marketplaceStudiosCount: 0,
+        marketplaceLeadsCount: 0,
+        activeStudiosCount: 0,
+        registeredOrdersCount: 0,
+      },
+      error: err instanceof Error ? err.message : "Failed to load platform stats",
+    };
+  }
+}
