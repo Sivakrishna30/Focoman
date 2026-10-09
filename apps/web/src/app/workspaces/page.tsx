@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, signInWithGoogle, signOutUser, syncServerSession, handleRedirectAuth } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, signInWithGoogle, signOutUser, syncServerSession } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction, deleteStudioAction, leaveStudioAction } from "@/actions/studioActions";
 import { getMyPendingInvitationsAction } from "@/actions/memberActions";
 import { StudioInvitationSummary, StudioMembership } from "@focoman/types";
@@ -32,10 +32,6 @@ export default function WorkspacesPage() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    handleRedirectAuth().catch((err) => {
-      console.error("[Workspaces] Redirect auth error:", err);
-    });
-
     const unsubscribe = subscribeToAuthState(async (user) => {
       setCurrentUser(user);
       setLoadingUser(false);
