@@ -119,7 +119,6 @@ The Next.js 15 development server starts on `http://localhost:3000`.
 | `http://localhost:3000/[studioSlug]/dashboard/erp` | Crew management & resource assignment |
 | `http://localhost:3000/[studioSlug]/dashboard/whatsapp` | WhatsApp milestone notification operational hub |
 | `http://localhost:3000/track/[passkey]` | Guest customer order tracker (no login required) |
-| `http://localhost:3000/devportal` | Internal system status and engineering task manager |
 
 ---
 

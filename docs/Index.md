@@ -23,7 +23,7 @@ When evaluating specifications and implementation guidelines:
 3. **Primary Product Source of Truth:** **[Focoman Product Discovery Document](product/product-discovery-document.md)** (OMS-First, Confirmed Order Model).
 3. **Target Technical Architecture Specifications:** `technical/tech-stack.md`, `technical/identity-and-auth-architecture.md`, `technical/recommended-architecture.md`, `technical/technical-design-mvp.md`, `technical/deployment-guide.md`.
 3. **Agent Governance & Workflow Specification:** `../Agents.md`.
-4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `DEVPORTAL_SETUP.md`, `ISSUE_ANALYSIS.md`.
+4. **Operational & Setup Guides:** `QUICK_SETUP_GUIDE.md`, `ISSUE_ANALYSIS.md`.
 5. **Realigned Specifications:** `product/srs-mvp.md` (Realigned product requirements).
 
 *Rule:* If a newer authoritative document conflicts with an older document, the newer active document takes precedence. Old documents must not override current specifications.
@@ -65,7 +65,6 @@ When evaluating specifications and implementation guidelines:
 ## 7. Setup & Operational Guides
 
 - **[Quick Setup Guide](QUICK_SETUP_GUIDE.md)** — Local environment initialization and startup instructions.
-- **[DevPortal Setup Guide](DEVPORTAL_SETUP.md)** — Developer portal setup and API credentials setup.
 - **[Issue Analysis Document](ISSUE_ANALYSIS.md)** — Diagnostic records for past platform issues.
 
 ---

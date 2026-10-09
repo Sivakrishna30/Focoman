@@ -65,27 +65,20 @@ function SignInContent() {
       setIsSigningIn(true);
       setAuthError(null);
       await signInWithGoogle();
-
-      const target = redirectUrl
-        ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
-        : "/dashboard";
-      router.push(target);
+      // The browser will now redirect to Google.
+      // We do not push the router here, as that would cancel the redirect.
     } catch (err: unknown) {
       console.error("Google sign-in failed:", err);
+      setIsSigningIn(false);
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("auth/unauthorized-domain")) {
         const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
         setAuthError(
           `Domain "${domain}" is not authorized. Please add it in Firebase Console.`
         );
-      } else if (errorMessage.includes("auth/popup-closed-by-user")) {
-        // User closed the popup, do not show an error
-        setAuthError(null);
       } else {
         setAuthError(errorMessage || "Sign-in failed. Please try again.");
       }
-    } finally {
-      setIsSigningIn(false);
     }
   };
 

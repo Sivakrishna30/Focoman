@@ -81,14 +81,14 @@ function JoinStudioContent() {
     setFeedback(null);
     try {
       await signInWithGoogle();
+      // The browser will now redirect to Google.
     } catch (err: any) {
       console.error("Sign-in error:", err);
+      setIsSigningIn(false);
       setFeedback({
         type: "error",
         message: err.message || "Failed to sign in with Google.",
       });
-    } finally {
-      setIsSigningIn(false);
     }
   };
 

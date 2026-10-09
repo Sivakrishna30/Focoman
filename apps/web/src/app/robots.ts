@@ -11,7 +11,6 @@ export default function robots(): MetadataRoute.Robots {
           '/dashboard',
           '/account-settings',
           '/workspaces',
-          '/devportal',
           '/onboarding',
           '/sign-in',
         ],

@@ -216,15 +216,12 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {visibleNavItems.map((item) => {
-          const isDevPortal = (item.module as string | null) === "dev";
           const isTestingMode = appEnv === "testing";
           
           // Phase 1 Modularity: Determine access based on specific feature flags if present, otherwise fallback to plan logic
           let accessible = false;
           
-          if (isDevPortal) {
-            accessible = isTestingMode;
-          } else if (item.module === null || item.module === "oms") {
+          if (item.module === null || item.module === "oms") {
             accessible = true; // Dashboard and OMS are always accessible
           } else if (features) {
             accessible = !!features[item.module as keyof typeof features];
@@ -245,7 +242,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
                 key={item.key}
                 href={`/checkout?studio=${studioSlug}&upgrade=${item.module || ""}`}
                 onClick={onLinkClick}
-                title={isDevPortal ? "Only visible in testing mode" : `Unlock ${item.label} in your studio configuration`}
+                title={`Unlock ${item.label} in your studio configuration`}
                 className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition text-text-tertiary hover:bg-orange-50/70 hover:text-brand-orange-primary"
               >
                 <span className="text-text-tertiary group-hover:text-brand-orange-primary">{item.icon}</span>

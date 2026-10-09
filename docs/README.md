@@ -26,7 +26,6 @@ Project documentation is organized by purpose:
 
 ### Setup & Operational Guides
 - `QUICK_SETUP_GUIDE.md`
-- `DEVPORTAL_SETUP.md`
 - `ISSUE_ANALYSIS.md`
 
 ### Brand Assets
