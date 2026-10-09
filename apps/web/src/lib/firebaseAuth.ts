@@ -1,7 +1,5 @@
 import {
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -21,7 +19,6 @@ const googleProvider = new GoogleAuthProvider();
 
 let inFlightSync: Promise<boolean> | null = null;
 let lastSyncedToken: string | null = null;
-let redirectHandlingPromise: Promise<UserCredential | null> | null = null;
 
 /**
  * Synchronizes client-side Firebase Auth credentials with the server-side
@@ -72,43 +69,10 @@ export async function syncServerSession(force = false): Promise<boolean> {
 }
 
 /**
- * Initiates Google sign-in via same-tab redirect.
+ * Initiates Google sign-in via popup.
  */
-export async function signInWithGoogle(): Promise<void> {
-  await signInWithRedirect(auth, googleProvider);
-}
-
-/**
- * Handles incoming redirect sign-in results from Google OAuth.
- * Safe to call on multiple component mounts: memoizes in-flight execution.
- */
-export async function handleRedirectAuth(): Promise<UserCredential | null> {
-  if (typeof window === "undefined") return null;
-  if (redirectHandlingPromise) return redirectHandlingPromise;
-
-  redirectHandlingPromise = (async () => {
-    try {
-      const credential = await getRedirectResult(auth);
-      if (credential?.user) {
-        const idToken = await credential.user.getIdToken(true);
-        const response = await fetch('/api/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        });
-        if (response.ok) {
-          lastSyncedToken = idToken;
-        }
-        return credential;
-      }
-      return null;
-    } catch (error) {
-      console.error("[Focoman Auth] Failed to process redirect sign-in:", error);
-      throw error;
-    }
-  })();
-
-  return redirectHandlingPromise;
+export async function signInWithGoogle(): Promise<UserCredential> {
+  return await signInWithPopup(auth, googleProvider);
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {

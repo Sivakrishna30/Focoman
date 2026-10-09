@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signInWithGoogle, subscribeToAuthState, handleRedirectAuth, syncServerSession } from "@/lib/firebaseAuth";
+import { signInWithGoogle, subscribeToAuthState, syncServerSession } from "@/lib/firebaseAuth";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
@@ -18,30 +18,6 @@ function SignInContent() {
 
   useEffect(() => {
     let isMounted = true;
-
-    // Process incoming redirect result from Google
-    handleRedirectAuth()
-      .then(async (credential) => {
-        if (credential?.user && isMounted) {
-          await syncServerSession(true);
-          const target = redirectUrl
-            ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
-            : "/dashboard";
-          router.replace(target);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.error("Redirect sign-in error:", err);
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          if (errorMessage.includes("auth/unauthorized-domain")) {
-            const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
-            setAuthError(`Domain "${domain}" is not authorized. Please add it in Firebase Console.`);
-          } else {
-            setAuthError(errorMessage || "Sign-in failed. Please try again.");
-          }
-        }
-      });
 
     // Listen to auth state changes and sync session
     const unsubscribe = subscribeToAuthState(async (user) => {
@@ -65,18 +41,17 @@ function SignInContent() {
       setIsSigningIn(true);
       setAuthError(null);
       await signInWithGoogle();
-      // The browser will now redirect to Google.
-      // We do not push the router here, as that would cancel the redirect.
+      // Auth state listener above will handle navigation after popup completes
     } catch (err: unknown) {
-      console.error("Google sign-in failed:", err);
       setIsSigningIn(false);
+      console.error("Google sign-in failed:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("auth/unauthorized-domain")) {
         const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
         setAuthError(
           `Domain "${domain}" is not authorized. Please add it in Firebase Console.`
         );
-      } else {
+      } else if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
         setAuthError(errorMessage || "Sign-in failed. Please try again.");
       }
     }

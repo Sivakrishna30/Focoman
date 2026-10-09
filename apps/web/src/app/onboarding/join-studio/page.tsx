@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, signInWithGoogle, getCurrentUserIdToken, handleRedirectAuth } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, signInWithGoogle, getCurrentUserIdToken } from "@/lib/firebaseAuth";
 import { acceptInvitationAction, getInvitationClaimStatusAction } from "@/actions/memberActions";
 import { User } from "firebase/auth";
 
@@ -32,10 +32,6 @@ function JoinStudioContent() {
   const [feedback, setFeedback] = useState<{ type: "error" | "success" | "info"; message: string } | null>(null);
 
   useEffect(() => {
-    handleRedirectAuth().catch((err) => {
-      console.error("[JoinStudio] Redirect auth error:", err);
-    });
-
     const unsubscribe = subscribeToAuthState((user) => {
       setCurrentUser(user);
     });
@@ -81,14 +77,16 @@ function JoinStudioContent() {
     setFeedback(null);
     try {
       await signInWithGoogle();
-      // The browser will now redirect to Google.
+      // Auth state listener above sets currentUser after popup completes
     } catch (err: any) {
       console.error("Sign-in error:", err);
       setIsSigningIn(false);
-      setFeedback({
-        type: "error",
-        message: err.message || "Failed to sign in with Google.",
-      });
+      if (!err.code?.includes("popup-closed-by-user") && !err.code?.includes("cancelled-popup-request")) {
+        setFeedback({
+          type: "error",
+          message: err.message || "Failed to sign in with Google.",
+        });
+      }
     }
   };
 
