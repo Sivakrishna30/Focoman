@@ -145,7 +145,7 @@ export default function StudioSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl pb-16">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8 space-y-8 max-w-4xl pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border-divider pb-6">
         <div>

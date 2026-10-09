@@ -63,12 +63,12 @@ export function RetroHeroVisual() {
   const tableY = useTransform(progress, [0.78, 0.94], [32, 0]);
 
   return (
-    <div className="relative mx-auto w-full max-w-[780px] h-[470px] sm:h-[495px] select-none perspective-1000">
+    <div className="relative mx-auto w-full max-w-[780px] h-[310px] sm:h-[390px] md:h-[430px] lg:h-[470px] xl:h-[495px] select-none perspective-1000">
       
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 1. CHAOS SECTION: 3 INDEPENDENTLY ANIMATING SEGMENTS          */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none gap-2.5">
+      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none gap-1.5 sm:gap-2.5">
         
         {/* ── SEGMENT 1: SPREADSHEET (EXITS FIRST ON SCROLL) ── */}
         <motion.div
@@ -78,106 +78,106 @@ export function RetroHeroVisual() {
             scale: spreadsheetScale,
             rotate: spreadsheetRotate,
           }}
-          className="w-full h-[235px] sm:h-[245px] rounded-2xl border-2 border-emerald-600/30 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col"
+          className="w-full h-[152px] sm:h-[195px] md:h-[215px] lg:h-[235px] xl:h-[245px] rounded-xl sm:rounded-2xl border border-emerald-600/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col"
         >
           {/* Excel Title Bar */}
-          <div className="bg-[#107C41] px-3 py-1.5 flex items-center justify-between text-white text-[11px] font-sans shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold bg-white text-[#107C41] px-1 rounded text-[10px] leading-tight shrink-0">X</span>
-              <span className="font-mono text-[10.5px]">Studio_Bookings_2026_MASTER.xlsx</span>
-              <span className="text-[9.5px] text-emerald-200 font-mono hidden sm:inline">(Local Autosave: Off)</span>
+          <div className="bg-[#107C41] px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-white text-[9.5px] sm:text-[11px] font-sans shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="font-bold bg-white text-[#107C41] px-1 rounded text-[9px] sm:text-[10px] leading-tight shrink-0">X</span>
+              <span className="font-mono text-[9px] sm:text-[10.5px] truncate">Studio_Bookings_2026_MASTER.xlsx</span>
+              <span className="text-[8.5px] sm:text-[9.5px] text-emerald-200 font-mono hidden md:inline shrink-0">(Local Autosave: Off)</span>
             </div>
-            <div className="flex items-center gap-2 text-[9.5px] text-emerald-100 font-mono">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[8.5px] sm:text-[9.5px] text-emerald-100 font-mono shrink-0">
               <span className="bg-white/20 px-1.5 py-0.2 rounded">Sheet1</span>
               <span className="text-red-200 font-bold hidden sm:inline">⚠️ Unsaved</span>
             </div>
           </div>
 
           {/* Formula Bar */}
-          <div className="bg-[#F3F2F1] px-2.5 py-1 border-b border-[#D4D4D4] flex items-center gap-2 text-[10px] font-mono text-gray-700 shrink-0">
-            <span className="font-bold text-gray-500 text-[11px]">fx</span>
-            <span className="bg-white border border-[#C8C8C8] px-2 py-0.5 rounded-2xs flex-1 truncate text-gray-800 text-[9.5px]">
+          <div className="bg-[#F3F2F1] px-2 sm:px-2.5 py-0.5 sm:py-1 border-b border-[#D4D4D4] flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] font-mono text-gray-700 shrink-0">
+            <span className="font-bold text-gray-500 text-[10px] sm:text-[11px]">fx</span>
+            <span className="bg-white border border-[#C8C8C8] px-2 py-0.5 rounded-2xs flex-1 truncate text-gray-800 text-[8.5px] sm:text-[9.5px]">
               =SUM(F2:F7)
             </span>
           </div>
 
           {/* Full Traditional Excel Table with ALL Columns */}
-          <div className="flex-1 overflow-x-auto bg-white font-sans text-[10px]">
-            <table className="w-full text-left border-collapse border border-[#D4D4D4]">
+          <div className="flex-1 overflow-x-auto bg-white font-sans text-[8.5px] sm:text-[10px]">
+            <table className="w-full min-w-[480px] sm:min-w-full text-left border-collapse border border-[#D4D4D4]">
               <thead>
-                <tr className="bg-[#E1DFDD] text-gray-700 text-[9px] border-b border-[#D4D4D4]">
-                  <th className="p-1 px-1.5 border-r border-[#D4D4D4] w-6 text-center font-normal bg-[#D0CECB]"> </th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] font-semibold">Order</th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] font-semibold">Customer</th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] font-semibold">Event / Shoot</th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] font-semibold">Date</th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] font-semibold">Status</th>
-                  <th className="p-1 px-2 border-r border-[#D4D4D4] text-right font-semibold">Amount</th>
-                  <th className="p-1 px-2 text-right font-semibold">Balance</th>
+                <tr className="bg-[#E1DFDD] text-gray-700 text-[8px] sm:text-[9px] border-b border-[#D4D4D4]">
+                  <th className="p-0.5 sm:p-1 px-1 sm:px-1.5 border-r border-[#D4D4D4] w-5 sm:w-6 text-center font-normal bg-[#D0CECB]"> </th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Order</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Customer</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Event / Shoot</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Date</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Status</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-right font-semibold">Amount</th>
+                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-semibold">Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E5E5] text-[9.5px] text-gray-800">
+              <tbody className="divide-y divide-[#E5E5E5] text-[8.5px] sm:text-[9.5px] text-gray-800">
                 <tr className="hover:bg-gray-50">
-                  <td className="p-1 px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[9px]">1</td>
-                  <td className="p-1 px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-010906</td>
-                  <td className="p-1 px-2 font-medium border-r border-[#D4D4D4]">Priya &amp; Arjun</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4]">Wedding</td>
-                  <td className="p-1 px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-1 px-2 text-right font-mono border-r border-[#D4D4D4]">₹1,50,000</td>
-                  <td className="p-1 px-2 text-right font-mono text-red-600 font-medium">₹50,000</td>
+                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">1</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-010906</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Priya &amp; Arjun</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹1,50,000</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹50,000</td>
                 </tr>
                 <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
-                  <td className="p-1 px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[9px]">2</td>
-                  <td className="p-1 px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004803</td>
-                  <td className="p-1 px-2 font-medium border-r border-[#D4D4D4]">Vikram Sharma</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4]">Reception</td>
-                  <td className="p-1 px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-06</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4] text-red-700 font-semibold bg-red-50/60">Pending Payment</td>
-                  <td className="p-1 px-2 text-right font-mono border-r border-[#D4D4D4]">₹80,000</td>
-                  <td className="p-1 px-2 text-right font-mono text-red-600 font-bold">₹30,000</td>
+                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">2</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004803</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Vikram Sharma</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Reception</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-06</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-red-700 font-semibold bg-red-50/60">Pending Payment</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹80,000</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-bold">₹30,000</td>
                 </tr>
                 <tr className="hover:bg-gray-50">
-                  <td className="p-1 px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[9px]">3</td>
-                  <td className="p-1 px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004647</td>
-                  <td className="p-1 px-2 font-medium border-r border-[#D4D4D4]">Divya Ramesh</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4]">Pre-Wedding</td>
-                  <td className="p-1 px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-1 px-2 text-right font-mono border-r border-[#D4D4D4]">₹45,000</td>
-                  <td className="p-1 px-2 text-right font-mono text-red-600 font-medium">₹15,000</td>
+                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">3</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004647</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Divya Ramesh</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Pre-Wedding</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹45,000</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹15,000</td>
                 </tr>
                 <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
-                  <td className="p-1 px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[9px]">4</td>
-                  <td className="p-1 px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-003234</td>
-                  <td className="p-1 px-2 font-medium border-r border-[#D4D4D4]">Siva Krishna</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4]">Wedding</td>
-                  <td className="p-1 px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-1 px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-1 px-2 text-right font-mono border-r border-[#D4D4D4]">₹3,20,000</td>
-                  <td className="p-1 px-2 text-right font-mono text-red-700 font-bold bg-amber-50">₹1,00,000</td>
+                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">4</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-003234</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Siva Krishna</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹3,20,000</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-700 font-bold bg-amber-50">₹1,00,000</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           {/* Traditional Excel Sheet Tabs & Status Bar */}
-          <div className="bg-[#F3F2F1] px-3 py-1 border-t border-[#D4D4D4] flex items-center justify-between text-[9px] text-gray-600 font-sans shrink-0">
+          <div className="bg-[#F3F2F1] px-2 sm:px-3 py-0.5 sm:py-1 border-t border-[#D4D4D4] flex items-center justify-between text-[8px] sm:text-[9px] text-gray-600 font-sans shrink-0">
             <div className="flex items-center gap-1 font-mono">
-              <span className="bg-white border-t border-x border-[#A6A6A6] px-2 py-0.5 font-bold text-gray-900">
+              <span className="bg-white border-t border-x border-[#A6A6A6] px-1.5 sm:px-2 py-0.2 sm:py-0.5 font-bold text-gray-900">
                 Oct_Orders
               </span>
-              <span className="px-1 text-gray-500">Nov_Shoots</span>
+              <span className="px-1 text-gray-500 hidden sm:inline">Nov_Shoots</span>
             </div>
-            <span className="text-red-600 font-mono font-bold">Unreconciled Due: ₹1,95,000</span>
+            <span className="text-red-600 font-mono font-bold text-[8px] sm:text-[9px]">Unreconciled Due: ₹1,95,000</span>
           </div>
         </motion.div>
 
 
         {/* ── BOTTOM ROW: DIARY & MESSAGING APP ── */}
-        <div className="w-full h-[225px] sm:h-[238px] flex items-stretch justify-between">
+        <div className="w-full h-[148px] sm:h-[185px] md:h-[205px] lg:h-[225px] xl:h-[238px] flex items-stretch justify-between gap-1.5 sm:gap-2.5">
           
-          {/* ── SEGMENT 2: 65% HANDWRITTEN DIARY (EXITS SECOND ON SCROLL) ── */}
+          {/* ── SEGMENT 2: 62% HANDWRITTEN DIARY (EXITS SECOND ON SCROLL) ── */}
           <motion.div
             style={{
               opacity: diaryOpacity,
@@ -186,59 +186,55 @@ export function RetroHeroVisual() {
               scale: diaryScale,
               rotate: diaryRotate,
             }}
-            className="w-[65%] h-full rounded-2xl border-2 border-amber-800/25 bg-[#FAF5E8] shadow-[0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col justify-between"
+            className="w-[62%] sm:w-[65%] h-full rounded-xl sm:rounded-2xl border border-amber-800/25 sm:border-2 bg-[#FAF5E8] shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between"
           >
             {/* Diary Printed Top Header */}
-            <div className="bg-[#F3EBD8] border-b border-[#D8D0BE] px-3 py-1.5 flex items-center justify-between text-[#8C5D35] font-mono text-[9.5px] font-bold shrink-0">
-              <div className="flex items-center gap-2">
+            <div className="bg-[#F3EBD8] border-b border-[#D8D0BE] px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-[#8C5D35] font-mono text-[8.5px] sm:text-[9.5px] font-bold shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 truncate">
                 <span>DAILY PLANNER 2026</span>
-                <span className="text-gray-400 font-normal">|</span>
-                <span className="text-[#8C2D19]">WEDNESDAY 07 OCT</span>
+                <span className="text-gray-400 font-normal hidden sm:inline">|</span>
+                <span className="text-[#8C2D19] hidden sm:inline">WEDNESDAY 07 OCT</span>
               </div>
-              <span className="text-gray-500 text-[8.5px]">PAGE 104</span>
+              <span className="text-gray-500 text-[8px] sm:text-[8.5px] shrink-0">PAGE 104</span>
             </div>
 
             {/* Ruled Paper with Real Handwritten Notes */}
             <div
-              className="flex-1 p-2.5 space-y-1.5 text-[#1E3A8A] leading-[20px] overflow-hidden"
+              className="flex-1 p-1.5 sm:p-2.5 space-y-0.5 sm:space-y-1.5 text-[#1E3A8A] leading-[15px] sm:leading-[18px] md:leading-[20px] overflow-hidden"
               style={{
                 fontFamily: "'Caveat', 'Kalam', 'Segoe Print', cursive",
-                backgroundImage: "linear-gradient(transparent 19px, #E5DEC9 20px)",
-                backgroundSize: "100% 20px",
+                backgroundImage: "linear-gradient(transparent 18px, #E5DEC9 19px)",
+                backgroundSize: "100% 19px",
               }}
             >
-              <div className="text-[16px] font-bold text-[#8C2D19] tracking-wide">
+              <div className="text-[12px] sm:text-[14px] md:text-[16px] font-bold text-[#8C2D19] tracking-wide truncate">
                 Today&apos;s Studio Shoot &amp; Crew Schedule:
               </div>
 
-              <div className="text-[15px] leading-[19px] text-[#1E3A8A] font-semibold">
+              <div className="text-[10.5px] sm:text-[13px] md:text-[15px] leading-[14px] sm:leading-[18px] text-[#1E3A8A] font-semibold">
                 <span className="text-[#8C2D19] font-bold">14th Dec Royal Wedding Lineup:</span><br />
-                • Lead: Vijay (Sony A7IV) | Candid: Manoj (Prime 85mm) | Drone: Karthik
+                • Lead: Vijay (Sony A7IV) | Candid: Manoj | Drone: Karthik
               </div>
 
-              <div className="text-[14.5px] leading-[19px] text-gray-900 font-bold">
+              <div className="text-[10px] sm:text-[12.5px] md:text-[14.5px] leading-[14px] sm:leading-[18px] text-gray-900 font-bold">
                 Pending Collections Urgent:<br />
-                • Sneha: Collect ₹25k at hall entrance | Siva: ₹1,00,000 (Send invoice)
+                • Sneha: Collect ₹25k | Siva: ₹1,00,000 (Invoice)
               </div>
 
-              <div className="text-[13.5px] line-through text-gray-500">
+              <div className="text-[9.5px] sm:text-[12px] md:text-[13.5px] line-through text-gray-500 hidden xs:block">
                 • Format 4x 128GB Sony Tough cards (Done)
               </div>
             </div>
 
             {/* Diary Footer */}
-            <div className="bg-[#F3EBD8] px-3 py-1 border-t border-[#D8D0BE] flex items-center justify-between text-[8px] font-mono text-[#8C5D35] shrink-0">
+            <div className="bg-[#F3EBD8] px-2 sm:px-3 py-0.5 sm:py-1 border-t border-[#D8D0BE] flex items-center justify-between text-[7px] sm:text-[8px] font-mono text-[#8C5D35] shrink-0">
               <span>Studio Crew Logbook</span>
               <span className="text-gray-600 font-semibold">3 Shoots Pending</span>
             </div>
           </motion.div>
 
 
-          {/* ── 5% GAP ── */}
-          <div className="w-[5%]" aria-hidden="true" />
-
-
-          {/* ── SEGMENT 3: 30% MESSAGING APP (EXITS THIRD ON SCROLL) ── */}
+          {/* ── SEGMENT 3: 35% MESSAGING APP (EXITS THIRD ON SCROLL) ── */}
           <motion.div
             style={{
               opacity: messagesOpacity,
@@ -247,54 +243,54 @@ export function RetroHeroVisual() {
               scale: messagesScale,
               rotate: messagesRotate,
             }}
-            className="w-[30%] h-full rounded-2xl border-2 border-blue-500/30 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col justify-between"
+            className="w-[35%] sm:w-[32%] h-full rounded-xl sm:rounded-2xl border border-blue-500/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between"
           >
             {/* Header */}
-            <div className="bg-[#F8FAFC] border-b border-gray-200 px-2.5 py-1.5 text-gray-800 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5 truncate">
-                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center text-[10px] shrink-0">
+            <div className="bg-[#F8FAFC] border-b border-gray-200 px-1.5 sm:px-2.5 py-1 sm:py-1.5 text-gray-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 truncate">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center text-[9px] sm:text-[10px] shrink-0">
                   P
                 </div>
                 <div className="truncate">
-                  <div className="text-[10px] font-bold text-gray-900 leading-tight truncate">Priya (Dec 14)</div>
-                  <div className="text-[7.5px] text-gray-500">SMS • Text</div>
+                  <div className="text-[8.5px] sm:text-[10px] font-bold text-gray-900 leading-tight truncate">Priya</div>
+                  <div className="text-[6.5px] sm:text-[7.5px] text-gray-500 truncate">SMS</div>
                 </div>
               </div>
-              <span className="text-blue-600 font-semibold text-[8.5px] shrink-0">Details</span>
+              <span className="text-blue-600 font-semibold text-[7.5px] sm:text-[8.5px] shrink-0 hidden xs:inline">Details</span>
             </div>
 
             {/* Notification */}
-            <div className="bg-gray-50 border-b border-gray-200 px-2 py-0.5 text-[7.5px] flex items-center justify-between text-gray-700 shrink-0">
-              <span className="truncate">💬 <strong>Vikram:</strong> &quot;Transfer tomorrow&quot;</span>
-              <span className="bg-blue-600 text-white rounded-full px-1 text-[6.5px] font-bold">1</span>
+            <div className="bg-gray-50 border-b border-gray-200 px-1.5 sm:px-2 py-0.5 text-[6.5px] sm:text-[7.5px] flex items-center justify-between text-gray-700 shrink-0">
+              <span className="truncate">💬 <strong>Vikram:</strong> Paid</span>
+              <span className="bg-blue-600 text-white rounded-full px-1 text-[6px] sm:text-[6.5px] font-bold">1</span>
             </div>
 
             {/* Message Stream */}
-            <div className="flex-1 p-2 space-y-1 text-[8.5px] leading-tight flex flex-col justify-end bg-[#F8FAFC] overflow-hidden">
-              <div className="bg-[#E2E8F0] rounded-xl rounded-bl-xs p-1.5 max-w-[90%] text-gray-900 shadow-2xs">
-                Available Dec 14 for wedding?
-                <div className="text-[6.5px] text-gray-500 text-right mt-0.5">10:14 AM</div>
+            <div className="flex-1 p-1 sm:p-2 space-y-0.5 sm:space-y-1 text-[7px] sm:text-[8.5px] leading-tight flex flex-col justify-end bg-[#F8FAFC] overflow-hidden">
+              <div className="bg-[#E2E8F0] rounded-lg sm:rounded-xl rounded-bl-xs p-1 sm:p-1.5 max-w-[95%] sm:max-w-[90%] text-gray-900 shadow-2xs">
+                Available Dec 14?
+                <div className="text-[5.5px] sm:text-[6.5px] text-gray-500 text-right mt-0.5">10:14 AM</div>
               </div>
-              <div className="bg-[#007AFF] text-white ml-auto rounded-xl rounded-br-xs p-1.5 max-w-[90%] shadow-2xs">
-                Yes! Package is ₹1,60,000.
-                <div className="text-[6.5px] text-blue-100 text-right mt-0.5">Delivered</div>
+              <div className="bg-[#007AFF] text-white ml-auto rounded-lg sm:rounded-xl rounded-br-xs p-1 sm:p-1.5 max-w-[95%] sm:max-w-[90%] shadow-2xs">
+                Yes! ₹1,60,000.
+                <div className="text-[5.5px] sm:text-[6.5px] text-blue-100 text-right mt-0.5">Delivered</div>
               </div>
-              <div className="bg-[#E2E8F0] rounded-xl rounded-bl-xs p-1.5 max-w-[90%] text-gray-900 shadow-2xs">
-                Advance ₹50k sent! Ref: 429188.
-                <div className="text-[6.5px] text-gray-500 text-right mt-0.5">10:25 AM</div>
+              <div className="bg-[#E2E8F0] rounded-lg sm:rounded-xl rounded-bl-xs p-1 sm:p-1.5 max-w-[95%] sm:max-w-[90%] text-gray-900 shadow-2xs">
+                Advance ₹50k sent!
+                <div className="text-[5.5px] sm:text-[6.5px] text-gray-500 text-right mt-0.5">10:25 AM</div>
               </div>
-              <div className="bg-[#007AFF] text-white ml-auto rounded-xl rounded-br-xs p-1.5 max-w-[90%] shadow-2xs">
-                Received! Booking blocked.
-                <div className="text-[6.5px] text-blue-100 text-right mt-0.5">Delivered</div>
+              <div className="bg-[#007AFF] text-white ml-auto rounded-lg sm:rounded-xl rounded-br-xs p-1 sm:p-1.5 max-w-[95%] sm:max-w-[90%] shadow-2xs">
+                Received! Blocked.
+                <div className="text-[5.5px] sm:text-[6.5px] text-blue-100 text-right mt-0.5">Delivered</div>
               </div>
             </div>
 
             {/* Input Bar */}
-            <div className="bg-white px-2 py-1 border-t border-gray-200 flex items-center gap-1 text-[8px] text-gray-500 shrink-0">
-              <div className="bg-gray-100 rounded-full px-2 py-0.5 flex-1 text-gray-600 border border-gray-200 truncate text-[7.5px]">
+            <div className="bg-white px-1.5 sm:px-2 py-0.5 sm:py-1 border-t border-gray-200 flex items-center gap-1 text-[7px] sm:text-[8px] text-gray-500 shrink-0">
+              <div className="bg-gray-100 rounded-full px-2 py-0.5 flex-1 text-gray-600 border border-gray-200 truncate text-[6.5px] sm:text-[7.5px]">
                 Text Message
               </div>
-              <div className="w-3.5 h-3.5 rounded-full bg-[#007AFF] text-white flex items-center justify-center text-[8px] font-bold">
+              <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-[#007AFF] text-white flex items-center justify-center text-[7px] sm:text-[8px] font-bold">
                 ↑
               </div>
             </div>
@@ -314,7 +310,7 @@ export function RetroHeroVisual() {
         }}
         className="absolute inset-0 flex items-center justify-center"
       >
-        <div className="w-full rounded-2xl border-2 border-[#D8D2C4] bg-white shadow-[0_20px_50px_rgba(28,25,23,0.12)] overflow-hidden flex flex-col">
+        <div className="w-full rounded-xl sm:rounded-2xl border border-[#D8D2C4] sm:border-2 bg-white shadow-[0_12px_40px_rgba(28,25,23,0.10)] overflow-hidden flex flex-col">
           
           {/* ── STAGE 1: DASHBOARD HEADER (ARRIVES FIRST) ── */}
           <motion.div
@@ -322,19 +318,19 @@ export function RetroHeroVisual() {
               opacity: headerOpacity,
               y: headerY,
             }}
-            className="flex items-center justify-between p-3 sm:p-3.5 border-b border-border-default bg-[#FAF7F2] shrink-0"
+            className="flex items-center justify-between p-2 sm:p-3 lg:p-3.5 border-b border-border-default bg-[#FAF7F2] shrink-0"
           >
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="badge-brand-blue text-[9.5px] py-0.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
+                <span className="badge-brand-blue text-[8px] sm:text-[9.5px] py-0.2 sm:py-0.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary animate-pulse" />
                   Studio workspace • test-studio
                 </span>
-                <span className="badge-status-neutral text-[9px]">
+                <span className="badge-status-neutral text-[8px] sm:text-[9px]">
                   OS Active
                 </span>
               </div>
-              <h2 className="text-sm sm:text-base font-extrabold text-text-primary tracking-tight">
+              <h2 className="text-xs sm:text-sm lg:text-base font-extrabold text-text-primary tracking-tight">
                 Studio Business Dashboard
               </h2>
             </div>
@@ -347,7 +343,7 @@ export function RetroHeroVisual() {
           </motion.div>
 
           {/* Dashboard Body Container */}
-          <div className="p-3 sm:p-3.5 bg-white space-y-2.5">
+          <div className="p-2 sm:p-3 lg:p-3.5 bg-white space-y-1.5 sm:space-y-2.5">
             
             {/* ── STAGE 2: TOP 3 KPI CARDS (ARRIVE SECOND) ── */}
             <motion.div
@@ -356,29 +352,29 @@ export function RetroHeroVisual() {
                 y: kpiY,
                 scale: kpiScale,
               }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5"
+              className="grid grid-cols-3 gap-1.5 sm:gap-2.5"
             >
               {/* Metric 1: Revenue with trend timeline */}
-              <div className="rounded-xl border border-border-default bg-[#FAF7F2]/60 p-2.5">
+              <div className="rounded-lg sm:rounded-xl border border-border-default bg-[#FAF7F2]/60 p-1.5 sm:p-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary">Revenue</span>
-                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                    +14.2% vs prev
+                  <span className="text-[7.5px] sm:text-[9px] font-bold uppercase tracking-wider text-text-tertiary">Revenue</span>
+                  <span className="text-[7px] sm:text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1 sm:px-1.5 py-0.2 rounded border border-emerald-200">
+                    +14%
                   </span>
                 </div>
-                <div className="mt-1 text-lg sm:text-xl font-black text-brand-blue-primary tracking-tight">
+                <div className="mt-0.5 sm:mt-1 text-xs sm:text-base md:text-lg lg:text-xl font-black text-brand-blue-primary tracking-tight truncate">
                   ₹5,80,000
                 </div>
                 
                 {/* Sparkline curve with timeline dates */}
-                <div className="mt-1 pt-1 border-t border-border-default/60">
-                  <div className="flex items-center justify-between text-[7.5px] font-mono text-text-tertiary">
+                <div className="mt-0.5 sm:mt-1 pt-0.5 sm:pt-1 border-t border-border-default/60">
+                  <div className="hidden sm:flex items-center justify-between text-[7.5px] font-mono text-text-tertiary">
                     <span>13/9</span>
                     <span>20/9</span>
                     <span>27/9</span>
                     <span className="font-bold text-brand-blue-primary">4/10</span>
                   </div>
-                  <div className="h-3.5 w-full mt-0.5">
+                  <div className="h-2 sm:h-3.5 w-full mt-0.5">
                     <svg className="w-full h-full overflow-visible" viewBox="0 0 120 20" preserveAspectRatio="none">
                       <path
                         d="M 0 16 Q 30 14, 40 10 T 80 11 T 120 3"
@@ -394,26 +390,26 @@ export function RetroHeroVisual() {
               </div>
 
               {/* Metric 2: Orders Count with trend timeline */}
-              <div className="rounded-xl border border-border-default bg-[#FAF7F2]/60 p-2.5">
+              <div className="rounded-lg sm:rounded-xl border border-border-default bg-[#FAF7F2]/60 p-1.5 sm:p-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary">Orders</span>
-                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                    +20% vs prev
+                  <span className="text-[7.5px] sm:text-[9px] font-bold uppercase tracking-wider text-text-tertiary">Orders</span>
+                  <span className="text-[7px] sm:text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1 sm:px-1.5 py-0.2 rounded border border-emerald-200">
+                    +20%
                   </span>
                 </div>
-                <div className="mt-1 text-lg sm:text-xl font-black text-text-primary tracking-tight">
-                  6 Confirmed
+                <div className="mt-0.5 sm:mt-1 text-xs sm:text-base md:text-lg lg:text-xl font-black text-text-primary tracking-tight truncate">
+                  6 Orders
                 </div>
 
                 {/* Timeline dates */}
-                <div className="mt-1 pt-1 border-t border-border-default/60">
-                  <div className="flex items-center justify-between text-[7.5px] font-mono text-text-tertiary">
+                <div className="mt-0.5 sm:mt-1 pt-0.5 sm:pt-1 border-t border-border-default/60">
+                  <div className="hidden sm:flex items-center justify-between text-[7.5px] font-mono text-text-tertiary">
                     <span>13/9</span>
                     <span>20/9</span>
                     <span>27/9</span>
                     <span className="font-bold text-text-primary">4/10</span>
                   </div>
-                  <div className="h-3.5 w-full mt-0.5">
+                  <div className="h-2 sm:h-3.5 w-full mt-0.5">
                     <svg className="w-full h-full overflow-visible" viewBox="0 0 120 20" preserveAspectRatio="none">
                       <path
                         d="M 0 15 Q 30 16, 40 12 T 80 9 T 120 4"
@@ -429,15 +425,15 @@ export function RetroHeroVisual() {
               </div>
 
               {/* Metric 3: Pending Collections */}
-              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-2.5">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-brand-orange-primary">
-                  Pending Collections
+              <div className="rounded-lg sm:rounded-xl border border-amber-200 bg-amber-50/50 p-1.5 sm:p-2.5">
+                <span className="text-[7.5px] sm:text-[9px] font-bold uppercase tracking-wider text-brand-orange-primary truncate block">
+                  Collections
                 </span>
-                <div className="mt-1 text-lg sm:text-xl font-black text-brand-orange-primary tracking-tight">
+                <div className="mt-0.5 sm:mt-1 text-xs sm:text-base md:text-lg lg:text-xl font-black text-brand-orange-primary tracking-tight truncate">
                   ₹1,80,000
                 </div>
-                <p className="mt-1 text-[9px] text-amber-900/80 font-medium leading-tight">
-                  Outstanding balance tracked automatically from active orders
+                <p className="mt-0.5 text-[7px] sm:text-[8.5px] text-amber-900/80 font-medium leading-tight truncate hidden xs:block">
+                  Outstanding balance
                 </p>
               </div>
             </motion.div>
@@ -450,24 +446,24 @@ export function RetroHeroVisual() {
               }}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">
+                <span className="text-[8px] sm:text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">
                   Order Status Filters
                 </span>
-                <span className="text-[8.5px] text-text-tertiary">
-                  Click a status to filter the Orders table below
+                <span className="text-[7px] sm:text-[8.5px] text-text-tertiary hidden xs:inline">
+                  Click status to filter
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-lg border border-brand-blue-primary bg-brand-blue-background/40 px-2 py-0.5 text-[8.5px] font-bold text-brand-blue-primary shadow-2xs">
-                  All Confirmed (6)
+              <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-0.5 sm:pb-0">
+                <span className="whitespace-nowrap rounded-lg border border-brand-blue-primary bg-brand-blue-background/40 px-1.5 sm:px-2 py-0.5 text-[7.5px] sm:text-[8.5px] font-bold text-brand-blue-primary shadow-2xs">
+                  All (6)
                 </span>
-                <span className="rounded-lg border border-brand-blue-soft bg-white px-2 py-0.5 text-[8.5px] font-semibold text-text-secondary">
-                  Awaiting Event (1)
+                <span className="whitespace-nowrap rounded-lg border border-brand-blue-soft bg-white px-1.5 sm:px-2 py-0.5 text-[7.5px] sm:text-[8.5px] font-semibold text-text-secondary">
+                  Awaiting (1)
                 </span>
-                <span className="rounded-lg border border-brand-orange-soft bg-brand-orange-background/30 px-2 py-0.5 text-[8.5px] font-bold text-brand-orange-primary">
-                  Post-Event In Progress (4)
+                <span className="whitespace-nowrap rounded-lg border border-brand-orange-soft bg-brand-orange-background/30 px-1.5 sm:px-2 py-0.5 text-[7.5px] sm:text-[8.5px] font-bold text-brand-orange-primary">
+                  In Progress (4)
                 </span>
-                <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8.5px] font-bold text-emerald-700">
+                <span className="whitespace-nowrap rounded-lg border border-emerald-200 bg-emerald-50 px-1.5 sm:px-2 py-0.5 text-[7.5px] sm:text-[8.5px] font-bold text-emerald-700">
                   Completed (1)
                 </span>
               </div>
@@ -479,67 +475,69 @@ export function RetroHeroVisual() {
                 opacity: tableOpacity,
                 y: tableY,
               }}
-              className="rounded-xl border border-border-default bg-white overflow-hidden shadow-2xs"
+              className="rounded-lg sm:rounded-xl border border-border-default bg-white overflow-hidden shadow-2xs"
             >
-              <table className="w-full text-left border-collapse text-[9px]">
-                <thead>
-                  <tr className="bg-[#FAF7F2] text-text-secondary font-bold border-b border-border-default uppercase tracking-wider text-[8px]">
-                    <th className="p-1.5 px-2">Order</th>
-                    <th className="p-1.5 px-2">Customer</th>
-                    <th className="p-1.5 px-2">Event / Shoot</th>
-                    <th className="p-1.5 px-2">Date</th>
-                    <th className="p-1.5 px-2">Status</th>
-                    <th className="p-1.5 px-2 text-right">Amount</th>
-                    <th className="p-1.5 px-2 text-right">Balance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-default/60 font-mono text-[8.5px]">
-                  <tr className="hover:bg-[#FAF7F2] transition">
-                    <td className="p-1.5 px-2 font-bold text-brand-blue-primary">ORD-TES-261008-010906</td>
-                    <td className="p-1.5 px-2 font-sans font-semibold text-text-primary">Priya &amp; Arjun</td>
-                    <td className="p-1.5 px-2 font-sans text-text-secondary">Wedding</td>
-                    <td className="p-1.5 px-2 text-text-tertiary">2026-10-07</td>
-                    <td className="p-1.5 px-2">
-                      <span className="badge-brand-orange text-[7.5px] py-0.2">Post-Event In Progress</span>
-                    </td>
-                    <td className="p-1.5 px-2 text-right font-bold text-text-primary">₹1,50,000</td>
-                    <td className="p-1.5 px-2 text-right font-bold text-brand-orange-primary">₹50,000</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAF7F2] transition">
-                    <td className="p-1.5 px-2 font-bold text-brand-blue-primary">ORD-TES-261008-004803</td>
-                    <td className="p-1.5 px-2 font-sans font-semibold text-text-primary">Vikram Sharma</td>
-                    <td className="p-1.5 px-2 font-sans text-text-secondary">Reception</td>
-                    <td className="p-1.5 px-2 text-text-tertiary">2026-10-06</td>
-                    <td className="p-1.5 px-2">
-                      <span className="badge-brand-orange text-[7.5px] py-0.2">Post-Event In Progress</span>
-                    </td>
-                    <td className="p-1.5 px-2 text-right font-bold text-text-primary">₹80,000</td>
-                    <td className="p-1.5 px-2 text-right font-bold text-brand-orange-primary">₹30,000</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAF7F2] transition bg-amber-50/20">
-                    <td className="p-1.5 px-2 font-bold text-brand-blue-primary">ORD-TES-261008-003234</td>
-                    <td className="p-1.5 px-2 font-sans font-bold text-text-primary">Siva Krishna</td>
-                    <td className="p-1.5 px-2 font-sans text-text-secondary">Wedding</td>
-                    <td className="p-1.5 px-2 text-text-tertiary">2026-10-07</td>
-                    <td className="p-1.5 px-2">
-                      <span className="badge-brand-orange text-[7.5px] py-0.2">Post-Event In Progress</span>
-                    </td>
-                    <td className="p-1.5 px-2 text-right font-bold text-text-primary">₹3,20,000</td>
-                    <td className="p-1.5 px-2 text-right font-black text-brand-orange-primary">₹1,00,000</td>
-                  </tr>
-                  <tr className="hover:bg-[#FAF7F2] transition">
-                    <td className="p-1.5 px-2 font-bold text-brand-blue-primary">ORD-TES-261007-235733</td>
-                    <td className="p-1.5 px-2 font-sans font-semibold text-text-primary">Ananya &amp; Rohit</td>
-                    <td className="p-1.5 px-2 font-sans text-text-secondary">Wedding</td>
-                    <td className="p-1.5 px-2 text-text-tertiary">2026-10-14</td>
-                    <td className="p-1.5 px-2">
-                      <span className="badge-brand-blue text-[7.5px] py-0.2">Awaiting Event</span>
-                    </td>
-                    <td className="p-1.5 px-2 text-right font-bold text-text-primary">₹2,50,000</td>
-                    <td className="p-1.5 px-2 text-right font-bold text-emerald-700 bg-emerald-50/60">Paid</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[420px] sm:min-w-full text-left border-collapse text-[8px] sm:text-[9px]">
+                  <thead>
+                    <tr className="bg-[#FAF7F2] text-text-secondary font-bold border-b border-border-default uppercase tracking-wider text-[7.5px] sm:text-[8px]">
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Order</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Customer</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Event / Shoot</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Date</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Status</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right">Amount</th>
+                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-default/60 font-mono text-[7.5px] sm:text-[8.5px]">
+                    <tr className="hover:bg-[#FAF7F2] transition">
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-010906</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Priya &amp; Arjun</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-07</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
+                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      </td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹1,50,000</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-brand-orange-primary">₹50,000</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAF7F2] transition">
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-004803</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Vikram Sharma</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Reception</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-06</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
+                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      </td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹80,000</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-brand-orange-primary">₹30,000</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAF7F2] transition bg-amber-50/20">
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-003234</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-bold text-text-primary">Siva Krishna</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-07</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
+                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      </td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹3,20,000</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-black text-brand-orange-primary">₹1,00,000</td>
+                    </tr>
+                    <tr className="hover:bg-[#FAF7F2] transition">
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261007-235733</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Ananya &amp; Rohit</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-14</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
+                        <span className="badge-brand-blue text-[7px] sm:text-[7.5px] py-0.2">Awaiting Event</span>
+                      </td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹2,50,000</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-emerald-700 bg-emerald-50/60">Paid</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </motion.div>
 
           </div>

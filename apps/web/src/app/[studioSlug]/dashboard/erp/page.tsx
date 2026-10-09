@@ -272,7 +272,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   return (
     <div className="flex h-full bg-surface-app">
       {/* Crew Members List Panel */}
-      <div className={`flex flex-col ${selected ? "w-1/2 border-r border-border-default" : "w-full"} h-full`}>
+      <div className={`flex flex-col ${selected ? "hidden lg:flex lg:w-1/2 border-r border-border-default" : "w-full"} h-full`}>
         {/* Header */}
         <header className="header-brand-purple">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -497,17 +497,18 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
       {/* Selected Crew Detail Drawer */}
       {selected && (
-        <div className="w-1/2 flex flex-col h-full bg-white overflow-y-auto border-l border-border-default">
-          <div className="sticky top-0 z-10 border-b border-border-default bg-white px-6 py-4 flex items-center justify-between">
+        <div className="w-full lg:w-1/2 flex flex-col h-full bg-white overflow-y-auto border-l border-border-default">
+          <div className="sticky top-0 z-10 border-b border-border-default bg-white px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-brand-purple-primary">Crew Profile</span>
               <h2 className="text-sm font-bold text-text-primary">Member Overview</h2>
             </div>
             <button
               onClick={() => setSelected(null)}
-              className="btn-brand-outline py-1.5 px-3 text-xs"
+              className="btn-brand-outline py-1.5 px-3 text-xs flex items-center gap-1"
             >
-              Close
+              <span>←</span>
+              <span>Back</span>
             </button>
           </div>
 

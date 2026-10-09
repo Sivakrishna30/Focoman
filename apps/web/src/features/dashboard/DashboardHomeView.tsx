@@ -612,7 +612,7 @@ export function DashboardHomeView({
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -626,14 +626,14 @@ export function DashboardHomeView({
       </div>
 
       {/* ── Two-Column Layout (Main Dashboard Content + Quick Actions Panel) ── */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
         {/* Left Column: Existing Dashboard Content */}
-        <div className="flex-1 min-w-0 space-y-6 w-full">
+        <div className="flex-1 min-w-0 space-y-4 sm:space-y-6 w-full">
           {/* ══════════════════════════════════════
               PANEL 1: BUSINESS REPORTS
           ══════════════════════════════════════ */}
           <section className="rounded-2xl border border-border-default bg-white shadow-xs overflow-hidden">
-        <div className="px-5 py-4 border-b border-border-divider">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-border-divider">
           <PanelHeader
             title="Business Reports"
             collapsed={collapsed.businessReports}
@@ -642,10 +642,10 @@ export function DashboardHomeView({
         </div>
 
         {!collapsed.businessReports && (
-          <div className="p-5 space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-3.5 sm:p-5 space-y-6 sm:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* --- REVENUE SECTION --- */}
-              <div className="rounded-xl border border-border-default bg-surface-app/40 p-5">
+              <div className="rounded-xl border border-border-default bg-surface-app/40 p-3.5 sm:p-5">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">
@@ -854,82 +854,82 @@ export function DashboardHomeView({
 
             {/* D: Order Status Summary */}
             <div>
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-3">
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-2 sm:mb-3">
                 Order Status
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 <button
                   onClick={() => handleStatusClick("ALL")}
-                  className={`rounded-xl border p-3.5 text-left transition hover:shadow-sm group ${
+                  className={`rounded-xl border p-2.5 sm:p-3.5 text-left transition hover:shadow-sm group ${
                     orderStatusFilter === "ALL"
                       ? "border-brand-blue-primary bg-brand-blue-background shadow-xs"
                       : "border-border-default bg-surface-app/50 hover:border-brand-blue-light hover:bg-white"
                   }`}
                 >
-                  <p className="text-[11px] font-semibold text-text-secondary">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-text-secondary">
                     Total Confirmed
                   </p>
-                  <p className="mt-1 text-xl font-extrabold text-text-primary">
+                  <p className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-extrabold text-text-primary">
                     {totalConfirmed}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-text-tertiary">
+                  <p className="mt-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
                     All active orders
                   </p>
                 </button>
 
                 <button
                   onClick={() => handleStatusClick("AWAITING_EVENT")}
-                  className={`rounded-xl border p-3.5 text-left transition hover:shadow-sm group ${
+                  className={`rounded-xl border p-2.5 sm:p-3.5 text-left transition hover:shadow-sm group ${
                     orderStatusFilter === "AWAITING_EVENT"
                       ? "border-brand-blue-primary bg-brand-blue-background shadow-xs"
                       : "border-border-default bg-surface-app/50 hover:border-brand-blue-light hover:bg-white"
                   }`}
                 >
-                  <p className="text-[11px] font-semibold text-text-secondary">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-text-secondary">
                     Awaiting Event
                   </p>
-                  <p className="mt-1 text-xl font-extrabold text-brand-blue-primary">
+                  <p className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-extrabold text-brand-blue-primary">
                     {awaitingEvent}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-text-tertiary">
+                  <p className="mt-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
                     Upcoming shoots
                   </p>
                 </button>
 
                 <button
                   onClick={() => handleStatusClick("POST_EVENT_IN_PROGRESS")}
-                  className={`rounded-xl border p-3.5 text-left transition hover:shadow-sm group ${
+                  className={`rounded-xl border p-2.5 sm:p-3.5 text-left transition hover:shadow-sm group ${
                     orderStatusFilter === "POST_EVENT_IN_PROGRESS"
                       ? "border-brand-orange-primary bg-brand-orange-background shadow-xs"
                       : "border-border-default bg-surface-app/50 hover:border-brand-orange-light hover:bg-white"
                   }`}
                 >
-                  <p className="text-[11px] font-semibold text-text-secondary">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-text-secondary">
                     Post-Event
                   </p>
-                  <p className="mt-1 text-xl font-extrabold text-brand-orange-primary">
+                  <p className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-extrabold text-brand-orange-primary">
                     {postEvent}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-text-tertiary">
+                  <p className="mt-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
                     In production
                   </p>
                 </button>
 
                 <button
                   onClick={() => handleStatusClick("COMPLETED")}
-                  className={`rounded-xl border p-3.5 text-left transition hover:shadow-sm group ${
+                  className={`rounded-xl border p-2.5 sm:p-3.5 text-left transition hover:shadow-sm group ${
                     orderStatusFilter === "COMPLETED"
                       ? "border-emerald-500 bg-emerald-50 shadow-xs"
                       : "border-border-default bg-surface-app/50 hover:border-emerald-200 hover:bg-white"
                   }`}
                 >
-                  <p className="text-[11px] font-semibold text-text-secondary">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-text-secondary">
                     Completed
                   </p>
-                  <p className="mt-1 text-xl font-extrabold text-emerald-700">
+                  <p className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-extrabold text-emerald-700">
                     {completedCount}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-text-tertiary">
+                  <p className="mt-0.5 text-[9px] sm:text-[10px] text-text-tertiary">
                     Delivered &amp; closed
                   </p>
                 </button>
@@ -940,20 +940,20 @@ export function DashboardHomeView({
             </div>
 
             {/* E: Pending Collections */}
-            <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/40 px-5 py-4">
+            <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/40 px-4 py-3 sm:px-5 sm:py-4">
               <div>
                 <p className="text-xs font-semibold text-brand-orange-primary">
                   Pending Collections
                 </p>
-                <p className="mt-1 text-2xl font-extrabold text-brand-orange-primary">
+                <p className="mt-0.5 sm:mt-1 text-xl sm:text-2xl font-extrabold text-brand-orange-primary">
                   {formatINR(pendingCollections)}
                 </p>
-                <p className="mt-0.5 text-[11px] text-brand-orange-primary/70">
+                <p className="mt-0.5 text-[10px] sm:text-[11px] text-brand-orange-primary/70">
                   Outstanding balance from active orders
                 </p>
               </div>
               <svg
-                className="h-8 w-8 text-brand-orange-primary/30"
+                className="h-7 w-7 sm:h-8 sm:w-8 text-brand-orange-primary/30"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
