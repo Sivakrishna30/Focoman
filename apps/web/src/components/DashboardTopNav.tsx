@@ -3,9 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { useLanguage } from "@/context/LanguageContext";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
 import { StudioPlan } from "@focoman/types";
@@ -25,7 +22,6 @@ export function DashboardTopNav({
   const params = useParams();
   const studioSlug = (params?.studioSlug as string) || "";
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
 
   useEffect(() => {
     setCurrentPlanInfo(initialPlanInfo);
@@ -88,7 +84,7 @@ export function DashboardTopNav({
     currentPlanInfo?.plan === "PROFESSIONAL";
 
   return (
-    <div className="h-14 border-b border-border-default bg-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
+    <div className="h-14 border-b border-[#D8D2C4] bg-[#FAF7F2] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-[0_1px_2px_rgba(40,30,20,0.04)]">
       <div className="flex items-center gap-2">
         {/* Top left space kept clean */}
       </div>
@@ -98,38 +94,38 @@ export function DashboardTopNav({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-blue-primary text-white font-bold text-xs focus:outline-none hover:bg-brand-blue-hover shadow-xs transition"
+              className="flex items-center justify-center w-8 h-8 rounded-md bg-[#0EA5E9] text-white font-bold text-xs border border-[#0369A1] shadow-[0_2px_0_#0369A1] hover:bg-[#0284C7] active:translate-y-[1.5px] active:shadow-none focus:outline-none transition"
               title={user.email || "Account"}
             >
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : "U")}
             </button>
 
             {isOpen && (
-              <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-border-default bg-white py-2 shadow-lg z-50">
-                <div className="px-4 py-2 border-b border-border-default mb-1">
-                  <p className="text-xs font-semibold text-text-primary truncate">{user.displayName || "Studio Member"}</p>
-                  <p className="text-[10px] text-text-tertiary truncate">{user.email}</p>
+              <div className="absolute right-0 mt-2 w-60 rounded-md border border-[#D8D2C4] bg-[#FFFFFF] p-1.5 shadow-[0_4px_16px_rgba(40,30,20,0.12)] z-50">
+                <div className="px-3 py-2 border-b border-[#E6E0D4] mb-1">
+                  <p className="text-xs font-bold text-[#1C1917] truncate">{user.displayName || "Studio Member"}</p>
+                  <p className="text-[10px] text-[#8C857B] truncate">{user.email}</p>
                 </div>
 
                 <Link
                   href="/workspaces"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
+                  className="block px-3 py-1.5 text-xs font-medium text-[#57534E] hover:bg-[#FAF7F2] hover:text-[#1C1917] rounded transition"
                 >
-                  {t("nav.workspaces", "My Workspaces")}
+                  My Workspaces
                 </Link>
 
                 {role === "STUDIO_OWNER" && (
-                  <div className="my-1.5 border-y border-border-default/60 py-2.5 px-3 bg-slate-50/70">
+                  <div className="my-1.5 border-y border-[#E6E0D4] py-2.5 px-3 bg-[#FAF7F2] rounded">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C857B]">
                         Studio Plan
                       </span>
                       <span
-                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
                           hasAnySubscription
-                            ? "bg-brand-blue-background text-brand-blue-primary border border-brand-blue-soft"
-                            : "bg-slate-200/80 text-slate-700"
+                            ? "bg-[#F0F9FF] text-[#0369A1] border border-[#7DD3FC]"
+                            : "bg-[#ECE6DE] text-[#57534E] border border-[#D8D2C4]"
                         }`}
                       >
                         {hasAnySubscription ? "PRO" : "FREE"}
@@ -140,7 +136,7 @@ export function DashboardTopNav({
                       <Link
                         href={studioSlug ? `/checkout?studio=${studioSlug}` : "/checkout"}
                         onClick={() => setIsOpen(false)}
-                        className="w-full text-center flex items-center justify-center rounded-xl bg-brand-blue-primary px-3 py-2 text-xs font-bold text-white shadow-2xs hover:bg-brand-blue-hover transition"
+                        className="w-full text-center flex items-center justify-center rounded-md bg-[#0EA5E9] border border-[#0369A1] px-3 py-1.5 text-xs font-bold text-white shadow-[0_2px_0_#0369A1] hover:bg-[#0284C7] active:translate-y-[1.5px] active:shadow-none transition"
                       >
                         Upgrade Plan
                       </Link>
@@ -148,7 +144,7 @@ export function DashboardTopNav({
                       <Link
                         href={studioSlug ? `/checkout?studio=${studioSlug}` : "/checkout"}
                         onClick={() => setIsOpen(false)}
-                        className="w-full text-center flex items-center justify-center rounded-xl border border-border-default bg-white px-3 py-2 text-xs font-bold text-text-primary hover:bg-slate-100 transition shadow-2xs"
+                        className="w-full text-center flex items-center justify-center rounded-md border border-[#C4BCAB] bg-white px-3 py-1.5 text-xs font-bold text-[#1C1917] shadow-[0_2px_0_#C4BCAB] hover:bg-[#FAF7F2] active:translate-y-[1.5px] active:shadow-none transition"
                       >
                         Manage Subscription
                       </Link>
@@ -159,15 +155,15 @@ export function DashboardTopNav({
                 <Link
                   href="/account-settings"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
+                  className="block px-3 py-1.5 text-xs font-medium text-[#57534E] hover:bg-[#FAF7F2] hover:text-[#1C1917] rounded transition"
                 >
-                  {t("nav.settings", "Account Settings")}
+                  Account Settings
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left block px-4 py-2 text-xs font-medium text-status-error hover:bg-red-50 transition"
+                  className="w-full text-left block px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded transition"
                 >
-                  {t("nav.signout", "Sign Out")}
+                  Sign Out
                 </button>
               </div>
             )}

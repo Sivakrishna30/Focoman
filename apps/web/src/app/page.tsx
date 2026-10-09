@@ -7,6 +7,7 @@ import { PricingTwoPanels } from "@/components/public/PricingTwoPanels";
 import { ValueAddedServices } from "@/components/public/ValueAddedServices";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import { StructuredData } from "@/components/public/StructuredData";
+import { RetroHeroVisual } from "@/components/home/RetroHeroVisual";
 import { getPlatformPublicStats } from "@focoman/db";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://focoman.web.app";
@@ -50,43 +51,57 @@ export default async function HomePage() {
         {/* 2. Hero Section */}
         <section
           id="home"
-          className="relative overflow-hidden bg-gradient-to-b from-surface-app via-white to-surface-app px-4 pt-16 pb-20 sm:px-6 sm:pt-20 sm:pb-24 lg:px-8"
+          className="relative h-[340vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
         >
-          <FocomanShieldWatermark className="pointer-events-none absolute left-1/2 top-[52%] h-[480px] w-[480px] sm:h-[520px] sm:w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-20" />
+          <div className="sticky top-0 flex h-screen min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-4 pt-0 sm:pt-2 lg:pt-2 sm:px-6 lg:px-8">
+            <div className="relative z-10 mx-auto max-w-7xl w-full -mt-12 sm:-mt-16 lg:-mt-20">
+              <div className="grid gap-8 lg:gap-8 lg:grid-cols-12 lg:items-center">
+                {/* Left Column: Hero Copy & Actions */}
+                <div className="lg:col-span-5 xl:col-span-5 text-center lg:text-left">
+                  {/* Brand themed badge */}
+                  <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft">
+                    <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-brand-orange-primary">
+                      [ Focus beyond the frames ]
+                    </span>
+                  </div>
 
-          <div className="relative z-10 mx-auto max-w-4xl text-center">
-            <span className="inline-block rounded-full border border-brand-orange-soft bg-brand-orange-background px-5 py-2 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-brand-orange-primary shadow-2xs">
-              Focus beyond the frames
-            </span>
+                <h1 className="retro-serif-heading text-4xl sm:text-5xl md:text-5xl lg:text-[52px] xl:text-[58px] font-black leading-[1.08] tracking-tight text-text-primary">
+                  Run your studio,{" "}
+                  <span className="text-brand-orange-primary underline decoration-brand-orange-soft decoration-[6px] underline-offset-[10px]">
+                    effortlessly.
+                  </span>
+                </h1>
 
-            <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
-              A Complete Business Operating System for{" "}
-              <span className="bg-gradient-to-r from-brand-blue-primary via-brand-orange-primary to-brand-purple-primary bg-clip-text text-transparent">
-                Photography Studios
-              </span>
-            </h1>
+                <p className="mx-auto lg:mx-0 mt-5 max-w-lg text-base sm:text-lg text-[#57534E] leading-relaxed font-normal">
+                  Bring your studio’s work, people, and orders together in one place and spend less time managing the work, more time creating.
+                </p>
 
-            <p className="mx-auto mt-6 max-w-2xl text-base text-text-secondary sm:text-lg lg:text-xl leading-relaxed">
-              Bring your studio’s work, people, and orders together in one place and spend less time managing the work, more time creating.
-            </p>
+                <div className="mt-8 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3.5">
+                  <Link
+                    href="/sign-in"
+                    className="w-full sm:w-auto text-center rounded-xl bg-[#E85D04] px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-[0_3px_0_#B84600] active:translate-y-[2px] active:shadow-none transition hover:bg-[#D95304] flex items-center justify-center gap-2"
+                  >
+                    <span>Start 30-Day Free Trial</span>
+                    <span>→</span>
+                  </Link>
+                  <Link
+                    href="/#how-it-works"
+                    className="w-full sm:w-auto text-center rounded-xl border border-[#D8D2C4] bg-white px-6 py-3.5 text-sm sm:text-base font-bold text-[#1C1917] shadow-[0_2px_0_#C4BCAB] active:translate-y-[2px] active:shadow-none transition hover:bg-[#FAF7F2] flex items-center justify-center gap-2"
+                  >
+                    <span>▶ How It Works</span>
+                    <span className="text-[#8C857B]">↓</span>
+                  </Link>
+                </div>
+              </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-              <Link
-                href="/sign-in"
-                className="w-full sm:w-64 text-center rounded-xl bg-brand-blue-primary px-8 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-sky-600 flex items-center justify-center"
-              >
-                Start 30-Day Free Trial
-              </Link>
-              <Link
-                href="/#how-it-works"
-                className="w-full sm:w-64 text-center rounded-xl border border-border-default bg-white px-8 py-3.5 text-sm font-bold text-text-primary shadow-xs transition hover:bg-slate-50 flex items-center justify-center gap-2"
-              >
-                <span>How Focoman Works</span>
-                <span className="text-text-tertiary">↓</span>
-              </Link>
+              {/* Right Column: Symmetrical Unified Studio Visual */}
+              <div className="lg:col-span-7 xl:col-span-7 flex items-center justify-center w-full">
+                <RetroHeroVisual />
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
         {/* 3. Challenge & Solution Section */}
         <section id="challenge" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

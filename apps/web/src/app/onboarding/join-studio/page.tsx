@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, signInWithGoogle, getCurrentUserIdToken } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, signInWithGoogle, getCurrentUserIdToken, handleRedirectAuth } from "@/lib/firebaseAuth";
 import { acceptInvitationAction, getInvitationClaimStatusAction } from "@/actions/memberActions";
 import { User } from "firebase/auth";
 
@@ -32,6 +32,10 @@ function JoinStudioContent() {
   const [feedback, setFeedback] = useState<{ type: "error" | "success" | "info"; message: string } | null>(null);
 
   useEffect(() => {
+    handleRedirectAuth().catch((err) => {
+      console.error("[JoinStudio] Redirect auth error:", err);
+    });
+
     const unsubscribe = subscribeToAuthState((user) => {
       setCurrentUser(user);
     });

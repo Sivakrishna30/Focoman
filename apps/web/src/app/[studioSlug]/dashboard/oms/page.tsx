@@ -14,18 +14,6 @@ import {
 } from "@/actions/orderActions";
 import { getStudioCustomersAction } from "@/actions/customerActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
-import {
-  isDemoStudio,
-  getDemoOrders,
-  getDemoCustomers,
-  getDemoTasksByOrder,
-  createDemoOrder,
-  updateDemoTaskStatus,
-  updateDemoPaymentStatus,
-  cancelDemoOrder,
-  deleteDemoOrder,
-  subscribeToDemoStore,
-} from "@/lib/demoStore";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
@@ -48,39 +36,6 @@ const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
   REWORK: "badge-status-error",
   COMPLETED: "badge-status-success",
 };
-
-export default function OmsPage({
-  params,
-}: {
-  params: Promise<{ studioSlug: string }>;
-}) {
-  const { studioSlug } = use(params);
-  const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = useMemo(
-    () => orders.find((o) => o.id === selectedId) || null,
-    [orders, selectedId]
-  );
-  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [copiedField, setCopiedField] = useState<"code" | "link" | null>(null);
-
-  const handleCopyText = (text: string, field: "code" | "link") => {
-    if (typeof navigator !== "undefined") {
-      navigator.clipboard.writeText(text);
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
-    }
-  };
-
-  const hasWhatsappPlan = Boolean(
-    studio?.features?.whatsapp ||
-    studio?.planInfo?.selectedCapabilities?.some((c) => c.startsWith("WHATSAPP")) ||
-    (studio as any)?.capabilities?.some((c: string) => c.startsWith("WHATSAPP"))
-  );
 
 const PRESET_EVENT_TYPES = [
   "Wedding",
@@ -131,6 +86,55 @@ const DEFAULT_ORDER_FORM = {
   advanceAmount: "" as unknown as number,
 };
 
+export default function OmsPage({
+  params,
+}: {
+  params: Promise<{ studioSlug: string }>;
+}) {
+  const { studioSlug } = use(params);
+  const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => orders.find((o) => o.id === selectedId) || null,
+    [orders, selectedId]
+  );
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [copiedField, setCopiedField] = useState<"code" | "link" | null>(null);
+
+  const handleCopyText = (text: string, field: "code" | "link") => {
+    if (typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
+
+  const handleShareText = async (url: string, title?: string) => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: title || "Focoman Order Tracking Link",
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+    handleCopyText(url, "link");
+  };
+
+  const hasWhatsappPlan = Boolean(
+    studio?.features?.whatsapp ||
+    studio?.planInfo?.selectedCapabilities?.some((c) => c.startsWith("WHATSAPP")) ||
+    (studio as any)?.capabilities?.some((c: string) => c.startsWith("WHATSAPP"))
+  );
+
+
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,12 +152,10 @@ const DEFAULT_ORDER_FORM = {
   const [deleteTargetOrder, setDeleteTargetOrder] = useState<Order | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isDemo = isDemoStudio(studioSlug);
-
   const [studioCustomers, setStudioCustomers] = useState<Customer[]>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateModal = useCallback(() => {
     setNewOrderForm({
       ...DEFAULT_ORDER_FORM,
       passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
@@ -162,7 +164,7 @@ const DEFAULT_ORDER_FORM = {
     setShowServicesDropdown(false);
     setShowCustomerDropdown(false);
     setShowCreateModal(true);
-  };
+  }, []);
 
   const matchingCustomers = useMemo(() => {
     const q = newOrderForm.customerName.trim().toLowerCase();
@@ -238,13 +240,6 @@ const DEFAULT_ORDER_FORM = {
 
   const loadOrders = useCallback(async (tokenOverride?: string | null) => {
     try {
-      if (isDemo) {
-        const data = getDemoOrders();
-        setOrders(data);
-        setStudioCustomers(getDemoCustomers());
-        setLoading(false);
-        return;
-      }
       const token = tokenOverride ?? (await getIdToken(false)) ?? workspaceToken;
       if (!token) {
         setLoading(false);
@@ -261,32 +256,39 @@ const DEFAULT_ORDER_FORM = {
     } finally {
       setLoading(false);
     }
-  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
+  }, [studioSlug, workspaceToken, getIdToken]);
 
   useEffect(() => {
-    if (isDemo) {
-      void loadOrders();
-      const unsub = subscribeToDemoStore(() => {
-        void loadOrders();
-      });
-      return () => unsub();
-    } else if (!authLoading) {
+    if (!authLoading) {
       void loadOrders(workspaceToken);
     }
-  }, [studioSlug, isDemo, authLoading, workspaceToken, loadOrders]);
+  }, [studioSlug, authLoading, workspaceToken, loadOrders]);
 
   // Load tasks when an order is selected
   useEffect(() => {
     if (selectedId) {
-      if (isDemo) {
-        setSelectedTasks(getDemoTasksByOrder(selectedId));
-      } else if (workspaceToken) {
+      if (workspaceToken) {
         void getOrderTasksAction(selectedId, studioSlug, workspaceToken).then(setSelectedTasks);
       }
     } else {
       setSelectedTasks([]);
     }
-  }, [selectedId, isDemo, studioSlug, workspaceToken]);
+  }, [selectedId, studioSlug, workspaceToken]);
+
+  // Check URL query parameters (e.g. ?orderId=... or ?action=new-order)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const urlOrderId = params.get("orderId");
+    if (urlOrderId) {
+      setSelectedId(urlOrderId);
+    }
+    const action = params.get("action");
+    const newOrder = params.get("newOrder");
+    if (action === "new-order" || newOrder === "true" || newOrder === "1") {
+      handleOpenCreateModal();
+    }
+  }, [handleOpenCreateModal]);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,35 +331,6 @@ const DEFAULT_ORDER_FORM = {
     const resolvedPhone = trimmedPhone
       ? (trimmedPhone.startsWith("+") ? trimmedPhone : `${newOrderForm.countryCode.trim() || "+91"} ${trimmedPhone}`)
       : undefined;
-
-    if (isDemo) {
-      const res = createDemoOrder({
-        customerName: newOrderForm.customerName,
-        customerPhone: resolvedPhone,
-        customerEmail: newOrderForm.customerEmail || undefined,
-        eventType: resolvedEventType,
-        eventDate: newOrderForm.eventDate,
-        eventLocation: newOrderForm.eventLocation.trim() || undefined,
-        services: newOrderForm.services,
-        finalConfirmedPrice: parsedFinalPrice,
-        advanceAmount: parsedAdvance,
-      });
-
-      setIsSubmitting(false);
-      if (res.success && res.order) {
-        setShowCreateModal(false);
-        setNewOrderForm({
-          ...DEFAULT_ORDER_FORM,
-          passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
-        });
-        setOrders(getDemoOrders());
-        setSelectedId(res.order.id);
-        if (res.tasks) setSelectedTasks(res.tasks);
-      } else {
-        setFormError("Failed to create order in demo mode.");
-      }
-      return;
-    }
 
     // Refresh token before mutation
     const token = await getIdToken(true);
@@ -403,16 +376,6 @@ const DEFAULT_ORDER_FORM = {
   };
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
-    if (isDemo && selected) {
-      const res = updateDemoTaskStatus(taskId, newStatus);
-      if (res.success && res.task) {
-        setSelectedTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
-        const refreshedOrders = getDemoOrders();
-        setOrders(refreshedOrders);
-      }
-      return;
-    }
-
     const token = (await getIdToken(false)) ?? workspaceToken;
     if (!selected || !token) return;
     const res = await updateTaskStatusAction({
@@ -431,15 +394,6 @@ const DEFAULT_ORDER_FORM = {
   const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
     if (!selected || isUpdatingPayment) return;
     setIsUpdatingPayment(true);
-
-    if (isDemo) {
-      const res = updateDemoPaymentStatus(selected.id, newPaymentStatus);
-      setIsUpdatingPayment(false);
-      if (res.success && res.order) {
-        setOrders(getDemoOrders());
-      }
-      return;
-    }
 
     const previousOrders = [...orders];
     // Optimistic UI update so owner sees immediate feedback
@@ -514,17 +468,6 @@ const DEFAULT_ORDER_FORM = {
     if (!cancelTargetOrder) return;
     setIsCancelling(true);
 
-    if (isDemo) {
-      const res = cancelDemoOrder(cancelTargetOrder.id, cancelReason.trim() || "Cancelled by studio owner");
-      setIsCancelling(false);
-      if (res.success && res.order) {
-        setOrders(getDemoOrders());
-        setCancelTargetOrder(null);
-        setCancelReason("");
-      }
-      return;
-    }
-
     const token = (await getIdToken(false)) ?? workspaceToken;
     if (!token) {
       setIsCancelling(false);
@@ -551,19 +494,6 @@ const DEFAULT_ORDER_FORM = {
   const handleConfirmDeleteOrder = async () => {
     if (!deleteTargetOrder) return;
     setIsDeleting(true);
-
-    if (isDemo) {
-      const res = deleteDemoOrder(deleteTargetOrder.id);
-      setIsDeleting(false);
-      if (res.success) {
-        setOrders(getDemoOrders());
-        if (selectedId === deleteTargetOrder.id) {
-          setSelectedId(null);
-        }
-        setDeleteTargetOrder(null);
-      }
-      return;
-    }
 
     const token = (await getIdToken(false)) ?? workspaceToken;
     if (!token) {
@@ -1025,6 +955,20 @@ const DEFAULT_ORDER_FORM = {
                     >
                       {copiedField === "link" ? "Copied Link!" : "Copy Link"}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        void handleShareText(link, `Order #${selected.orderNumber} Tracking Link`);
+                      }}
+                      className="rounded-lg border border-border-default bg-white px-2.5 py-1.5 text-xs font-bold text-text-primary hover:bg-surface-app hover:border-brand-blue-primary transition flex items-center gap-1.5"
+                      title="Share tracking link"
+                    >
+                      <svg className="w-3.5 h-3.5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      Share
+                    </button>
                     <a
                       href={`/track/${selected.orderNumber}`}
                       target="_blank"
@@ -1080,6 +1024,20 @@ const DEFAULT_ORDER_FORM = {
                       className="rounded-lg bg-brand-blue-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 transition"
                     >
                       {copiedField === "link" ? "Copied Link!" : "Copy Link"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        void handleShareText(link, `Order #${selected.orderNumber} Tracking Link`);
+                      }}
+                      className="rounded-lg border border-border-default bg-white px-2.5 py-1.5 text-xs font-bold text-text-primary hover:bg-surface-app hover:border-brand-blue-primary transition flex items-center gap-1.5"
+                      title="Share tracking link"
+                    >
+                      <svg className="w-3.5 h-3.5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      Share
                     </button>
                     <a
                       href={`/track/${selected.orderNumber}`}
@@ -1599,6 +1557,45 @@ const DEFAULT_ORDER_FORM = {
                       Advance amount cannot exceed the confirmed total price.
                     </div>
                   )}
+                </div>
+
+                {/* Payment Summary Breakdown */}
+                <div className="rounded-2xl border border-border-default bg-surface-app/70 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                      Payment Summary
+                    </span>
+                    <span className="text-[10px] text-text-tertiary">
+                      Auto-calculated breakdown
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1 border-t border-border-divider text-xs">
+                    <div className="flex items-center justify-between text-text-secondary">
+                      <span>Confirmed Total Price</span>
+                      <span className="font-bold text-text-primary">
+                        ₹{(Math.max(0, Number(newOrderForm.finalConfirmedPrice) || 0)).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-text-secondary">
+                      <span>Advance Received</span>
+                      <span className="font-bold text-brand-blue-primary">
+                        ₹{(Math.max(0, Number(newOrderForm.advanceAmount) || 0)).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border-divider font-bold">
+                      <span className="text-text-primary">Remaining Amount</span>
+                      <span
+                        className={
+                          Math.max(0, (Number(newOrderForm.finalConfirmedPrice) || 0) - (Number(newOrderForm.advanceAmount) || 0)) > 0
+                            ? "text-brand-orange-primary font-extrabold text-sm"
+                            : "text-emerald-600 font-extrabold text-sm"
+                        }
+                      >
+                        ₹{(Math.max(0, (Number(newOrderForm.finalConfirmedPrice) || 0) - (Number(newOrderForm.advanceAmount) || 0))).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 6-Digit Guest Access PIN & Tracking Passkey */}

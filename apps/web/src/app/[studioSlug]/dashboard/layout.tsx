@@ -4,15 +4,9 @@ import { StudioWorkspaceProvider } from "@/components/StudioWorkspaceProvider";
 import { DashboardTopNav } from "@/components/DashboardTopNav";
 import { getStudioBySlug } from "@focoman/db";
 import { Studio } from "@focoman/types";
-import { DEMO_STUDIO } from "@/lib/demoData";
-import { DemoBanner } from "@/components/DemoBanner";
 import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
 const APP_ENV = process.env.NEXT_PUBLIC_APP_ENV || "local";
-
-function isDemoSlug(slug: string): boolean {
-  return slug.toLowerCase() === "demo-studio";
-}
 
 export const dynamic = "force-dynamic";
 
@@ -24,16 +18,8 @@ export default async function DashboardLayout({
   params: Promise<{ studioSlug: string }>;
 }) {
   const { studioSlug } = await params;
-  const isDemo = isDemoSlug(studioSlug);
-
-  const access = isDemo ? null : await requireDashboardStudioAccess(studioSlug);
-
-  let studio: Studio | null = null;
-  if (isDemo) {
-    studio = DEMO_STUDIO;
-  } else {
-    studio = await getStudioBySlug(studioSlug);
-  }
+  const access = await requireDashboardStudioAccess(studioSlug);
+  const studio = await getStudioBySlug(studioSlug);
 
   if (!studio) {
     // Studio slug not found — surface truthful 404
@@ -73,7 +59,6 @@ export default async function DashboardLayout({
         />
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">
           <DashboardTopNav role={access?.membership.role || "STUDIO_OWNER"} planInfo={studio.planInfo} />
-          {isDemo && <DemoBanner studioSlug={studioSlug} />}
           <div id="dashboard-main-content" className="flex-1 overflow-y-auto min-h-0">{children}</div>
         </main>
       </div>

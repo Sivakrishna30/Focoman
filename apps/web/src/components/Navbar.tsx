@@ -4,9 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { useLanguage } from "@/context/LanguageContext";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
 
@@ -15,7 +12,6 @@ function UserDropdownMenu({ user }: { user: User }) {
   const [defaultStudio, setDefaultStudio] = useState<string | null>(null);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
 
   useEffect(() => {
     if (typeof window !== "undefined" && user) {
@@ -48,51 +44,65 @@ function UserDropdownMenu({ user }: { user: User }) {
     router.push("/");
   };
 
+  const firstWord = (() => {
+    const raw = user.displayName || user.email || "Account";
+    const clean = raw.trim();
+    if (clean.includes(" ")) {
+      return clean.split(" ")[0];
+    }
+    if (clean.includes("@")) {
+      const handle = clean.split("@")[0];
+      return handle.split(".")[0];
+    }
+    return clean;
+  })();
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-blue-primary text-white font-bold text-xs focus:outline-none hover:bg-brand-blue-hover shadow-xs transition"
-        title={user.email || "Account"}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0EA5E9] text-white font-bold text-xs border border-[#0369A1] shadow-[0_2px_0_#0369A1] hover:bg-[#0284C7] active:translate-y-[1.5px] active:shadow-none focus:outline-none transition max-w-[140px]"
+        title={user.email || user.displayName || "Account"}
       >
-        {user.displayName ? user.displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : "U")}
+        <span className="truncate">{firstWord}</span>
+        <span className="text-[9px] opacity-80">▼</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border-default bg-white py-2 shadow-lg z-50">
-          <div className="px-4 py-2 border-b border-border-default mb-1">
-            <p className="text-xs font-semibold text-text-primary truncate">{user.displayName || "Studio Member"}</p>
-            <p className="text-[10px] text-text-tertiary truncate">{user.email}</p>
+        <div className="absolute right-0 mt-2 w-56 rounded-md border border-[#D8D2C4] bg-[#FFFFFF] p-1.5 shadow-[0_4px_16px_rgba(40,30,20,0.12)] z-50">
+          <div className="px-3 py-2 border-b border-[#E6E0D4] mb-1">
+            <p className="text-xs font-bold text-[#1C1917] truncate">{user.displayName || "Studio Member"}</p>
+            <p className="text-[10px] text-[#8C857B] truncate">{user.email}</p>
           </div>
           
           {defaultStudio && (
             <Link
               href={`/${defaultStudio}/dashboard`}
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-xs font-semibold text-brand-blue-primary hover:bg-brand-blue-background/40 transition"
+              className="block px-3 py-1.5 text-xs font-bold text-[#0EA5E9] hover:bg-[#FAF7F2] rounded transition"
             >
-              {t("nav.dashboard", "Studio Dashboard")}
+              Studio Dashboard
             </Link>
           )}
           <Link
             href="/workspaces"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
+            className="block px-3 py-1.5 text-xs font-medium text-[#57534E] hover:bg-[#FAF7F2] hover:text-[#1C1917] rounded transition"
           >
-            {t("nav.workspaces", "My Workspaces")}
+            My Workspaces
           </Link>
           <Link
             href="/account-settings"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-xs font-medium text-text-secondary hover:bg-surface-app hover:text-brand-blue-primary transition"
+            className="block px-3 py-1.5 text-xs font-medium text-[#57534E] hover:bg-[#FAF7F2] hover:text-[#1C1917] rounded transition"
           >
-            {t("nav.settings", "Account Settings")}
+            Account Settings
           </Link>
           <button
             onClick={handleSignOut}
-            className="w-full text-left block px-4 py-2 text-xs font-medium text-status-error hover:bg-red-50 transition"
+            className="w-full text-left block px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded transition"
           >
-            {t("nav.signout", "Sign Out")}
+            Sign Out
           </button>
         </div>
       )}
@@ -104,15 +114,14 @@ export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const { t } = useLanguage();
 
   const navLinks = [
-    { label: t("nav.home", "Home"), href: "/#home" },
-    { label: t("nav.modules", "Modules"), href: "/#modules" },
-    { label: t("nav.how_it_works", "How It Works"), href: "/#how-it-works" },
-    { label: t("nav.marketplace", "Studio Marketplace"), href: "/#studios" },
-    { label: t("nav.pricing", "Pricing"), href: "/#pricing" },
-    { label: t("nav.faq", "FAQ"), href: "/#faq" },
+    { label: "Home", href: "/#home" },
+    { label: "Modules", href: "/#modules" },
+    { label: "How It Works", href: "/#how-it-works" },
+    { label: "Studio Marketplace", href: "/#studios" },
+    { label: "Pricing", href: "/#pricing" },
+    { label: "FAQ", href: "/#faq" },
   ];
 
   useEffect(() => {
@@ -123,14 +132,14 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border-default bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-[#D8D2C4] bg-[#FAF7F2]/95 backdrop-blur-xs shadow-[0_1px_3px_rgba(40,30,20,0.06)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-6 lg:px-8">
         {/* Left Side: Hamburger (Mobile) + Logo */}
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {/* Mobile Nav Toggle - Left Corner */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden rounded-lg p-1.5 text-text-secondary hover:bg-gray-100 focus:outline-none"
+            className="lg:hidden rounded-md border border-[#D8D2C4] bg-[#FFFFFF] p-1.5 text-[#57534E] shadow-[0_1.5px_0_#C4BCAB] hover:bg-[#FAF7F2] active:translate-y-[1px] active:shadow-none focus:outline-none"
             aria-label="Toggle Menu"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,17 +158,17 @@ export function Navbar() {
 
         {/* Desktop Nav Links */}
         <div className="hidden lg:flex items-center gap-3">
-          <nav className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium sm:text-sm">
+          <nav className="flex items-center gap-1 rounded-md border border-[#D8D2C4] bg-[#ECE6DE] p-1 text-xs font-bold shadow-inner">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                  className={`rounded px-3.5 py-1.5 font-bold transition-all ${
                     isActive
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs"
-                      : "text-text-secondary hover:text-text-primary"
+                      ? "bg-[#1C1917] text-white shadow-[0_2px_0_#000000]"
+                      : "text-[#57534E] hover:text-[#1C1917] hover:bg-[#FAF7F2]"
                   }`}
                 >
                   {link.label}
@@ -169,16 +178,16 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Side Controls (Sign In) - Unified for all screens */}
+        {/* Right Side Controls (Sign In / User) - Unified for all screens */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {user ? (
             <UserDropdownMenu user={user} />
           ) : (
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white shrink-0"
+              className="inline-flex items-center justify-center rounded-md bg-[#F97316] text-white px-4 py-1.5 text-xs font-bold border border-[#C2410C] shadow-[0_2px_0_#9A3412] hover:bg-[#EA580C] active:translate-y-[2px] active:shadow-none transition-all shrink-0"
             >
-              {t("nav.signin", "Sign In")}
+              Sign In
             </Link>
           )}
         </div>
@@ -186,7 +195,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-border-default bg-white px-4 py-4 shadow-lg absolute w-full left-0">
+        <div className="lg:hidden border-t border-[#D8D2C4] bg-[#FAF7F2] px-4 py-4 shadow-lg absolute w-full left-0">
           <nav className="flex flex-col gap-2">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -195,10 +204,10 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${
+                  className={`rounded-md px-4 py-2.5 text-sm font-bold transition ${
                     isActive
-                      ? "bg-brand-blue-primary text-white"
-                      : "bg-gray-50 text-text-secondary hover:bg-gray-100 hover:text-text-primary"
+                      ? "bg-[#F97316] text-white border border-[#C2410C] shadow-[0_2px_0_#9A3412]"
+                      : "bg-white text-[#57534E] border border-[#D8D2C4] hover:bg-[#FAF7F2] hover:text-[#1C1917]"
                   }`}
                 >
                   {link.label}

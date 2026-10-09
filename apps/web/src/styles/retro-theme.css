@@ -1,0 +1,506 @@
+/* ==========================================================================
+   FOCOMAN RETRO / VINTAGE DESIGN SYSTEM (GLOBAL RETRO MODE)
+   Primary inspiration: Structured, tactile desktop business software.
+   Strictly preserves Focoman orange (#F97316), blue (#0EA5E9), purple (#8B5CF6) & green (#22C55E).
+   Surfaces: Warm dirty-white / cream paper (#F7F3EE / #F5EFEB).
+   Panels: Rectangular, restrained corner radii (4-8px), crisp borders (#D8D2C4).
+   Buttons: Tactile physical press feedback (1.5-2px translate down + bevel).
+   ========================================================================== */
+
+/* Variables when in Retro UI mode */
+:root[data-ui-style="retro"],
+.retro-ui {
+  --retro-bg-app: #F7F3EE;
+  --retro-bg-subtle: #ECE6DE;
+  --retro-bg-card: #FFFFFF;
+  --retro-bg-card-alt: #FAF7F2;
+  --retro-border: #D8D2C4;
+  --retro-border-strong: #BFB8A7;
+  
+  --retro-text-primary: #1C1917;
+  --retro-text-secondary: #57534E;
+  --retro-text-muted: #8C857B;
+  
+  --retro-orange: #F97316;
+  --retro-orange-hover: #EA580C;
+  --retro-orange-bevel: #9A3412;
+  --retro-orange-subtle: #FFF7ED;
+  --retro-orange-border: #FDBA74;
+
+  --retro-blue: #0EA5E9;
+  --retro-blue-hover: #0284C7;
+  --retro-blue-bevel: #0369A1;
+  --retro-blue-subtle: #F0F9FF;
+  --retro-blue-border: #7DD3FC;
+
+  --retro-purple: #8B5CF6;
+  --retro-purple-bevel: #6D28D9;
+  --retro-purple-subtle: #FAF5FF;
+  --retro-purple-border: #C4B5FD;
+
+  --retro-green: #16A34A;
+  --retro-green-bevel: #15803D;
+  --retro-green-subtle: #F0FDF4;
+  --retro-green-border: #86EFAC;
+}
+
+/* Base Body Application in Retro Mode */
+.retro-ui body,
+body.retro-ui {
+  background-color: #F7F3EE !important;
+  color: #1C1917 !important;
+}
+
+/* Editorial display font for retro headings */
+.retro-ui .retro-serif-heading {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  letter-spacing: -0.02em;
+}
+
+/* Global Container & Card Overrides in Retro Mode */
+.retro-ui .bg-surface-app,
+.retro-ui .bg-slate-50,
+.retro-ui .bg-gray-50 {
+  background-color: #F7F3EE !important;
+}
+
+.retro-ui .bg-white {
+  background-color: #FFFFFF !important;
+}
+
+.retro-ui .border-border-default,
+.retro-ui .border-slate-200,
+.retro-ui .border-gray-200 {
+  border-color: #D8D2C4 !important;
+}
+
+.retro-ui .border-border-divider,
+.retro-ui .border-slate-100 {
+  border-color: #E6E0D4 !important;
+}
+
+/* Restrained corner radii across cards, buttons & elements in Retro Mode */
+.retro-ui .rounded-3xl,
+.retro-ui .rounded-2xl {
+  border-radius: 8px !important;
+}
+
+.retro-ui .rounded-xl {
+  border-radius: 6px !important;
+}
+
+/* Restrain excessive modern rounded-full pills to retro 6px radii (except tiny dots) */
+.retro-ui button.rounded-full,
+.retro-ui a.rounded-full,
+.retro-ui nav.rounded-full,
+.retro-ui .rounded-full:not(.w-1\.5):not(.w-2):not(.w-2\.5):not(.w-3):not(.h-1\.5):not(.h-2):not(.h-2\.5):not(.h-3) {
+  border-radius: 6px !important;
+}
+
+/* ==========================================================================
+   1. RETRO TOP NAVIGATION PANEL & HEADERS
+   ========================================================================== */
+.retro-ui header,
+.retro-ui .h-14.border-b,
+.retro-ui [class*="dashboard-header"],
+.retro-ui [class*="header-brand-"] {
+  background-color: #FAF7F2 !important;
+  border-color: #D8D2C4 !important;
+  box-shadow: 0 1px 3px rgba(40, 30, 20, 0.05);
+}
+
+.retro-ui header nav {
+  background-color: #ECE6DE !important;
+  border: 1px solid #D8D2C4 !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 1px 2px rgba(40, 30, 20, 0.06);
+}
+
+.retro-ui header nav a {
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  transition: all 0.12s ease !important;
+}
+
+.retro-ui header nav a[class*="bg-zinc-900"],
+.retro-ui header nav a[class*="bg-brand-"],
+.retro-ui header nav a.active {
+  background-color: #1C1917 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 0 #000000 !important;
+}
+
+/* ==========================================================================
+   2. RETRO TACTILE BUTTONS
+   ========================================================================== */
+.retro-ui button,
+.retro-ui a[class*="btn"],
+.retro-ui a.retro-btn,
+.retro-ui input[type="submit"],
+.retro-ui input[type="button"] {
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease !important;
+  user-select: none;
+}
+
+/* Primary Orange Buttons */
+.retro-ui .btn-brand-orange,
+.retro-ui .bg-brand-orange-primary,
+.retro-ui .retro-btn-orange {
+  background-color: #F97316 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #C2410C !important;
+  box-shadow: 0 2px 0 #9A3412 !important;
+}
+
+.retro-ui .btn-brand-orange:hover,
+.retro-ui .bg-brand-orange-primary:hover,
+.retro-ui .retro-btn-orange:hover {
+  background-color: #EA580C !important;
+}
+
+.retro-ui .btn-brand-orange:active,
+.retro-ui .bg-brand-orange-primary:active,
+.retro-ui .retro-btn-orange:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Primary Blue Buttons */
+.retro-ui .btn-brand-blue,
+.retro-ui .bg-brand-blue-primary,
+.retro-ui .retro-btn-blue {
+  background-color: #0EA5E9 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #0369A1 !important;
+  box-shadow: 0 2px 0 #075985 !important;
+}
+
+.retro-ui .btn-brand-blue:hover,
+.retro-ui .bg-brand-blue-primary:hover,
+.retro-ui .retro-btn-blue:hover {
+  background-color: #0284C7 !important;
+}
+
+.retro-ui .btn-brand-blue:active,
+.retro-ui .bg-brand-blue-primary:active,
+.retro-ui .retro-btn-blue:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Primary Purple Buttons */
+.retro-ui .btn-brand-purple,
+.retro-ui .bg-brand-purple-primary {
+  background-color: #8B5CF6 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #6D28D9 !important;
+  box-shadow: 0 2px 0 #5B21B6 !important;
+}
+
+.retro-ui .btn-brand-purple:hover,
+.retro-ui .bg-brand-purple-primary:hover {
+  background-color: #7C3AED !important;
+}
+
+.retro-ui .btn-brand-purple:active,
+.retro-ui .bg-brand-purple-primary:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Standard Outline / Light Tactile Buttons */
+.retro-ui .btn-brand-outline,
+.retro-ui button[class*="border"],
+.retro-ui a[class*="border"][class*="bg-white"] {
+  border: 1px solid #C4BCAB !important;
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  box-shadow: 0 2px 0 #C4BCAB !important;
+}
+
+.retro-ui .btn-brand-outline:hover,
+.retro-ui button[class*="border"]:hover,
+.retro-ui a[class*="border"][class*="bg-white"]:hover {
+  background-color: #FAF7F2 !important;
+  border-color: #BFB8A7 !important;
+}
+
+.retro-ui .btn-brand-outline:active,
+.retro-ui button[class*="border"]:active,
+.retro-ui a[class*="border"][class*="bg-white"]:active {
+  transform: translateY(1.5px) !important;
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Ghost Buttons */
+.retro-ui .btn-brand-ghost {
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+}
+
+.retro-ui .btn-brand-ghost:hover {
+  background-color: #FAF7F2 !important;
+  border-color: #D8D2C4 !important;
+  color: #1C1917 !important;
+}
+
+.retro-ui .btn-brand-ghost:active {
+  transform: translateY(1px) !important;
+}
+
+/* General button tactile press feedback */
+.retro-ui button:active {
+  transform: translateY(1.5px) !important;
+}
+
+/* Sidebar in Retro Mode: Dark Slate Navy like in reference image */
+.retro-ui aside {
+  background-color: #111827 !important;
+  border-color: #1F2937 !important;
+  color: #F3F4F6 !important;
+}
+
+.retro-ui aside a {
+  color: #D1D5DB !important;
+}
+
+.retro-ui aside a:hover {
+  background-color: #1F2937 !important;
+  color: #FFFFFF !important;
+}
+
+/* Active sidebar item in Retro Mode: Vibrant Orange Pill */
+.retro-ui aside a[class*="bg-brand-blue-primary"],
+.retro-ui aside a[class*="bg-brand-orange-primary"],
+.retro-ui aside a[class*="bg-brand-purple-primary"] {
+  background-color: #F97316 !important;
+  color: #FFFFFF !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 0 #9A3412 !important;
+}
+
+/* ==========================================================================
+   3. RETRO OPTIONS, SELECTS & DROPDOWN MENUS
+   ========================================================================== */
+/* Selects & Options */
+.retro-ui select {
+  border: 1px solid #C4BCAB !important;
+  border-radius: 5px !important;
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  box-shadow: 0 1.5px 0 #C4BCAB !important;
+  font-weight: 600 !important;
+  padding-right: 2rem !important;
+  cursor: pointer !important;
+}
+
+.retro-ui select:focus {
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+  outline: none !important;
+}
+
+.retro-ui option {
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  padding: 6px 10px !important;
+  font-weight: 500 !important;
+}
+
+/* Form Inputs in Retro Mode */
+.retro-ui input[type="text"],
+.retro-ui input[type="email"],
+.retro-ui input[type="tel"],
+.retro-ui input[type="number"],
+.retro-ui input[type="date"],
+.retro-ui textarea {
+  border: 1px solid #D8D2C4 !important;
+  border-radius: 5px !important;
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  box-shadow: inset 0 1px 2px rgba(40, 30, 20, 0.04);
+}
+
+.retro-ui input:focus,
+.retro-ui textarea:focus {
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+  outline: none !important;
+}
+
+/* Dropdown Menus, Popovers, and Options Panels */
+.retro-ui [role="menu"],
+.retro-ui [role="listbox"],
+.retro-ui div[class*="absolute"][class*="shadow-lg"],
+.retro-ui div[class*="absolute"][class*="shadow-xl"],
+.retro-ui div[class*="absolute"][class*="shadow-md"] {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D8D2C4 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(40, 30, 20, 0.12) !important;
+}
+
+/* Option items inside dropdowns */
+.retro-ui [role="menu"] button,
+.retro-ui [role="menu"] a,
+.retro-ui div[class*="absolute"][class*="shadow"] button,
+.retro-ui div[class*="absolute"][class*="shadow"] a {
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: background-color 0.1s ease, color 0.1s ease !important;
+}
+
+.retro-ui [role="menu"] button:hover,
+.retro-ui [role="menu"] a:hover,
+.retro-ui div[class*="absolute"][class*="shadow"] button:hover,
+.retro-ui div[class*="absolute"][class*="shadow"] a:hover {
+  background-color: #FAF7F2 !important;
+  color: #C2410C !important;
+  transform: none !important;
+}
+
+/* Filter Option Pills, Segmented Controls & Dropdown Trigger Buttons */
+.retro-ui button[class*="filter"],
+.retro-ui [role="tab"],
+.retro-ui button[class*="px-2.5"][class*="py-1"],
+.retro-ui button[class*="px-3"][class*="py-1"] {
+  border-radius: 5px !important;
+  font-weight: 700 !important;
+}
+
+/* Checkboxes & Radios */
+.retro-ui input[type="checkbox"],
+.retro-ui input[type="radio"] {
+  accent-color: #F97316 !important;
+  border: 1px solid #C4BCAB !important;
+  cursor: pointer !important;
+}
+
+.retro-ui input[type="checkbox"] {
+  border-radius: 3px !important;
+}
+
+/* Tables in Retro Mode */
+.retro-ui table th {
+  background-color: #F5EFEB !important;
+  color: #57534E !important;
+  border-bottom: 1px solid #D8D2C4 !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.retro-ui table td {
+  border-bottom: 1px solid #E6E0D4 !important;
+}
+
+.retro-ui table tr:hover td {
+  background-color: #FAF7F2 !important;
+}
+
+/* Status Badges in Retro Mode (Restrained rectangular pills) */
+.retro-ui span[class*="badge"],
+.retro-ui span[class*="rounded-full"] {
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* ==========================================================================
+   RETRO THEME HELPER CLASSES
+   ========================================================================== */
+.retro-card {
+  background-color: #FFFFFF;
+  border: 1px solid #D8D2C4;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(40, 30, 20, 0.05);
+}
+
+.retro-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #C4BCAB;
+  background-color: #FFFFFF;
+  color: #1C1917;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #C4BCAB;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  user-select: none;
+  text-decoration: none;
+}
+
+.retro-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.retro-btn-orange {
+  background-color: #F97316;
+  color: #FFFFFF;
+  border-color: #C2410C;
+  box-shadow: 0 2px 0 #9A3412;
+}
+
+.retro-btn-orange:hover {
+  background-color: #EA580C;
+}
+
+.retro-btn-orange:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.retro-btn-blue {
+  background-color: #0EA5E9;
+  color: #FFFFFF;
+  border-color: #0369A1;
+  box-shadow: 0 2px 0 #075985;
+}
+
+.retro-btn-blue:hover {
+  background-color: #0284C7;
+}
+
+.retro-btn-blue:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.retro-btn-sm {
+  padding: 5px 12px;
+  font-size: 0.775rem;
+}
+
+.retro-badge-orange {
+  background-color: #FFF7ED;
+  border: 1px solid #FDBA74;
+  color: #C2410C;
+}
+
+.retro-badge-blue {
+  background-color: #F0F9FF;
+  border: 1px solid #7DD3FC;
+  color: #0369A1;
+}
+
+.retro-badge-purple {
+  background-color: #FAF5FF;
+  border: 1px solid #C4B5FD;
+  color: #6D28D9;
+}
+
+.retro-badge-green {
+  background-color: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #15803D;
+}

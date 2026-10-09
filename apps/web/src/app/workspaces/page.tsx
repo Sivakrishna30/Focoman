@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import { subscribeToAuthState, signInWithGoogle, signOutUser, syncServerSession } from "@/lib/firebaseAuth";
+import { subscribeToAuthState, signInWithGoogle, signOutUser, syncServerSession, handleRedirectAuth } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction, deleteStudioAction, leaveStudioAction } from "@/actions/studioActions";
 import { getMyPendingInvitationsAction } from "@/actions/memberActions";
 import { StudioInvitationSummary, StudioMembership } from "@focoman/types";
@@ -32,6 +32,10 @@ export default function WorkspacesPage() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    handleRedirectAuth().catch((err) => {
+      console.error("[Workspaces] Redirect auth error:", err);
+    });
+
     const unsubscribe = subscribeToAuthState(async (user) => {
       setCurrentUser(user);
       setLoadingUser(false);
@@ -159,6 +163,8 @@ export default function WorkspacesPage() {
         setAuthError(
           `Domain "${domain}" is not authorized in Firebase. Please add "${domain}" to Authorized Domains in Firebase Console (Authentication -> Settings -> Authorized domains).`
         );
+      } else if (errorMessage.includes("auth/popup-closed-by-user")) {
+        setAuthError(null);
       } else {
         setAuthError(errorMessage || "Sign-in failed. Please try again.");
       }
@@ -198,7 +204,7 @@ export default function WorkspacesPage() {
                 <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
                   Your Studio Workspaces
                 </h1>
-                <p className="text-xs text-text-secondary">
+                <p className="text-xs text-text-secondary mt-1">
                   Logged in as <span className="font-semibold text-text-primary">{currentUser.displayName || currentUser.email}</span> ({currentUser.email})
                 </p>
               </div>

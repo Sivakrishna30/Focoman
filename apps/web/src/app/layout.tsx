@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LanguageProvider } from "@/context/LanguageContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import "@/styles/retro-theme.css";
 import { SessionSyncProvider } from "@/components/SessionSyncProvider";
 
 export const metadata: Metadata = {
@@ -24,15 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <ThemeProvider>
-          <LanguageProvider>
-            <SessionSyncProvider>
-              {children}
-            </SessionSyncProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+    <html lang="en" className="retro-ui" data-ui-style="retro" suppressHydrationWarning>
+      <body className="retro-ui" suppressHydrationWarning>
+        <SessionSyncProvider>
+          {children}
+        </SessionSyncProvider>
       </body>
     </html>
   );

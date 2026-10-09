@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signInWithGoogle, subscribeToAuthState } from "@/lib/firebaseAuth";
+import { signInWithGoogle, subscribeToAuthState, handleRedirectAuth, syncServerSession } from "@/lib/firebaseAuth";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
@@ -17,19 +17,47 @@ function SignInContent() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToAuthState((user) => {
-      if (user) {
-        if (redirectUrl) {
-          const target = autoSync
-            ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true`
-            : redirectUrl;
+    let isMounted = true;
+
+    // Process incoming redirect result from Google
+    handleRedirectAuth()
+      .then(async (credential) => {
+        if (credential?.user && isMounted) {
+          await syncServerSession(true);
+          const target = redirectUrl
+            ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
+            : "/dashboard";
           router.replace(target);
-        } else {
-          router.replace("/dashboard");
         }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error("Redirect sign-in error:", err);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          if (errorMessage.includes("auth/unauthorized-domain")) {
+            const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
+            setAuthError(`Domain "${domain}" is not authorized. Please add it in Firebase Console.`);
+          } else {
+            setAuthError(errorMessage || "Sign-in failed. Please try again.");
+          }
+        }
+      });
+
+    // Listen to auth state changes and sync session
+    const unsubscribe = subscribeToAuthState(async (user) => {
+      if (user && isMounted) {
+        await syncServerSession();
+        const target = redirectUrl
+          ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
+          : "/dashboard";
+        router.replace(target);
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [router, redirectUrl, autoSync]);
 
   const handleGoogleSignIn = async () => {
@@ -38,14 +66,10 @@ function SignInContent() {
       setAuthError(null);
       await signInWithGoogle();
 
-      if (redirectUrl) {
-        const target = autoSync
-          ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true`
-          : redirectUrl;
-        router.push(target);
-      } else {
-        router.push("/dashboard");
-      }
+      const target = redirectUrl
+        ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
+        : "/dashboard";
+      router.push(target);
     } catch (err: unknown) {
       console.error("Google sign-in failed:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -54,12 +78,11 @@ function SignInContent() {
         setAuthError(
           `Domain "${domain}" is not authorized. Please add it in Firebase Console.`
         );
-      } else if (errorMessage.includes("auth/popup-closed-by-user") || errorMessage.includes("Cross-Origin-Opener-Policy")) {
-        setAuthError(
-          "Popups are blocked by this environment. Please open this app in a New Tab to use Google Sign-in."
-        );
+      } else if (errorMessage.includes("auth/popup-closed-by-user")) {
+        // User closed the popup, do not show an error
+        setAuthError(null);
       } else {
-        setAuthError("Popups are blocked in the preview. Please click 'Open App' (top right arrow) to open in a new tab to sign in.");
+        setAuthError(errorMessage || "Sign-in failed. Please try again.");
       }
     } finally {
       setIsSigningIn(false);
@@ -99,27 +122,36 @@ function SignInContent() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
-              className="inline-flex w-full justify-center items-center gap-3 rounded-xl border border-border-default bg-white px-6 py-3 text-sm font-bold text-text-primary shadow-xs transition hover:bg-gray-50 hover:shadow-sm disabled:opacity-50"
+              className="inline-flex w-full justify-center items-center gap-3 rounded-xl border border-border-default bg-white px-6 py-3 text-sm font-bold text-text-primary shadow-xs transition hover:bg-gray-50 hover:shadow-sm disabled:opacity-60"
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              Continue with Google
+              {isSigningIn ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-orange-primary border-t-transparent" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span>Continue with Google</span>
+                </>
+              )}
             </button>
 
             <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-2">

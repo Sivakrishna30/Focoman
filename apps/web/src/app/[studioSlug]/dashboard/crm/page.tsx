@@ -6,13 +6,6 @@ import { Customer, Order } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
 import { getStudioOrdersAction, getDeletedStudioOrdersAction, restoreOrderAction } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
-import {
-  isDemoStudio,
-  getDemoCustomers,
-  getDemoOrders,
-  createDemoCustomer,
-  subscribeToDemoStore,
-} from "@/lib/demoStore";
 
 const STATUS_COLORS: Record<string, string> = {
   AWAITING_EVENT: "badge-brand-blue",
@@ -37,8 +30,6 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const isDemo = isDemoStudio(studioSlug);
-
   // New Customer Modal
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,13 +44,6 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   const loadData = useCallback(async (tokenOverride?: string | null) => {
     try {
       setLoading(true);
-      if (isDemo) {
-        setCustomers(getDemoCustomers());
-        setOrders(getDemoOrders());
-        setDeletedOrders([]);
-        setLoading(false);
-        return;
-      }
       const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
       if (!token) {
         setLoading(false);
@@ -78,7 +62,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
     } finally {
       setLoading(false);
     }
-  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
+  }, [studioSlug, workspaceToken, getIdToken]);
 
   const handleRestoreOrder = async (orderId: string) => {
     if (!confirm("Are you sure you want to restore this order back to active OMS workflows?")) {
@@ -110,16 +94,10 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   };
 
   useEffect(() => {
-    if (isDemo) {
-      void loadData();
-      const unsub = subscribeToDemoStore(() => {
-        void loadData();
-      });
-      return () => unsub();
-    } else if (!authLoading) {
+    if (!authLoading) {
       void loadData(workspaceToken);
     }
-  }, [studioSlug, isDemo, authLoading, workspaceToken, loadData]);
+  }, [studioSlug, authLoading, workspaceToken, loadData]);
 
   const customerMetrics = useMemo(() => {
     const metrics: Record<string, { totalOrders: number; lifetimeValue: number; pendingReceivables: number; latestOrder: string | null }> = {};
@@ -146,25 +124,6 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
     e.preventDefault();
     setIsSubmitting(true);
     setModalError(null);
-
-    if (isDemo) {
-      const res = createDemoCustomer({
-        name: form.name,
-        phone: form.phone || undefined,
-        email: form.email || undefined,
-        address: form.address || undefined,
-      });
-      setIsSubmitting(false);
-      if (res.success && res.customer) {
-        setShowModal(false);
-        setForm({ name: "", phone: "", email: "", address: "" });
-        setCustomers(getDemoCustomers());
-        setSelected(res.customer);
-      } else {
-        setModalError("Failed to add customer in demo mode");
-      }
-      return;
-    }
 
     const token = await getIdToken(true);
     if (!token) {

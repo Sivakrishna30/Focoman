@@ -28,6 +28,5 @@ export async function requireDashboardStudioAccess(
 }
 
 export async function requireDashboardOwnerAccess(studioSlug: string): Promise<void> {
-  if (studioSlug.toLowerCase() === 'demo-studio') return;
   await requireDashboardStudioAccess(studioSlug, 'STUDIO_OWNER');
 }

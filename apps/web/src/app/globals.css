@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,141 +16,11 @@
   background: var(--bg-app);
 }
 
-/* Dark Mode Theme */
-.dark, [data-theme="dark"] {
-  color-scheme: dark;
-  --bg-app: #0B0F19;
-  --bg-card: #111827;
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-tertiary: #64748B;
-  --border-default: #1E293B;
-  color: var(--text-primary);
-  background: var(--bg-app);
-}
-
-/* Monochrome Theme */
-.monochrome, [data-theme="monochrome"] {
-  color-scheme: light dark;
-  --bg-app: #F4F4F5;
-  --bg-card: #FFFFFF;
-  --text-primary: #09090B;
-  --text-secondary: #52525B;
-  --text-tertiary: #71717A;
-  --border-default: #D4D4D8;
-  color: var(--text-primary);
-  background: var(--bg-app);
-}
-
 body {
   margin: 0;
   min-height: 100vh;
   background-color: var(--bg-app);
   color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-/* Dark Mode Global Component Adaptations */
-.dark body {
-  background-color: #0B0F19;
-  color: #F8FAFC;
-}
-
-.dark header,
-.dark nav,
-.dark aside,
-.dark .bg-white {
-  background-color: #111827 !important;
-  color: #F8FAFC;
-}
-
-.dark .bg-surface-app,
-.dark .bg-slate-50,
-.dark .bg-gray-50 {
-  background-color: #0B0F19 !important;
-}
-
-.dark .bg-slate-100,
-.dark .bg-gray-100 {
-  background-color: #1E293B !important;
-}
-
-.dark .border-border-default,
-.dark .border-slate-200,
-.dark .border-gray-200,
-.dark .border-slate-100 {
-  border-color: #1E293B !important;
-}
-
-.dark .text-text-primary,
-.dark .text-slate-900,
-.dark .text-gray-900 {
-  color: #F8FAFC !important;
-}
-
-.dark .text-text-secondary,
-.dark .text-slate-600,
-.dark .text-gray-600,
-.dark .text-slate-500 {
-  color: #94A3B8 !important;
-}
-
-.dark .text-text-tertiary,
-.dark .text-slate-400 {
-  color: #64748B !important;
-}
-
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
-  border-color: #334155 !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #64748B !important;
-}
-
-/* Monochrome Global Component Adaptations */
-.monochrome body {
-  background-color: #F4F4F5;
-  color: #09090B;
-}
-
-.monochrome .bg-brand-blue-primary,
-.monochrome .bg-brand-orange-primary,
-.monochrome .bg-brand-purple-primary,
-.monochrome .bg-sky-600,
-.monochrome .bg-orange-600,
-.monochrome .bg-purple-600 {
-  background-color: #18181B !important;
-  color: #FFFFFF !important;
-  border-color: #27272A !important;
-}
-
-.monochrome .text-brand-blue-primary,
-.monochrome .text-brand-orange-primary,
-.monochrome .text-brand-purple-primary {
-  color: #18181B !important;
-}
-
-.monochrome .badge-brand-blue,
-.monochrome .badge-brand-orange,
-.monochrome .badge-brand-purple,
-.monochrome .badge-status-success,
-.monochrome .badge-status-warning,
-.monochrome .badge-status-error {
-  background-color: #F4F4F5 !important;
-  color: #18181B !important;
-  border-color: #D4D4D8 !important;
-}
-
-.monochrome .border-brand-blue-primary,
-.monochrome .border-brand-orange-primary,
-.monochrome .border-brand-purple-primary {
-  border-color: #18181B !important;
 }
 
 @layer components {

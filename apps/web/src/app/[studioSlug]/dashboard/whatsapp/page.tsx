@@ -3,12 +3,6 @@
 import { useState, use, useEffect } from "react";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import { updateStudioWhatsappConfigAction } from "@/actions/studioActions";
-import {
-  isDemoStudio,
-  getDemoWhatsappConfig,
-  saveDemoWhatsappConfig,
-  subscribeToDemoStore,
-} from "@/lib/demoStore";
 
 /**
  * WhatsApp Premium Operational Layer Configuration
@@ -67,28 +61,17 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
   const { studioSlug } = use(params);
   const { studio, idToken, authLoading, getIdToken } = useStudioWorkspace();
   
-  const isDemo = isDemoStudio(studioSlug);
   const [masterEnabled, setMasterEnabled] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [config, setConfig] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (isDemo) {
-      const demoCfg = getDemoWhatsappConfig();
-      setConfig(demoCfg);
-      setMasterEnabled(demoCfg.masterEnabled !== false);
-      const unsub = subscribeToDemoStore(() => {
-        const updated = getDemoWhatsappConfig();
-        setConfig(updated);
-        setMasterEnabled(updated.masterEnabled !== false);
-      });
-      return () => unsub();
-    } else if (studio.whatsappConfig) {
+    if (studio.whatsappConfig) {
       setConfig(studio.whatsappConfig);
       setMasterEnabled(studio.whatsappConfig.masterEnabled !== false);
     }
-  }, [studio, isDemo]);
+  }, [studio]);
 
   const toggleItem = (id: string) => {
     setConfig(prev => ({
@@ -102,12 +85,6 @@ export default function WhatsappPage({ params }: { params: Promise<{ studioSlug:
     setStatusMessage(null);
     try {
       const finalConfig = { ...config, masterEnabled };
-      if (isDemo) {
-        saveDemoWhatsappConfig(finalConfig);
-        setStatusMessage("WhatsApp notification configuration updated successfully (saved to browser memory).");
-        return;
-      }
-
       const token = idToken || await getIdToken(true);
       if (!token) throw new Error("Authentication required");
 

@@ -11,14 +11,6 @@ import {
 import { getStudioOrdersAction, confirmResourceAvailabilityAction } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import { StudioInvitationSummary } from "@focoman/types";
-import {
-  isDemoStudio,
-  getDemoMembers,
-  getDemoOrders,
-  createDemoMember,
-  confirmDemoResourceAvailability,
-  subscribeToDemoStore,
-} from "@/lib/demoStore";
 
 const SKILL_LABELS: Record<string, string> = {
   PHOTOGRAPHY: "Photographer",
@@ -47,8 +39,6 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const isDemo = isDemoStudio(studioSlug);
-
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,16 +53,45 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   const [createdInvite, setCreatedInvite] = useState<{ code: string; email?: string; name: string; claimCode?: string; linkToken?: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Check URL query parameters (e.g. ?action=add-crew or ?addCrew=true)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get("action");
+    const addCrew = params.get("addCrew");
+    if (action === "add-crew" || addCrew === "true" || addCrew === "1") {
+      setShowModal(true);
+      setModalError(null);
+      setForm((prev) => ({
+        ...prev,
+        claimCode: prev.claimCode || Math.floor(100000 + Math.random() * 900000).toString(),
+      }));
+    }
+  }, []);
+
+  const handleShareLink = async (url: string, title?: string, text?: string) => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: title || "Focoman Studio Invitation",
+          text: text,
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const loadData = useCallback(async (tokenOverride?: string | null) => {
     try {
       setLoading(true);
-      if (isDemo) {
-        setCrewList(getDemoMembers());
-        setPendingInvitations([]);
-        setOrders(getDemoOrders());
-        setLoading(false);
-        return;
-      }
       const token = tokenOverride ?? workspaceToken ?? (await getIdToken(false));
       if (!token) {
         setLoading(false);
@@ -91,19 +110,13 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     } finally {
       setLoading(false);
     }
-  }, [studioSlug, isDemo, workspaceToken, getIdToken]);
+  }, [studioSlug, workspaceToken, getIdToken]);
 
   useEffect(() => {
-    if (isDemo) {
-      void loadData();
-      const unsub = subscribeToDemoStore(() => {
-        void loadData();
-      });
-      return () => unsub();
-    } else if (!authLoading) {
+    if (!authLoading) {
       void loadData(workspaceToken);
     }
-  }, [studioSlug, isDemo, authLoading, workspaceToken, loadData]);
+  }, [studioSlug, authLoading, workspaceToken, loadData]);
 
   const toggleSkill = (skill: string) => {
     setForm((prev) => ({
@@ -182,25 +195,6 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     e.preventDefault();
     setIsSubmitting(true);
     setModalError(null);
-
-    if (isDemo) {
-      const res = createDemoMember({
-        name: form.name,
-        email: form.email || `${form.name.toLowerCase().replace(/\s+/g, ".")}@demo.invalid`,
-        phone: form.phone || undefined,
-        skills: form.skills,
-      });
-      setIsSubmitting(false);
-      if (res.success && res.member) {
-        setShowModal(false);
-        setForm({ name: "", email: "", phone: "", claimCode: "", skills: ["PHOTOGRAPHY"] });
-        setCrewList(getDemoMembers());
-        setSelected(res.member);
-      } else {
-        setModalError(res.error || "Failed to add crew member in demo mode");
-      }
-      return;
-    }
 
     const token = await getIdToken(true);
     if (!token) {
@@ -387,6 +381,20 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                         className="rounded-lg border border-border-default bg-white px-3 py-2 text-[11px] font-semibold text-text-primary hover:bg-surface-app"
                       >
                         Copy link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const link = `${window.location.origin}/onboarding/join-studio?code=${encodeURIComponent(invitation.id)}`;
+                          void handleShareLink(link, "Join Studio Invitation", `You have been invited to join ${studioSlug} on Focoman`);
+                        }}
+                        className="rounded-lg border border-border-default bg-white px-2.5 py-2 text-[11px] font-semibold text-text-primary hover:bg-surface-app flex items-center gap-1.5"
+                        title="Share invitation"
+                      >
+                        <svg className="w-3.5 h-3.5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share
                       </button>
                       <button
                         type="button"
@@ -604,11 +612,6 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                               <div className="flex gap-2">
                                 <button
                                   onClick={async () => {
-                                    if (isDemo) {
-                                      confirmDemoResourceAvailability(order.id, selected.id, true);
-                                      setOrders(getDemoOrders());
-                                      return;
-                                    }
                                     const token = await getIdToken(false);
                                     if (token) {
                                       await confirmResourceAvailabilityAction(order.id, selected.id, true, token);
@@ -621,11 +624,6 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                                 </button>
                                 <button
                                   onClick={async () => {
-                                    if (isDemo) {
-                                      confirmDemoResourceAvailability(order.id, selected.id, false);
-                                      setOrders(getDemoOrders());
-                                      return;
-                                    }
                                     const token = await getIdToken(false);
                                     if (token) {
                                       await confirmResourceAvailabilityAction(order.id, selected.id, false, token);
@@ -891,6 +889,20 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                   className="btn-brand-purple shrink-0 py-2 px-3 text-xs"
                 >
                   {copied ? "Copied!" : "Copy Link"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}`;
+                    void handleShareLink(link, "Join Studio Invitation", `Join ${studioSlug} on Focoman`);
+                  }}
+                  className="rounded-xl border border-border-default bg-white px-3 py-2 text-xs font-semibold text-text-primary hover:bg-surface-app flex items-center gap-1.5 shrink-0"
+                  title="Share invitation link"
+                >
+                  <svg className="w-3.5 h-3.5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Share
                 </button>
               </div>
             </div>

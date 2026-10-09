@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Order } from "@focoman/types";
-import { isDemoStudio, getDemoOrders, subscribeToDemoStore } from "@/lib/demoStore";
 
 interface BusinessReportsViewProps {
   studioSlug: string;
@@ -16,19 +15,8 @@ export function BusinessReportsView({
   studioSlug,
   initialOrders,
 }: BusinessReportsViewProps) {
-  const isDemo = isDemoStudio(studioSlug);
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [orders] = useState<Order[]>(initialOrders);
   const [timeframe, setTimeframe] = useState<Timeframe>("all");
-
-  useEffect(() => {
-    if (isDemo) {
-      setOrders(getDemoOrders());
-      const unsub = subscribeToDemoStore(() => {
-        setOrders(getDemoOrders());
-      });
-      return () => unsub();
-    }
-  }, [isDemo]);
 
   // Filter orders by timeframe
   const filteredOrders = useMemo(() => {

@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User } from "firebase/auth";
 import { Studio } from "@focoman/types";
 import { subscribeToTokenChange, getCurrentUserIdToken, signOutUser, syncServerSession } from "@/lib/firebaseAuth";
-import { isDemoStudio, getDemoActiveUser, subscribeToDemoStore } from "@/lib/demoStore";
 
 export interface StudioWorkspaceContextValue {
   studio: Studio;
@@ -24,7 +23,6 @@ export function StudioWorkspaceProvider({
   studio: Studio;
   children: React.ReactNode;
 }) {
-  const isDemo = isDemoStudio(studio.id);
   const [user, setUser] = useState<User | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -41,19 +39,6 @@ export function StudioWorkspaceProvider({
           console.error("[StudioWorkspaceProvider] Failed to get fresh token:", err);
           setIdToken(null);
         }
-      } else if (isDemo) {
-        const demoUser = getDemoActiveUser();
-        if (demoUser) {
-          setUser({
-            uid: demoUser.uid,
-            displayName: demoUser.name,
-            email: demoUser.email,
-          } as unknown as User);
-          setIdToken("demo-token");
-        } else {
-          setUser(null);
-          setIdToken(null);
-        }
       } else {
         setUser(null);
         setIdToken(null);
@@ -61,30 +46,14 @@ export function StudioWorkspaceProvider({
       setAuthLoading(false);
     });
 
-    const unsubDemo = isDemo
-      ? subscribeToDemoStore(() => {
-          const demoUser = getDemoActiveUser();
-          if (demoUser) {
-            setUser({
-              uid: demoUser.uid,
-              displayName: demoUser.name,
-              email: demoUser.email,
-            } as unknown as User);
-            setIdToken("demo-token");
-          }
-        })
-      : () => {};
-
     return () => {
       unsubscribe();
-      unsubDemo();
     };
-  }, [isDemo]);
+  }, []);
 
   const getIdToken = useCallback(async (forceRefresh = false): Promise<string | null> => {
-    if (isDemo) return "demo-token";
     return await getCurrentUserIdToken(forceRefresh);
-  }, [isDemo]);
+  }, []);
 
   const handleSignOut = useCallback(async () => {
     await signOutUser();

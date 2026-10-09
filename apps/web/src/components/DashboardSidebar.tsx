@@ -4,9 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { useLanguage } from "@/context/LanguageContext";
 import { signOutUser } from "@/lib/firebaseAuth";
 
 export type Plan = "basic" | "professional" | "complete";
@@ -42,11 +39,10 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { t } = useLanguage();
 
   const navItems = [
     {
-      label: t("nav.dashboard", "Dashboard"),
+      label: "Dashboard",
       sublabel: undefined,
       key: "dashboard",
       href: (slug: string) => `/${slug}/dashboard`,
@@ -58,7 +54,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.orders", "Order Management"),
+      label: "Order Management",
       sublabel: "OMS",
       key: "oms",
       href: (slug: string) => `/${slug}/dashboard/oms`,
@@ -70,7 +66,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.crm", "Customer Relations"),
+      label: "Customer Relations",
       sublabel: "CRM",
       key: "crm",
       href: (slug: string) => `/${slug}/dashboard/crm`,
@@ -82,7 +78,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.erp", "Studio Operations"),
+      label: "Studio Operations",
       sublabel: "ERP",
       key: "erp",
       href: (slug: string) => `/${slug}/dashboard/erp`,
@@ -94,7 +90,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.whatsapp", "WhatsApp"),
+      label: "WhatsApp",
       sublabel: "Notifications",
       key: "whatsapp",
       href: (slug: string) => `/${slug}/dashboard/whatsapp`,
@@ -106,7 +102,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.marketplace", "Studio Marketplace"),
+      label: "Studio Marketplace",
       sublabel: "Public Profile",
       key: "marketplace",
       href: (slug: string) => `/${slug}/dashboard/marketplace`,
@@ -118,7 +114,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("dash.reports", "Business Reports"),
+      label: "Business Reports",
       sublabel: "Analytics",
       key: "reports",
       href: (slug: string) => `/${slug}/dashboard/reports`,
@@ -130,7 +126,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       ),
     },
     {
-      label: t("nav.studio_settings", "Studio Settings"),
+      label: "Studio Settings",
       sublabel: "Preferences & Danger Zone",
       key: "settings",
       href: (slug: string) => `/${slug}/dashboard/settings`,
@@ -194,7 +190,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
             className="text-[10px] font-semibold text-brand-blue-primary hover:underline shrink-0"
             title="Switch Workspace"
           >
-            {t("nav.switch", "Switch")}
+            Switch
           </Link>
         </div>
         {role === "STUDIO_OWNER" && <p className="text-xs text-text-tertiary truncate">{ownerName}</p>}
@@ -303,7 +299,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          {t("nav.signout", "Sign Out")}
+          Sign Out
         </button>
       </div>
     </div>
@@ -336,7 +332,7 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
             prefetch={true}
             className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary hover:text-brand-blue-primary hover:bg-brand-blue-50 transition"
           >
-            {t("nav.switch", "Switch")}
+            Switch
           </Link>
         </div>
       </div>

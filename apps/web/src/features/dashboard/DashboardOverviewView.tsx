@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { OrderStatus, Order, BookingRequest } from "@focoman/types";
 import { getStudioCalendarDate } from "@focoman/domain";
-import { isDemoStudio, getDemoOrders, subscribeToDemoStore } from "@/lib/demoStore";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import { getStudioBookingRequestsAction } from "@/actions/marketplaceActions";
 
@@ -80,7 +79,6 @@ export function DashboardOverviewView({
   studioSlug,
   initialOrders,
 }: DashboardOverviewViewProps) {
-  const isDemo = isDemoStudio(studioSlug);
   const { studio, idToken } = useStudioWorkspace();
   const [orders, setOrders] = useState<Order[]>(initialOrders);
 
@@ -115,16 +113,6 @@ export function DashboardOverviewView({
     });
   };
 
-  // Sync demo orders
-  useEffect(() => {
-    if (isDemo) {
-      setOrders(getDemoOrders());
-      const unsub = subscribeToDemoStore(() => {
-        setOrders(getDemoOrders());
-      });
-      return () => unsub();
-    }
-  }, [isDemo]);
 
   // 2. Period Filter state
   const [period, setPeriod] = useState<PeriodFilter>("LAST_30_DAYS");
@@ -152,7 +140,7 @@ export function DashboardOverviewView({
   const [leadsLoading, setLeadsLoading] = useState(false);
 
   useEffect(() => {
-    if (isMarketplaceEnabled && idToken && !isDemo) {
+    if (isMarketplaceEnabled && idToken) {
       setLeadsLoading(true);
       getStudioBookingRequestsAction(studioSlug, idToken)
         .then((res) => {
@@ -163,7 +151,7 @@ export function DashboardOverviewView({
         .catch(() => {})
         .finally(() => setLeadsLoading(false));
     }
-  }, [isMarketplaceEnabled, studioSlug, idToken, isDemo]);
+  }, [isMarketplaceEnabled, studioSlug, idToken]);
 
   // Determine date ranges for reporting
   const { currentRange, previousRange, periodLabel } = useMemo(() => {
@@ -446,7 +434,7 @@ export function DashboardOverviewView({
               Studio Operating System
             </span>
             <span className="badge-status-neutral">
-              Studio: <strong className="font-semibold text-text-primary">{isDemo ? "Lumina Creative Studio" : studioSlug}</strong>
+              Studio: <strong className="font-semibold text-text-primary">{studioSlug}</strong>
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
@@ -1097,7 +1085,7 @@ export function DashboardOverviewView({
       {/* ========================================================================= */}
       {/* 4. STUDIO MARKETPLACE LEADS PANEL (ONLY WHEN ENABLED & RELEVANT)           */}
       {/* ========================================================================= */}
-      {isMarketplaceEnabled && (marketplaceLeads.length > 0 || isDemo) && (
+      {isMarketplaceEnabled && marketplaceLeads.length > 0 && (
         <section className="rounded-2xl border border-border-default bg-white shadow-xs overflow-hidden">
           {/* Panel Header */}
           <div className="flex items-center justify-between p-5 border-b border-border-default bg-surface-app/40">

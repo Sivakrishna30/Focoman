@@ -1,29 +1,12 @@
 import { Order } from "@focoman/types";
 import { toMemberWorkView } from "@focoman/domain";
 import { getMembersByStudio, getOrdersByStudio, getTasksByMember, getStudioBySlug } from "@focoman/db";
-import { DEMO_ORDERS, DEMO_STUDIO } from "@/lib/demoData";
 import { DashboardHomeView } from "@/features/dashboard/DashboardHomeView";
 import { MemberWorkDashboardView } from "@/features/dashboard/MemberWorkDashboardView";
 import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
-function isDemoSlug(slug: string): boolean {
-  return slug.toLowerCase() === "demo-studio";
-}
-
 export default async function DashboardPage({ params }: { params: Promise<{ studioSlug: string }> }) {
   const { studioSlug } = await params;
-  const isDemo = isDemoSlug(studioSlug);
-
-  if (isDemo) {
-    return (
-      <DashboardHomeView
-        studioSlug={studioSlug}
-        initialOrders={DEMO_ORDERS}
-        hasMarketplace={Boolean(DEMO_STUDIO.features?.marketplace)}
-      />
-    );
-  }
-
   const access = await requireDashboardStudioAccess(studioSlug);
   if (access.membership.role === "STUDIO_MEMBER") {
     const normalizedEmail = access.decoded.email?.trim().toLowerCase();

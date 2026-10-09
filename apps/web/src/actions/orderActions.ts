@@ -8,7 +8,6 @@ import {
   UpdatePaymentSchema,
 } from "@focoman/validation";
 import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate, isContactMatch } from "@focoman/domain";
-import { DEMO_ORDERS, DEMO_TASKS } from "@/lib/demoData";
 import {
   getOrdersByStudio,
   getDeletedOrdersByStudio,
