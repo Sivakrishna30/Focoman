@@ -53,8 +53,8 @@ export default async function HomePage() {
           id="home"
           className="relative h-[340vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
         >
-          <div className="sticky top-0 flex h-screen min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3.5 sm:px-6 lg:px-8 pt-14 sm:pt-16 lg:pt-0 pb-2 sm:pb-4 lg:pb-0">
-            <div className="relative z-10 mx-auto max-w-7xl w-full mt-0 lg:-mt-10 xl:-mt-16">
+          <div className="sticky top-0 flex h-screen min-h-[100dvh] w-full flex-col items-center justify-start sm:justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-10 lg:pt-0 pb-2 sm:pb-4 lg:pb-0">
+            <div className="relative z-10 mx-auto max-w-7xl w-full mt-2 sm:mt-0 lg:-mt-10 xl:-mt-16">
               <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-12 lg:items-center">
                 {/* Left Column: Hero Copy & Actions */}
                 <div className="lg:col-span-5 xl:col-span-5 text-center lg:text-left">
@@ -103,8 +103,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-        {/* 3. Challenge & Solution Section (Direct in main background, 6 rectangular folder planes) */}
-        <section id="challenge" className="mx-auto max-w-7xl px-3.5 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-[#D8D2C4]">
+        {/* 3. Challenge & Solution Section (Why Focoman / Modules) */}
+        <section id="modules" className="mx-auto max-w-7xl px-3.5 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-[#D8D2C4] scroll-mt-14 sm:scroll-mt-16">
+          <span id="challenge" className="sr-only" />
           <div className="mx-auto max-w-3xl text-center mb-10 sm:mb-14">
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-brand-orange-primary px-3 py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft">
               [ Why Focoman? ]
