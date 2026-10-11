@@ -153,8 +153,8 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
 
   const navContent = (onLinkClick?: () => void) => (
     <div className="flex h-full flex-col bg-[#181B20] text-slate-300">
-      {/* Logo */}
-      <div className="flex items-center justify-between border-b border-[#262A32] px-5 py-4">
+      {/* Logo Header (In sync with dark side nav) */}
+      <div className="flex items-center justify-between border-b border-[#262A32] bg-[#181B20] px-5 py-3.5 shrink-0">
         <Link href="/" className="flex items-center shrink-0" title="Focoman Home">
           <FocomanLogo className="h-8 sm:h-9 w-auto" showStudiosSuffix={true} variant="dark" />
         </Link>
@@ -244,8 +244,8 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
 
   return (
     <>
-      {/* Mobile Top Header */}
-      <div className="flex h-13 w-full items-center justify-between border-b border-[#262A32] bg-[#181B20] px-3 sm:px-4 md:hidden shrink-0 z-30">
+      {/* Mobile Top Header (In sync with dark side nav) */}
+      <div className="flex items-center justify-between border-b border-[#262A32] bg-[#181B20] px-3 sm:px-4 py-2.5 md:hidden shrink-0 z-30">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <button
             onClick={() => setMobileOpen(true)}

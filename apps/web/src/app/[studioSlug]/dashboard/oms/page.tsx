@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback, use } from "react";
+import { useSearchParams } from "next/navigation";
 import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion, Customer } from "@focoman/types";
 import {
   getStudioOrdersAction,
@@ -92,6 +93,7 @@ export default function OmsPage({
   params: Promise<{ studioSlug: string }>;
 }) {
   const { studioSlug } = use(params);
+  const searchParams = useSearchParams();
   const { studio, idToken: workspaceToken, authLoading, getIdToken } = useStudioWorkspace();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -138,10 +140,30 @@ export default function OmsPage({
   // New Order Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const orderIdParam = searchParams.get("orderId");
+    if (orderIdParam) {
+      setSelectedId(orderIdParam);
+    }
+    const actionParam = searchParams.get("action");
+    if (actionParam === "new-order") {
+      setShowCreateModal(true);
+    }
+  }, [searchParams]);
   const [formError, setFormError] = useState<string | null>(null);
   const [newOrderForm, setNewOrderForm] = useState(DEFAULT_ORDER_FORM);
   const [showServicesDropdown, setShowServicesDropdown] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+  const [isEditingPricing, setIsEditingPricing] = useState(false);
+  const [editConfirmedPrice, setEditConfirmedPrice] = useState("");
+  const [editAdvanceAmount, setEditAdvanceAmount] = useState("");
+
+  useEffect(() => {
+    setIsEditingPricing(false);
+    setEditConfirmedPrice("");
+    setEditAdvanceAmount("");
+  }, [selectedId]);
 
   // In-App Cancellation Dialog State
   const [cancelTargetOrder, setCancelTargetOrder] = useState<Order | null>(null);
@@ -391,13 +413,23 @@ export default function OmsPage({
     }
   };
 
-  const handleUpdatePayment = async (newPaymentStatus: PaymentStatus) => {
+  const handleUpdatePayment = async (
+    newPaymentStatus?: PaymentStatus,
+    advanceAmount?: number,
+    finalConfirmedPrice?: number
+  ) => {
     if (!selected || isUpdatingPayment) return;
     setIsUpdatingPayment(true);
 
     const previousOrders = [...orders];
+    const confirmedVal = finalConfirmedPrice !== undefined ? finalConfirmedPrice : selected.pricing.finalConfirmedPrice;
+
     // Optimistic UI update so owner sees immediate feedback
     if (newPaymentStatus === "PAID") {
+      const prevAdv =
+        selected.pricing.advanceAmount < selected.pricing.finalConfirmedPrice
+          ? selected.pricing.advanceAmount
+          : (selected.pricing.previousAdvanceAmount ?? 0);
       setOrders((prev) =>
         prev.map((o) =>
           o.id === selected.id
@@ -406,8 +438,53 @@ export default function OmsPage({
                 paymentStatus: "PAID",
                 pricing: {
                   ...o.pricing,
-                  advanceAmount: o.pricing.finalConfirmedPrice,
+                  finalConfirmedPrice: confirmedVal,
+                  previousAdvanceAmount: prevAdv,
+                  advanceAmount: confirmedVal,
                   remainingAmount: 0,
+                },
+              }
+            : o
+        )
+      );
+    } else if (newPaymentStatus === "PENDING" && advanceAmount === undefined) {
+      const restoredAdvance = selected.pricing.previousAdvanceAmount ?? 0;
+      const calculatedStatus: PaymentStatus =
+        restoredAdvance > 0 && restoredAdvance < confirmedVal ? "PARTIAL" : "PENDING";
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selected.id
+            ? {
+                ...o,
+                paymentStatus: calculatedStatus,
+                pricing: {
+                  ...o.pricing,
+                  finalConfirmedPrice: confirmedVal,
+                  advanceAmount: restoredAdvance,
+                  remainingAmount: Math.max(0, confirmedVal - restoredAdvance),
+                },
+              }
+            : o
+        )
+      );
+    } else {
+      const advVal = advanceAmount !== undefined ? advanceAmount : selected.pricing.advanceAmount;
+      const statusVal =
+        newPaymentStatus ||
+        (advVal >= confirmedVal && confirmedVal > 0 ? "PAID" : advVal > 0 ? "PARTIAL" : "PENDING");
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selected.id
+            ? {
+                ...o,
+                paymentStatus: statusVal,
+                pricing: {
+                  ...o.pricing,
+                  finalConfirmedPrice: confirmedVal,
+                  advanceAmount: advVal,
+                  remainingAmount: Math.max(0, confirmedVal - advVal),
+                  previousAdvanceAmount:
+                    advVal < confirmedVal ? advVal : o.pricing.previousAdvanceAmount,
                 },
               }
             : o
@@ -426,7 +503,9 @@ export default function OmsPage({
         idToken: token,
         studioId: studioSlug,
         orderId: selected.id,
-        paymentStatus: newPaymentStatus,
+        ...(newPaymentStatus ? { paymentStatus: newPaymentStatus } : {}),
+        ...(advanceAmount !== undefined ? { advanceAmount } : {}),
+        ...(finalConfirmedPrice !== undefined ? { finalConfirmedPrice } : {}),
       });
       setIsUpdatingPayment(false);
       if (res.success && res.order) {
@@ -441,6 +520,34 @@ export default function OmsPage({
       setOrders(previousOrders);
       alert(err instanceof Error ? err.message : "Failed to update payment status");
     }
+  };
+
+  const handleStartEditingPricing = () => {
+    if (!selected) return;
+    setEditConfirmedPrice(String(selected.pricing.finalConfirmedPrice));
+    setEditAdvanceAmount(String(selected.pricing.advanceAmount));
+    setIsEditingPricing(true);
+  };
+
+  const handleSavePricing = async () => {
+    if (!selected) return;
+    const confirmedNum = Math.max(0, Number(editConfirmedPrice) || 0);
+    const advanceNum = Math.max(0, Number(editAdvanceAmount) || 0);
+
+    if (advanceNum > confirmedNum) {
+      alert("Advance received cannot be greater than confirmed price.");
+      return;
+    }
+
+    const calculatedStatus: PaymentStatus =
+      advanceNum >= confirmedNum && confirmedNum > 0
+        ? "PAID"
+        : advanceNum > 0
+        ? "PARTIAL"
+        : "PENDING";
+
+    await handleUpdatePayment(calculatedStatus, advanceNum, confirmedNum);
+    setIsEditingPricing(false);
   };
 
   const handleConfirmSuggestion = async (sug: ResourceSuggestion) => {
@@ -623,6 +730,16 @@ export default function OmsPage({
                       <span className="font-mono text-xs font-bold text-brand-blue-primary">
                         {order.orderNumber}
                       </span>
+                      {order.paymentStatus === "PAID" && (
+                        <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-status-success border border-emerald-200">
+                          PAID
+                        </span>
+                      )}
+                      {order.paymentStatus === "PARTIAL" && (
+                        <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 border border-sky-200">
+                          PARTIAL
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-text-secondary mt-1">
                       {order.eventType} · Event Date: {order.eventDate}
@@ -773,41 +890,160 @@ export default function OmsPage({
               <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
                 Payment & Pricing Summary
               </h3>
-              <div className="flex gap-1.5">
-                {selected.paymentStatus === "PAID" ? (
-                  <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-status-success">
-                    Payment Completed
-                  </span>
+              <div className="flex items-center gap-1.5">
+                {isEditingPricing ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={isUpdatingPayment}
+                      onClick={() => void handleSavePricing()}
+                      className="btn-brand-blue py-1 px-2.5 text-[11px] disabled:opacity-50 flex items-center gap-1"
+                      title="Save pricing changes"
+                    >
+                      <span>✓</span>
+                      <span>{isUpdatingPayment ? "Saving..." : "Save"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUpdatingPayment}
+                      onClick={() => setIsEditingPricing(false)}
+                      className="rounded-lg border border-border-default bg-white px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-text-primary hover:bg-surface-subtle shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
+                      title="Cancel editing"
+                    >
+                      <span>✕</span>
+                      <span>Cancel</span>
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    disabled={isUpdatingPayment}
-                    onClick={() => handleUpdatePayment("PAID")}
-                    className="btn-brand-blue py-1 px-2.5 text-[11px] disabled:opacity-50"
-                  >
-                    {isUpdatingPayment ? "Updating..." : "Mark Paid"}
-                  </button>
+                  <>
+                    {selected.paymentStatus === "PAID" ? (
+                      <button
+                        type="button"
+                        disabled={isUpdatingPayment}
+                        onClick={() => {
+                          void handleUpdatePayment("PENDING");
+                        }}
+                        className="rounded-lg border border-border-default bg-white px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-amber-700 hover:border-amber-300 hover:bg-amber-50/50 shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
+                        title="Mark order as Unpaid"
+                      >
+                        <span>✕</span>
+                        <span>{isUpdatingPayment ? "Updating..." : "Mark Unpaid"}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isUpdatingPayment}
+                        onClick={() => void handleUpdatePayment("PAID")}
+                        className="btn-brand-blue py-1 px-2.5 text-[11px] disabled:opacity-50 flex items-center gap-1"
+                        title="Mark order as Paid"
+                      >
+                        <span>✓</span>
+                        <span>{isUpdatingPayment ? "Updating..." : "Mark Paid"}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={isUpdatingPayment}
+                      onClick={handleStartEditingPricing}
+                      className="rounded-lg border border-border-default bg-white px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-brand-blue-primary hover:border-brand-blue-primary hover:bg-blue-50/50 shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
+                      title="Edit pricing & payment amounts"
+                    >
+                      <span>✎</span>
+                      <span>Edit</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
-            <div className="mt-2 space-y-2 rounded-2xl bg-surface-app p-4 border border-border-default text-xs">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Confirmed Price:</span>
-                <span className="font-bold text-text-primary">₹{selected.pricing.finalConfirmedPrice.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Advance Received:</span>
-                <span className="font-bold text-brand-blue-primary">₹{selected.pricing.advanceAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Remaining Balance:</span>
-                <span className="font-bold text-brand-orange-primary">₹{selected.pricing.remainingAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-border-default">
-                <span className="text-text-secondary">Payment Status:</span>
-                <span className={`font-bold ${selected.paymentStatus === "PAID" ? "text-status-success" : "text-text-primary"}`}>
-                  {selected.paymentStatus === "PAID" ? "Payment Completed" : selected.paymentStatus}
-                </span>
-              </div>
+            <div className="mt-2 space-y-2.5 rounded-2xl bg-surface-app p-4 border border-border-default text-xs">
+              {isEditingPricing ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary font-medium">Confirmed Price:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-text-secondary font-bold">₹</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editConfirmedPrice}
+                        onChange={(e) => setEditConfirmedPrice(e.target.value)}
+                        className="w-28 rounded-lg border border-border-default bg-white px-2.5 py-1 text-xs font-bold text-text-primary focus:outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                        placeholder="0"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary font-medium">Advance Received:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-text-secondary font-bold">₹</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editAdvanceAmount}
+                        onChange={(e) => setEditAdvanceAmount(e.target.value)}
+                        className="w-28 rounded-lg border border-border-default bg-white px-2.5 py-1 text-xs font-bold text-brand-blue-primary focus:outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary font-medium">Remaining Balance:</span>
+                    <span className="font-bold text-brand-orange-primary">
+                      ₹{Math.max(0, (Number(editConfirmedPrice) || 0) - (Number(editAdvanceAmount) || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border-default">
+                    <span className="text-text-secondary font-medium">Payment Status:</span>
+                    {(() => {
+                      const c = Math.max(0, Number(editConfirmedPrice) || 0);
+                      const a = Math.max(0, Number(editAdvanceAmount) || 0);
+                      const isPaid = a >= c && c > 0;
+                      const isPartial = a > 0 && a < c;
+                      return (
+                        <span className={`font-bold ${isPaid ? "text-status-success" : isPartial ? "text-brand-orange-primary" : "text-text-secondary"}`}>
+                          {isPaid ? "Payment Completed" : isPartial ? "PARTIAL" : "PENDING"}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary">Confirmed Price:</span>
+                    <span className="font-bold text-text-primary">
+                      ₹{selected.pricing.finalConfirmedPrice.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary">Advance Received:</span>
+                    <span className="font-bold text-brand-blue-primary">
+                      ₹{selected.pricing.advanceAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-secondary">Remaining Balance:</span>
+                    <span className="font-bold text-brand-orange-primary">
+                      ₹{selected.pricing.remainingAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border-default">
+                    <span className="text-text-secondary">Payment Status:</span>
+                    <span
+                      className={`font-bold ${
+                        selected.paymentStatus === "PAID"
+                          ? "text-status-success"
+                          : selected.paymentStatus === "PARTIAL"
+                          ? "text-brand-orange-primary"
+                          : "text-text-primary"
+                      }`}
+                    >
+                      {selected.paymentStatus === "PAID" ? "Payment Completed" : selected.paymentStatus}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

@@ -644,13 +644,27 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
     }
 
     const currentPricing = existingOrder.pricing;
-    let calculatedStatus: PaymentStatus = validated.paymentStatus as PaymentStatus;
+    const newConfirmed = validated.finalConfirmedPrice !== undefined ? validated.finalConfirmedPrice : currentPricing.finalConfirmedPrice;
+    let calculatedStatus: PaymentStatus | undefined = validated.paymentStatus as PaymentStatus | undefined;
     let newAdvance = validated.advanceAmount !== undefined ? validated.advanceAmount : currentPricing.advanceAmount;
-    
+    let previousAdvance = currentPricing.previousAdvanceAmount ?? (currentPricing.advanceAmount < currentPricing.finalConfirmedPrice ? currentPricing.advanceAmount : 0);
+
+    if (validated.advanceAmount !== undefined && validated.advanceAmount < newConfirmed) {
+      previousAdvance = validated.advanceAmount;
+    }
+
     if (calculatedStatus === "PAID") {
-      newAdvance = currentPricing.finalConfirmedPrice;
+      // When marking as PAID, remember the previous advance if it wasn't already full price
+      if (existingOrder.paymentStatus !== "PAID") {
+        previousAdvance = currentPricing.advanceAmount < currentPricing.finalConfirmedPrice ? currentPricing.advanceAmount : 0;
+      }
+      newAdvance = newConfirmed;
+    } else if (calculatedStatus === "PENDING" && existingOrder.paymentStatus === "PAID" && validated.advanceAmount === undefined) {
+      // Mark Unpaid: Restore previous advance amount instead of resetting to zero
+      newAdvance = previousAdvance;
+      calculatedStatus = newAdvance > 0 && newAdvance < newConfirmed ? "PARTIAL" : "PENDING";
     } else if (!calculatedStatus) {
-      if (newAdvance >= currentPricing.finalConfirmedPrice && currentPricing.finalConfirmedPrice > 0) {
+      if (newAdvance >= newConfirmed && newConfirmed > 0) {
         calculatedStatus = "PAID";
       } else if (newAdvance > 0) {
         calculatedStatus = "PARTIAL";
@@ -659,14 +673,16 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
       }
     }
 
-    const newRemaining = Math.max(0, currentPricing.finalConfirmedPrice - newAdvance);
+    const newRemaining = Math.max(0, newConfirmed - newAdvance);
 
     const updatedOrder = await updateOrder(validated.orderId, {
       paymentStatus: calculatedStatus,
       pricing: {
         ...currentPricing,
+        finalConfirmedPrice: newConfirmed,
         advanceAmount: newAdvance,
         remainingAmount: newRemaining,
+        previousAdvanceAmount: previousAdvance,
       },
     });
 
@@ -675,6 +691,11 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
       if (canCompleteOrder(calculatedStatus, allTasks) && updatedOrder.orderStatus !== "COMPLETED") {
         await updateOrder(validated.orderId, { orderStatus: "COMPLETED" });
         updatedOrder.orderStatus = "COMPLETED";
+      } else if (!canCompleteOrder(calculatedStatus, allTasks) && existingOrder.orderStatus === "COMPLETED") {
+        const todayStr = getStudioCalendarDate();
+        const fallbackStatus: OrderStatus = existingOrder.eventDate < todayStr ? "POST_EVENT_IN_PROGRESS" : "AWAITING_EVENT";
+        await updateOrder(validated.orderId, { orderStatus: fallbackStatus });
+        updatedOrder.orderStatus = fallbackStatus;
       }
     }
 

@@ -102,7 +102,7 @@ body.retro-ui {
    1. RETRO TOP NAVIGATION PANEL & HEADERS
    ========================================================================== */
 .retro-ui header,
-.retro-ui .h-14.border-b,
+.retro-ui main > .h-14.border-b,
 .retro-ui [class*="dashboard-header"],
 .retro-ui [class*="header-brand-"] {
   background-color: #FAF7F2 !important;

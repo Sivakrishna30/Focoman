@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
 import { StudioPlan } from "@focoman/types";
@@ -20,6 +20,7 @@ export function DashboardTopNav({
   const [currentPlanInfo, setCurrentPlanInfo] = useState<StudioPlan | null | undefined>(initialPlanInfo);
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
   const studioSlug = (params?.studioSlug as string) || "";
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -65,6 +66,33 @@ export function DashboardTopNav({
     router.push("/");
   };
 
+  const firstWord = (() => {
+    if (!user) return "Account";
+    const raw = user.displayName || user.email || "Account";
+    const clean = raw.trim();
+    if (clean.includes(" ")) {
+      return clean.split(" ")[0];
+    }
+    if (clean.includes("@")) {
+      const handle = clean.split("@")[0];
+      return handle.split(".")[0];
+    }
+    return clean;
+  })();
+
+  const pageTitle = (() => {
+    if (!pathname) return "Dashboard";
+    if (pathname.includes("/crm")) return "Customer CRM";
+    if (pathname.includes("/oms")) return "Order Management";
+    if (pathname.includes("/erp")) return "Studio ERP";
+    if (pathname.includes("/whatsapp")) return "WhatsApp Operations";
+    if (pathname.includes("/settings")) return "Studio Settings";
+    if (pathname.includes("/reports")) return "Business Reports";
+    if (pathname.includes("/marketplace")) return "Marketplace Profile";
+    if (pathname.includes("/dev-portal")) return "Developer Portal";
+    return "Dashboard";
+  })();
+
   const selectedCaps = (currentPlanInfo?.selectedCapabilities || []) as string[];
   const hasCRM = selectedCaps.includes("CUSTOMER_CRM");
   const hasERP = selectedCaps.includes("STUDIO_ERP");
@@ -85,8 +113,10 @@ export function DashboardTopNav({
 
   return (
     <div className="h-14 border-b border-[#D8D2C4] bg-[#FAF7F2] flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-[0_1px_2px_rgba(40,30,20,0.04)]">
-      <div className="flex items-center gap-2">
-        {/* Top left space kept clean */}
+      <div className="flex items-center gap-2 min-w-0">
+        <h1 className="text-base sm:text-lg font-extrabold text-[#1C1917] tracking-tight truncate">
+          {pageTitle}
+        </h1>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
@@ -94,10 +124,11 @@ export function DashboardTopNav({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center justify-center w-8 h-8 rounded-md bg-[#0EA5E9] text-white font-bold text-xs border border-[#0369A1] shadow-[0_2px_0_#0369A1] hover:bg-[#0284C7] active:translate-y-[1.5px] active:shadow-none focus:outline-none transition"
-              title={user.email || "Account"}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0EA5E9] text-white font-bold text-xs border border-[#0369A1] shadow-[0_2px_0_#0369A1] hover:bg-[#0284C7] active:translate-y-[1.5px] active:shadow-none focus:outline-none transition max-w-[140px]"
+              title={user.email || user.displayName || "Account"}
             >
-              {user.displayName ? user.displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : "U")}
+              <span className="truncate">{firstWord}</span>
+              <span className="text-[9px] opacity-80">▼</span>
             </button>
 
             {isOpen && (

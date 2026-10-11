@@ -54,6 +54,7 @@ export const UpdatePaymentSchema = z.object({
   idToken: z.string().optional(),
   studioId: z.string().optional(),
   orderId: z.string().min(1, 'Order ID is required'),
+  finalConfirmedPrice: z.number().nonnegative().optional(),
   advanceAmount: z.number().nonnegative().optional(),
   paymentStatus: z.enum([
     'PENDING',
@@ -65,7 +66,7 @@ export const UpdatePaymentSchema = z.object({
     'PAYMENT_PENDING',
     'PAYMENT_CONFIRMATION_REQUIRED',
     'PAYMENT_COMPLETED'
-  ])
+  ]).optional()
 });
 
 export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema>;

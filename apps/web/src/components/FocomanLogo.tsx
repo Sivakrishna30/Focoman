@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 
 export function FocomanLogo({
   className = "h-14 w-auto",
@@ -9,8 +9,13 @@ export function FocomanLogo({
   showStudiosSuffix?: boolean;
   variant?: "light" | "dark";
 }) {
-  const focoTextColor = variant === "dark" ? "#CBD5E1" : "#111827";
-  const studiosTextColor = variant === "dark" ? "#94A3B8" : "#4B5563";
+  const reactId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const shieldBgId = `foco-shield-bg-${reactId}`;
+  const fCyanId = `foco-cyan-${reactId}`;
+  const purpleBorderId = `foco-purple-${reactId}`;
+
+  const focoTextColor = variant === "dark" ? "#FFFFFF" : "#111827";
+  const studiosTextColor = variant === "dark" ? "#CBD5E1" : "#4B5563";
 
   return (
     <svg
@@ -21,15 +26,15 @@ export function FocomanLogo({
     >
       <defs>
         {/* Gradients */}
-        <linearGradient id="shield-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={shieldBgId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FB923C" />
           <stop offset="100%" stopColor="#F97316" />
         </linearGradient>
-        <linearGradient id="f-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id={fCyanId} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#38BDF8" />
           <stop offset="100%" stopColor="#0284C7" />
         </linearGradient>
-        <linearGradient id="purple-border" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={purpleBorderId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#A78BFA" />
           <stop offset="50%" stopColor="#8B5CF6" />
           <stop offset="100%" stopColor="#6D28D9" />
@@ -41,7 +46,7 @@ export function FocomanLogo({
         {/* Outer Purple Shield Border */}
         <path
           d="M6 10 L34 10 L40 22 L20 44 L0 22 Z"
-          fill="url(#purple-border)"
+          fill={`url(#${purpleBorderId})`}
           stroke="#4C1D95"
           strokeWidth="1.5"
           strokeLinejoin="round"
@@ -49,7 +54,7 @@ export function FocomanLogo({
         {/* Inner Orange Shield Fill */}
         <path
           d="M8 12.5 L32 12.5 L37 22 L20 40.5 L3 22 Z"
-          fill="url(#shield-bg)"
+          fill={`url(#${shieldBgId})`}
         />
 
         {/* Stylized 'F' Mark */}
@@ -62,7 +67,7 @@ export function FocomanLogo({
         {/* F Main Face */}
         <path
           d="M9.5 15.5 H29.5 L26 21.5 H16.5 V24.5 H23.5 L21 29.5 H16.5 V35.5 L11.5 36.5 V15.5 Z"
-          fill="url(#f-cyan)"
+          fill={`url(#${fCyanId})`}
           stroke="#0284C7"
           strokeWidth="0.75"
         />

@@ -613,23 +613,7 @@ export function DashboardHomeView({
 
   return (
     <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-xs text-text-secondary mt-0.5">
-            Studio workspace • <span className="font-semibold text-text-primary">{studioSlug}</span>
-          </p>
-        </div>
-      </div>
-
-      {/* ── Two-Column Layout (Main Dashboard Content + Quick Actions Panel) ── */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
-        {/* Left Column: Existing Dashboard Content */}
-        <div className="flex-1 min-w-0 space-y-4 sm:space-y-6 w-full">
-          {/* ══════════════════════════════════════
+      {/* ══════════════════════════════════════
               PANEL 1: BUSINESS REPORTS
           ══════════════════════════════════════ */}
           <section className="rounded-2xl border border-border-default bg-white shadow-xs overflow-hidden">
@@ -643,7 +627,7 @@ export function DashboardHomeView({
 
         {!collapsed.businessReports && (
           <div className="p-3.5 sm:p-5 space-y-6 sm:space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {/* --- REVENUE SECTION --- */}
               <div className="rounded-xl border border-border-default bg-surface-app/40 p-3.5 sm:p-5">
                 <div className="flex items-start justify-between mb-2">
@@ -847,6 +831,99 @@ export function DashboardHomeView({
                     formatValue={(v) => v.toString()}
                   />
                 )}
+              </div>
+
+              {/* --- QUICK ACTIONS SECTION (BESIDE GRAPHS) --- */}
+              <div className="rounded-xl border border-border-default bg-surface-app/40 p-3.5 sm:p-5 md:col-span-2 xl:col-span-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">
+                        Quick Actions
+                      </p>
+                      <p className="text-xs font-bold text-text-primary mt-1">
+                        Frequently Used Shortcuts
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-brand-blue-primary bg-brand-blue-background px-2 py-0.5 rounded border border-brand-blue-soft">
+                      Shortcuts
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2.5">
+                    {/* Action 1: Register Order */}
+                    <Link
+                      href={`/${studioSlug}/dashboard/oms?action=new-order`}
+                      id="quick-action-register-order"
+                      className="group flex items-center gap-3 rounded-xl border border-border-default bg-white p-2.5 sm:p-3 transition hover:border-brand-blue-primary hover:bg-brand-blue-50/40 hover:shadow-2xs"
+                    >
+                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-brand-blue-soft bg-brand-blue-background text-brand-blue-primary shadow-2xs group-hover:bg-brand-blue-primary group-hover:text-white transition">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold text-text-primary group-hover:text-brand-blue-primary transition">
+                          Register Order
+                        </span>
+                        <span className="block text-[10px] text-text-tertiary truncate">
+                          Confirmed booking in OMS
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-text-tertiary group-hover:text-brand-blue-primary group-hover:translate-x-0.5 transition">
+                        →
+                      </span>
+                    </Link>
+
+                    {/* Action 2: Add Crew Member */}
+                    <Link
+                      href={`/${studioSlug}/dashboard/erp?action=add-crew`}
+                      id="quick-action-add-crew"
+                      className="group flex items-center gap-3 rounded-xl border border-border-default bg-white p-2.5 sm:p-3 transition hover:border-brand-purple-primary hover:bg-brand-purple-50/40 hover:shadow-2xs"
+                    >
+                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-brand-purple-soft bg-brand-purple-background text-brand-purple-primary shadow-2xs group-hover:bg-brand-purple-primary group-hover:text-white transition">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold text-text-primary group-hover:text-brand-purple-primary transition">
+                          Add Crew Member
+                        </span>
+                        <span className="block text-[10px] text-text-tertiary truncate">
+                          Invite team member in ERP
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-text-tertiary group-hover:text-brand-purple-primary group-hover:translate-x-0.5 transition">
+                        →
+                      </span>
+                    </Link>
+
+                    {/* Action 3: New Customer */}
+                    <Link
+                      href={`/${studioSlug}/dashboard/crm?action=new-customer`}
+                      id="quick-action-new-customer"
+                      className="group flex items-center gap-3 rounded-xl border border-border-default bg-white p-2.5 sm:p-3 transition hover:border-emerald-600 hover:bg-emerald-50/40 hover:shadow-2xs"
+                    >
+                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-2xs group-hover:bg-emerald-600 group-hover:text-white transition">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold text-text-primary group-hover:text-emerald-700 transition">
+                          New Customer
+                        </span>
+                        <span className="block text-[10px] text-text-tertiary truncate">
+                          Create client in CRM
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-text-tertiary group-hover:text-emerald-700 group-hover:translate-x-0.5 transition">
+                        →
+                      </span>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1158,74 +1235,6 @@ export function DashboardHomeView({
           )}
         </section>
       )}
-        </div>
-
-        {/* ── Right Column: Quick Actions Panel ── */}
-        <aside className="w-full lg:w-64 xl:w-72 shrink-0">
-          <div className="rounded-2xl border border-border-default bg-white p-5 shadow-xs lg:sticky lg:top-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border-divider">
-              <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                  Quick Actions
-                </h2>
-                <p className="text-[10px] text-text-tertiary mt-0.5">
-                  Frequently used actions
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              {/* Action 1: Register Order */}
-              <Link
-                href={`/${studioSlug}/dashboard/oms?action=new-order`}
-                id="quick-action-register-order"
-                className="group flex items-center gap-3 rounded-xl border border-border-default bg-surface-app/40 p-3 transition hover:border-brand-blue-primary hover:bg-brand-blue-50/50 hover:shadow-xs"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-blue-soft bg-white text-brand-blue-primary shadow-2xs group-hover:bg-brand-blue-primary group-hover:text-white transition">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-xs font-bold text-text-primary group-hover:text-brand-blue-primary transition">
-                    Register Order
-                  </span>
-                  <span className="block text-[11px] text-text-tertiary truncate">
-                    Confirmed booking in OMS
-                  </span>
-                </div>
-                <span className="text-xs font-bold text-text-tertiary group-hover:text-brand-blue-primary group-hover:translate-x-0.5 transition">
-                  →
-                </span>
-              </Link>
-
-              {/* Action 2: Add Crew Member */}
-              <Link
-                href={`/${studioSlug}/dashboard/erp?action=add-crew`}
-                id="quick-action-add-crew"
-                className="group flex items-center gap-3 rounded-xl border border-border-default bg-surface-app/40 p-3 transition hover:border-brand-purple-primary hover:bg-brand-purple-50/50 hover:shadow-xs"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-purple-soft bg-white text-brand-purple-primary shadow-2xs group-hover:bg-brand-purple-primary group-hover:text-white transition">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-xs font-bold text-text-primary group-hover:text-brand-purple-primary transition">
-                    Add Crew Member
-                  </span>
-                  <span className="block text-[11px] text-text-tertiary truncate">
-                    Invite team member in ERP
-                  </span>
-                </div>
-                <span className="text-xs font-bold text-text-tertiary group-hover:text-brand-purple-primary group-hover:translate-x-0.5 transition">
-                  →
-                </span>
-              </Link>
-            </div>
-          </div>
-        </aside>
-      </div>
     </div>
   );
 }

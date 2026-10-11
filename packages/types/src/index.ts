@@ -455,6 +455,7 @@ export interface OrderPricing {
   finalConfirmedPrice: number;
   advanceAmount: number;
   remainingAmount: number;
+  previousAdvanceAmount?: number;
 }
 
 export interface Order extends SoftDeletable {
