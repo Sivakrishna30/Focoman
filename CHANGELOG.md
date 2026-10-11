@@ -4,6 +4,24 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-047 — Dull Cold Black Dashboard Side Navigation (All Modules Unlocked)
+
+- **Task:** CHG-047 — Dull Cold Black Dashboard Left Navigation and Full Module Access for All Accounts
+- **Date:** 2026-10-11
+- **Area:** `apps/web/src/components/DashboardSidebar.tsx`, `apps/web/src/components/FocomanLogo.tsx`
+- **Change:**
+  1. **Dull Cold Black Dashboard Sidebar (`DashboardSidebar.tsx`, `FocomanLogo.tsx`)**:
+     - Shifted from pitch-black contrast to a calm, matte dull cold black/slate tone (`#181B20`) with muted borders (`border-[#262A32]`).
+     - Softened logo text in `FocomanLogo` with muted cold silver (`#CBD5E1`) for "Foco".
+     - Removed bright/harsh highlights: applied quiet, understated active state (`bg-[#242932] text-slate-200 border border-slate-700/60 font-medium`) and soft hover transitions (`text-slate-400 hover:text-slate-200 hover:bg-[#22262E]`).
+     - **All Modules 100% Unlocked for All Accounts**: Removed all entitlement paywalls, locked `/checkout` redirection links, and PRO chips from navigation items. All 8 studio modules (Dashboard, OMS, CRM, ERP, WhatsApp, Marketplace, Reports, Settings) are directly accessible.
+     - Cleaned up studio info header: removed PRO/FREE paywall badge and checkout upsell links.
+  2. **Why FocoMan Section**:
+     - Reverted `ModuleAccordion.tsx` and `page.tsx` (`#challenge`) back to the original version per user request.
+- **Verification:** TypeScript compilation clean (`npx tsc --noEmit`), dev server running at `http://localhost:3000` returning `200 OK` on both public landing page and `/[studioSlug]/dashboard`.
+
+---
+
 ## CHG-046 — Account Settings Redesign, Minimal Customer Order History & Conditional Studio Dashboard Dropdown
 
 - **Task:** CHG-046 — Dedicated Account Settings page, minimal personal customer order history panel, and conditional Studio Dashboard in profile dropdown

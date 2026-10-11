@@ -195,7 +195,7 @@ export default function FeaturesPage() {
               WhatsApp Operations & Interactive Bot
             </h2>
             <p className="max-w-3xl text-sm text-text-secondary sm:text-base">
-              Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.
+              Automated WhatsApp alerts and mobile operations send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.
             </p>
           </div>
 

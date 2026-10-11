@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "@/styles/retro-theme.css";
 import { SessionSyncProvider } from "@/components/SessionSyncProvider";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Focoman",
@@ -23,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="retro-ui" data-ui-style="retro" suppressHydrationWarning>
-      <body className="retro-ui" suppressHydrationWarning>
+    <html lang="en" className={`retro-ui ${inter.variable}`} data-ui-style="retro" suppressHydrationWarning>
+      <body className={`retro-ui ${inter.className} font-sans`} suppressHydrationWarning>
         <SessionSyncProvider>
           {children}
         </SessionSyncProvider>

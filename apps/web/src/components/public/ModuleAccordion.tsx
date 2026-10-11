@@ -45,19 +45,19 @@ const MODULES: ModuleData[] = [
     tagColor: "bg-brand-orange-background text-brand-orange-primary border-brand-orange-soft",
     cards: [
       {
-        title: "Customer Directory & Profiles",
+        title: "Customer Directory and Profiles",
         desc: "Centralized client directory with verified phone numbers, email addresses, and postal addresses.",
       },
       {
-        title: "Order, Payment & Receivables History",
+        title: "Order, Payment and Receivables History",
         desc: "Instant visibility into all past and active photoshoot orders, cumulative customer spend, historical receipts, advance deposits, and outstanding receivables across years of service.",
       },
       {
-        title: "Booking & Inquiry Records",
+        title: "Booking and Inquiry Records",
         desc: "Review past booking inquiries and requests directly attached to customer profile records.",
       },
       {
-        title: "Anniversary & Customer Milestone Reminders",
+        title: "Anniversary and Customer Milestone Reminders",
         desc: "Use previous event dates to remind studios about upcoming anniversaries and important customer milestones, creating opportunities to reconnect and offer relevant photography services.",
       },
     ],
@@ -66,15 +66,15 @@ const MODULES: ModuleData[] = [
     number: "03",
     name: "Studio Operations - ERP",
     shortDesc: "Manage your studio team, assign shoots and production tasks, check crew availability, and keep track of crew expenses and payments.",
-    tag: "Operations & Team",
+    tag: "Operations and Team",
     tagColor: "bg-brand-purple-background text-brand-purple-primary border-brand-purple-light/50",
     cards: [
       {
-        title: "Team Directory & Roles",
+        title: "Team Directory and Roles",
         desc: "Add photographers, videographers, drone pilots, and editors with their roles, skills, and contact details so your studio team is organized in one place.",
       },
       {
-        title: "Shoot & Task Assignment",
+        title: "Shoot and Task Assignment",
         desc: "Assign team members to confirmed shoots and production tasks, and keep track of the work assigned to each crew member across active projects.",
       },
       {
@@ -82,16 +82,16 @@ const MODULES: ModuleData[] = [
         desc: "Check crew availability before assigning shoots and tasks, and view the current availability of team members when planning upcoming studio work.",
       },
       {
-        title: "Expenses & Crew Payments",
+        title: "Expenses and Crew Payments",
         desc: "Record shoot day-rates, travel expenses, and crew payments to keep track of production costs and understand the expenses related to each studio project.",
       },
     ],
   },
   {
     number: "04",
-    name: "WhatsApp Operations & Bot",
-    shortDesc: "Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.",
-    tag: "WhatsApp & Bot",
+    name: "WhatsApp Operations and Bot",
+    shortDesc: "Send automated booking confirmations and gallery links to clients, dispatch call times to crew, and manage studio operations on the go with an interactive WhatsApp bot.",
+    tag: "WhatsApp and Bot",
     tagColor: "bg-green-50 text-status-success border-green-200",
     cards: [
       {
@@ -107,7 +107,7 @@ const MODULES: ModuleData[] = [
         desc: "Use the Focoman WhatsApp Bot to check active orders, upcoming events, pending tasks, and other supported studio operations directly from WhatsApp.",
       },
       {
-        title: "Crew Reminders & Call Times",
+        title: "Crew Reminders and Call Times",
         desc: "Send scheduled reminders to assigned crew members with event date, call time, venue location, and required shoot information.",
       },
     ],
@@ -120,7 +120,7 @@ const MODULES: ModuleData[] = [
     tagColor: "bg-pink-50 text-pink-700 border-pink-200",
     cards: [
       {
-        title: "Public Studio Profile & Direct Inquiries",
+        title: "Public Studio Profile and Direct Inquiries",
         desc: "Showcase your studio profile with bio, city, services, and verified operational delivery metrics on a unique URL, allowing prospective clients to submit direct booking requests with event dates, locations, and service requirements.",
       },
       {
@@ -139,17 +139,17 @@ const MODULES: ModuleData[] = [
   },
   {
     number: "06",
-    name: "Business Reports & Analytics",
+    name: "Business Reports and Analytics",
     shortDesc: "Track your studio income with monthly and yearly revenue charts, monitor pending client balances, see your most profitable shoot categories, and review on-time delivery track records.",
-    tag: "Business & Growth",
+    tag: "Business and Growth",
     tagColor: "bg-amber-50 text-amber-800 border-amber-200",
     cards: [
       {
-        title: "Monthly & Yearly Revenue Reports",
+        title: "Monthly and Yearly Revenue Reports",
         desc: "See your total studio earnings by month and year. Track growth over time and compare peak wedding season vs off-season revenue.",
       },
       {
-        title: "Pending Balances & Cash Flow",
+        title: "Pending Balances and Cash Flow",
         desc: "Get an instant list of all pending client dues, advance deposits received, and balance payments to collect before album delivery.",
       },
       {
@@ -157,7 +157,7 @@ const MODULES: ModuleData[] = [
         desc: "Know exactly which photoshoot packages earn you the most profit—Weddings, Engagements, Receptions, Baby Shoots, or Corporate Events.",
       },
       {
-        title: "On-Time Delivery & Speed",
+        title: "On-Time Delivery and Speed",
         desc: "Review your average turnaround time from shoot day to final album hand-off to maintain high client satisfaction and earn 5-star reviews.",
       },
     ],
@@ -174,79 +174,72 @@ export function ModuleAccordion() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5 sm:space-y-4">
       {MODULES.map((mod, idx) => {
         const isExpanded = expandedIndices.includes(idx);
-        const panelId = `module-panel-${mod.number}`;
-        const headerId = `module-header-${mod.number}`;
 
         return (
           <div
-            key={mod.number}
-            className={`rounded-2xl border transition-all duration-200 bg-white ${
-              isExpanded
-                ? "border-brand-blue-primary/40 shadow-md ring-1 ring-brand-blue-primary/10"
-                : "border-border-default shadow-xs hover:border-border-default/80"
-            }`}
+            key={idx}
+            className="rounded-xl border border-[#D8D2C4] bg-[#FFFDF9] shadow-[0_2px_0_#C4BCAB] transition hover:border-[#BFB8A7] overflow-hidden"
           >
-            {/* Parent Panel Header / Toggle */}
+            {/* Header row (Clickable) */}
             <button
-              id={headerId}
               type="button"
-              aria-expanded={isExpanded}
-              aria-controls={panelId}
               onClick={() => toggleModule(idx)}
-              className="w-full text-left p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue-primary rounded-2xl cursor-pointer"
+              className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left group transition-colors hover:bg-[#FAF7F2]"
+              aria-expanded={isExpanded}
             >
-              <div className="flex items-start sm:items-center gap-4 min-w-0">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-mono text-xs font-bold text-text-secondary">
-                  {mod.number}
-                </span>
-                <div className="min-w-0">
-                  <span className="block text-base sm:text-lg font-bold text-text-primary">
-                    {mod.name}
-                  </span>
-                  <span className="block mt-1 text-xs text-text-secondary">
-                    {mod.shortDesc}
-                  </span>
-                </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="retro-serif-heading text-base sm:text-lg font-bold text-[#1C1917] group-hover:text-brand-orange-primary transition-colors">
+                  {mod.name}
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-[#57534E] leading-relaxed">
+                  {mod.shortDesc}
+                </p>
               </div>
 
-              <div className="flex items-center justify-end shrink-0">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors">
+              {/* Just arrow mark */}
+              <div className="shrink-0 flex items-center justify-center pl-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF5E8] border border-[#D8D2C4] group-hover:border-brand-orange-soft transition-colors">
                   <svg
-                    className={`h-4 w-4 text-text-secondary transition-transform duration-200 ${isExpanded ? "rotate-180 text-brand-blue-primary" : ""}`}
+                    className={`h-4 w-4 text-[#57534E] transition-transform duration-200 ${
+                      isExpanded ? "rotate-180 text-brand-orange-primary" : ""
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </span>
               </div>
             </button>
 
-            {/* Expandable Content (Crawlable in DOM) */}
-            <div
-              id={panelId}
-              role="region"
-              aria-labelledby={headerId}
-              className={`border-t border-border-divider transition-all duration-200 ${
-                isExpanded ? "block p-5 sm:p-6 bg-slate-50/50" : "hidden"
-              }`}
-            >
-              <div className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 sm:gap-4">
-                {mod.cards.map((card, cIdx) => (
-                  <div
-                    key={cIdx}
-                    className="rounded-xl border border-border-default bg-white p-4 shadow-xs"
-                  >
-                    <h4 className="text-xs font-bold text-text-primary">{card.title}</h4>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-text-secondary">{card.desc}</p>
-                  </div>
-                ))}
+            {/* Expanded 4 child feature panels */}
+            {isExpanded && (
+              <div className="border-t border-[#E8E0D0] bg-[#FAF7F2] p-4 sm:p-5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {mod.cards.map((card, cIdx) => (
+                    <div
+                      key={cIdx}
+                      className="rounded-lg border border-[#D8D2C4] bg-[#FFFDF9] p-3.5 shadow-xs transition hover:border-[#BFB8A7] flex flex-col justify-between"
+                    >
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-[#1C1917]">
+                          {card.title}
+                        </h4>
+                        <p className="mt-1.5 text-xs text-[#57534E] leading-relaxed">
+                          {card.desc}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         );
       })}

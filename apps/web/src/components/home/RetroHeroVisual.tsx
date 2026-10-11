@@ -120,7 +120,7 @@ export function RetroHeroVisual() {
                 <tr className="hover:bg-gray-50">
                   <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">1</td>
                   <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-010906</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Priya &amp; Arjun</td>
+                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Priya and Arjun</td>
                   <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
                   <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
                   <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
@@ -208,7 +208,7 @@ export function RetroHeroVisual() {
               }}
             >
               <div className="text-[12px] sm:text-[14px] md:text-[16px] font-bold text-[#8C2D19] tracking-wide truncate">
-                Today&apos;s Studio Shoot &amp; Crew Schedule:
+                Today&apos;s Studio Shoot and Crew Schedule:
               </div>
 
               <div className="text-[10.5px] sm:text-[13px] md:text-[15px] leading-[14px] sm:leading-[18px] text-[#1E3A8A] font-semibold">
@@ -493,7 +493,7 @@ export function RetroHeroVisual() {
                   <tbody className="divide-y divide-border-default/60 font-mono text-[7.5px] sm:text-[8.5px]">
                     <tr className="hover:bg-[#FAF7F2] transition">
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-010906</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Priya &amp; Arjun</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Priya and Arjun</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-07</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
@@ -526,7 +526,7 @@ export function RetroHeroVisual() {
                     </tr>
                     <tr className="hover:bg-[#FAF7F2] transition">
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261007-235733</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Ananya &amp; Rohit</td>
+                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Ananya and Rohit</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-14</td>
                       <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">

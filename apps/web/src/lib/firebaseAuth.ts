@@ -1,5 +1,7 @@
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -19,6 +21,7 @@ const googleProvider = new GoogleAuthProvider();
 
 let inFlightSync: Promise<boolean> | null = null;
 let lastSyncedToken: string | null = null;
+let redirectHandlingPromise: Promise<UserCredential | null> | null = null;
 
 /**
  * Synchronizes client-side Firebase Auth credentials with the server-side
@@ -47,11 +50,13 @@ export async function syncServerSession(force = false): Promise<boolean> {
       if (!force && lastSyncedToken === idToken) {
         return true;
       }
+      console.log("[Focoman Auth] Posting idToken to /api/session...");
       const response = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
+      console.log("[Focoman Auth] /api/session response status:", response.status);
       if (response.ok) {
         lastSyncedToken = idToken;
         return true;
@@ -69,10 +74,65 @@ export async function syncServerSession(force = false): Promise<boolean> {
 }
 
 /**
- * Initiates Google sign-in via popup.
+ * Initiates Google sign-in.
+ * - On localhost: uses signInWithPopup to avoid browser cross-origin third-party storage partitioning blocks.
+ * - On deployed production domains: uses same-tab signInWithRedirect for mobile and full-page redirect flow.
  */
-export async function signInWithGoogle(): Promise<UserCredential> {
-  return await signInWithPopup(auth, googleProvider);
+export async function signInWithGoogle(forceRedirect = false): Promise<UserCredential | void> {
+  const isLocalhost = typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  if (isLocalhost && !forceRedirect) {
+    console.log("[Focoman Auth] Localhost detected. Using signInWithPopup to avoid cross-origin cookie partition block.");
+    const credential = await signInWithPopup(auth, googleProvider);
+    await syncServerSession(true);
+    return credential;
+  }
+
+  console.log("[Focoman Auth] Production environment detected. Initiating same-tab signInWithRedirect...");
+  await signInWithRedirect(auth, googleProvider);
+}
+
+/**
+ * Handles incoming redirect sign-in results from Google OAuth.
+ * Safe to call on multiple component mounts: memoizes in-flight execution.
+ */
+export async function handleRedirectAuth(): Promise<UserCredential | null> {
+  if (typeof window === "undefined") return null;
+  if (redirectHandlingPromise) return redirectHandlingPromise;
+
+  redirectHandlingPromise = (async () => {
+    try {
+      console.log("[Focoman Auth] Checking getRedirectResult(auth)...");
+      const credential = await getRedirectResult(auth);
+      console.log("[Focoman Auth] getRedirectResult returned:", credential ? {
+        uid: credential.user?.uid,
+        email: credential.user?.email,
+      } : "null (no pending redirect credential)");
+
+      if (credential?.user) {
+        console.log("[Focoman Auth] Syncing server session for user:", credential.user.email);
+        await syncServerSession(true);
+        return credential;
+      }
+      return null;
+    } catch (error) {
+      console.error("[Focoman Auth] Error processing redirect sign-in:", error);
+      throw error;
+    }
+  })();
+
+  return redirectHandlingPromise;
+}
+
+/**
+ * Optional fallback popup sign-in if redirect is blocked.
+ */
+export async function signInWithGooglePopup(): Promise<UserCredential> {
+  console.log("[Focoman Auth] Initiating signInWithPopup as fallback...");
+  const credential = await signInWithPopup(auth, googleProvider);
+  await syncServerSession(true);
+  return credential;
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {

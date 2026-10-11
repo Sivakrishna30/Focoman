@@ -96,7 +96,7 @@ export function HomePage() {
               </span>
               <h3 className="mt-4 text-lg font-bold text-text-primary">WhatsApp Operations & Bot</h3>
               <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-                Automated WhatsApp alerts and mobile operations: send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.
+                Automated WhatsApp alerts and mobile operations send booking confirmations and gallery links to clients, shoot reminders and call-times to crew, and receive real-time order milestone updates.
               </p>
             </div>
             

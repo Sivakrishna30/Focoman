@@ -3,7 +3,13 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signInWithGoogle, subscribeToAuthState, syncServerSession } from "@/lib/firebaseAuth";
+import {
+  signInWithGoogle,
+  signInWithGooglePopup,
+  handleRedirectAuth,
+  subscribeToAuthState,
+  syncServerSession,
+} from "@/lib/firebaseAuth";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
@@ -18,15 +24,49 @@ function SignInContent() {
 
   useEffect(() => {
     let isMounted = true;
+    console.log("[SignInPage] Mounted. Checking redirect and auth state...");
 
-    // Listen to auth state changes and sync session
+    // Check if we returned from a Google OAuth redirect
+    handleRedirectAuth()
+      .then(async (credential) => {
+        if (credential?.user && isMounted) {
+          console.log("[SignInPage] Google redirect returned valid user:", credential.user.email);
+          const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
+          if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+
+          const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
+          const finalUrl = autoSync
+            ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
+            : effectiveTarget;
+
+          console.log("[SignInPage] Redirecting to target via window.location:", finalUrl);
+          window.location.href = finalUrl;
+        }
+      })
+      .catch((err) => {
+        console.error("[SignInPage] handleRedirectAuth error:", err);
+        if (isMounted) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setAuthError(msg || "Failed to process Google sign-in redirect.");
+          setIsSigningIn(false);
+        }
+      });
+
+    // Listen to auth state changes as fallback or for active sessions
     const unsubscribe = subscribeToAuthState(async (user) => {
+      console.log("[SignInPage] subscribeToAuthState user:", user ? user.email : "null");
       if (user && isMounted) {
         await syncServerSession();
-        const target = redirectUrl
-          ? (autoSync ? `${redirectUrl}${redirectUrl.includes("?") ? "&" : "?"}autoSync=true` : redirectUrl)
-          : "/dashboard";
-        router.replace(target);
+        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
+        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+
+        const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
+        const finalUrl = autoSync
+          ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
+          : effectiveTarget;
+
+        console.log("[SignInPage] AuthState active, redirecting to:", finalUrl);
+        window.location.href = finalUrl;
       }
     });
 
@@ -40,20 +80,55 @@ function SignInContent() {
     try {
       setIsSigningIn(true);
       setAuthError(null);
-      await signInWithGoogle();
-      // Auth state listener above will handle navigation after popup completes
+
+      // Save the target redirect URL in sessionStorage across page navigation
+      if (typeof window !== "undefined" && redirectUrl) {
+        sessionStorage.setItem("focoman_auth_redirect", redirectUrl);
+      }
+
+      console.log("[SignInPage] Triggering signInWithGoogle...");
+      const res = await signInWithGoogle();
+      if (res && "user" in res && res.user) {
+        console.log("[SignInPage] Immediate user credential received:", res.user.email);
+        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
+        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+
+        const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
+        const finalUrl = autoSync
+          ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
+          : effectiveTarget;
+
+        window.location.href = finalUrl;
+      }
+      // In production, the browser now navigates to Google accounts and redirects back
     } catch (err: unknown) {
       setIsSigningIn(false);
-      console.error("Google sign-in failed:", err);
+      console.error("[SignInPage] signInWithGoogle error:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("auth/unauthorized-domain")) {
         const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
-        setAuthError(
-          `Domain "${domain}" is not authorized. Please add it in Firebase Console.`
-        );
+        setAuthError(`Domain "${domain}" is not authorized. Please add it in Firebase Console.`);
       } else if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
         setAuthError(errorMessage || "Sign-in failed. Please try again.");
       }
+    }
+  };
+
+  const handleFallbackPopupSignIn = async () => {
+    try {
+      setIsSigningIn(true);
+      setAuthError(null);
+      console.log("[SignInPage] Triggering popup fallback sign-in...");
+      const credential = await signInWithGooglePopup();
+      if (credential?.user) {
+        const target = redirectUrl || "/dashboard";
+        window.location.href = target;
+      }
+    } catch (err: unknown) {
+      setIsSigningIn(false);
+      console.error("[SignInPage] Popup sign-in error:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setAuthError(errorMessage || "Popup sign-in failed.");
     }
   };
 
@@ -80,8 +155,15 @@ function SignInContent() {
           </h2>
           
           {authError && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
-              {authError}
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left">
+              <p>{authError}</p>
+              <button
+                type="button"
+                onClick={handleFallbackPopupSignIn}
+                className="mt-2 block text-xs font-bold text-brand-blue-primary underline hover:text-sky-700"
+              >
+                Or try Google Sign-In with Popup →
+              </button>
             </div>
           )}
           
@@ -95,7 +177,7 @@ function SignInContent() {
               {isSigningIn ? (
                 <>
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-orange-primary border-t-transparent" />
-                  <span>Signing in...</span>
+                  <span>Redirecting to Google...</span>
                 </>
               ) : (
                 <>
@@ -125,7 +207,7 @@ function SignInContent() {
             <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-2">
               By signing in, you agree to our{" "}
               <Link href="/terms" className="underline hover:text-text-primary transition">
-                Terms &amp; Conditions
+                Terms and Conditions
               </Link>{" "}
               and{" "}
               <Link href="/privacy" className="underline hover:text-text-primary transition">

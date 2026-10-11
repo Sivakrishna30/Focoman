@@ -4,34 +4,34 @@ export function ValueAddedServices() {
   return (
     <section
       id="value-added-services"
-      className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-border-divider"
+      className="mx-auto max-w-7xl px-4 py-12 sm:py-20 sm:px-6 lg:px-8 border-t border-[#D8D2C4]"
     >
       <div className="mx-auto max-w-3xl text-center mb-12">
         <span
           id="vas-badge"
-          className="inline-block rounded-full bg-brand-orange-background px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-orange-primary border border-brand-orange-soft"
+          className="inline-flex items-center gap-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-brand-orange-primary px-3 py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft"
         >
-          Value-added services
+          [ Value-added services ]
         </span>
         <h2
           id="vas-heading"
-          className="mt-3 text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl lg:text-4xl"
+          className="retro-serif-heading mt-3 text-2xl font-black tracking-tight text-[#1C1917] sm:text-3xl lg:text-4xl"
         >
-          Studio Setup &amp; Creative Add-ons
+          Studio Setup and Creative Add-ons
         </h2>
         <p
           id="vas-subtitle"
-          className="mx-auto mt-3 max-w-2xl text-sm sm:text-base text-text-secondary leading-relaxed"
+          className="mx-auto mt-3 max-w-2xl text-sm sm:text-base text-[#57534E] leading-relaxed"
         >
           Optional creative design and onboarding assistance to help set up and elevate your studio operations with a minimal one-time charge.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
-        {/* Service 1: Branding & Website */}
+        {/* Service 1: Branding and Website */}
         <div
           id="vas-card-branding-website"
-          className="relative rounded-2xl border border-border-default bg-white p-6 sm:p-8 shadow-xs transition hover:border-brand-blue-primary/40 hover:shadow-sm flex flex-col justify-between"
+          className="relative rounded-xl border border-[#D8D2C4] bg-[#FFFDF9] p-6 sm:p-8 shadow-[0_2px_0_#C4BCAB] transition hover:border-[#BFB8A7] flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -58,7 +58,7 @@ export function ValueAddedServices() {
               id="vas-title-branding-website"
               className="text-lg sm:text-xl font-bold text-text-primary"
             >
-              Branding &amp; Website
+              Branding and Website
             </h3>
 
             <ul className="mt-5 space-y-3">
@@ -95,7 +95,7 @@ export function ValueAddedServices() {
         {/* Service 2: Data Migration */}
         <div
           id="vas-card-data-migration"
-          className="relative rounded-2xl border border-border-default bg-white p-6 sm:p-8 shadow-xs transition hover:border-brand-orange-primary/40 hover:shadow-sm flex flex-col justify-between"
+          className="relative rounded-xl border border-[#D8D2C4] bg-[#FFFDF9] p-6 sm:p-8 shadow-[0_2px_0_#C4BCAB] transition hover:border-[#BFB8A7] flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-3 mb-4">

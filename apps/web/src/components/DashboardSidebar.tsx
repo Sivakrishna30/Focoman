@@ -25,15 +25,8 @@ export interface DashboardSidebarProps {
   appEnv?: string;
 }
 
-const MODULE_ACTIVE_CLASSES: Record<string, string> = {
-  oms: "bg-brand-blue-primary text-white shadow-xs",
-  crm: "bg-brand-orange-primary text-white shadow-xs",
-  erp: "bg-brand-purple-primary text-white shadow-xs",
-  whatsapp: "bg-brand-blue-primary text-white shadow-xs",
-  marketplace: "bg-brand-purple-primary text-white shadow-xs",
-  reports: "bg-amber-600 text-white shadow-xs",
-  default: "bg-brand-blue-primary text-white shadow-xs",
-};
+const ACTIVE_NAV_CLASS = "bg-[#242932] text-slate-200 border border-slate-700/60 font-medium shadow-2xs";
+const INACTIVE_NAV_CLASS = "text-slate-400 hover:text-slate-200 hover:bg-[#22262E] border border-transparent transition-colors";
 
 export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName, features, appEnv }: DashboardSidebarProps) {
   const pathname = usePathname();
@@ -159,16 +152,16 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
   };
 
   const navContent = (onLinkClick?: () => void) => (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-[#181B20] text-slate-300">
       {/* Logo */}
-      <div className="flex items-center justify-between border-b border-border-divider px-5 py-4">
+      <div className="flex items-center justify-between border-b border-[#262A32] px-5 py-4">
         <Link href="/" className="flex items-center shrink-0" title="Focoman Home">
-          <FocomanLogo className="h-8 sm:h-9 w-auto" showStudiosSuffix={true} />
+          <FocomanLogo className="h-8 sm:h-9 w-auto" showStudiosSuffix={true} variant="dark" />
         </Link>
         {onLinkClick && (
           <button
             onClick={onLinkClick}
-            className="rounded-lg p-1.5 text-text-tertiary hover:bg-slate-100 md:hidden"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-[#22262E] hover:text-slate-200 md:hidden transition"
             aria-label="Close sidebar"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,84 +171,31 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
         )}
       </div>
 
-      {/* Studio Info */}
-      <div className="border-b border-border-divider px-5 py-3">
+      {/* Studio Info (Clean, no paywalls, all accounts full access) */}
+      <div className="border-b border-[#262A32] px-5 py-3 bg-[#1C1F26]/50">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-text-primary truncate">{studioName}</p>
+          <p className="text-xs font-semibold text-slate-200 truncate">{studioName}</p>
           <Link
             id="tour-sidebar-switch"
             href="/workspaces"
             prefetch={true}
             onClick={onLinkClick}
-            className="text-[10px] font-semibold text-brand-blue-primary hover:underline shrink-0"
+            className="text-[10px] font-medium text-slate-400 hover:text-slate-200 hover:underline shrink-0 transition"
             title="Switch Workspace"
           >
             Switch
           </Link>
         </div>
-        {role === "STUDIO_OWNER" && <p className="text-xs text-text-tertiary truncate">{ownerName}</p>}
-        {role === "STUDIO_OWNER" && <div className="mt-1.5 flex items-center justify-between">
-          <span
-            className={`inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider ${
-              plan === "complete" || plan === "professional"
-                ? "bg-brand-orange-primary text-white shadow-2xs"
-                : "bg-emerald-100 text-emerald-800"
-            }`}
-          >
-            {plan === "complete" || plan === "professional" ? "PRO" : "FREE"}
-          </span>
-          <Link
-            href={`/checkout?studio=${studioSlug}`}
-            className="text-[10px] font-bold text-brand-orange-primary hover:underline"
-          >
-            Manage Capabilities →
-          </Link>
-        </div>}
+        {role === "STUDIO_OWNER" && (
+          <p className="text-[11px] text-slate-500 truncate mt-0.5">{ownerName}</p>
+        )}
       </div>
 
-      {/* Nav Items */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      {/* Nav Items (All modules enabled for all accounts, no restrictions) */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
         {visibleNavItems.map((item) => {
-          const isTestingMode = appEnv === "testing";
-          
-          // Phase 1 Modularity: Determine access based on specific feature flags if present, otherwise fallback to plan logic
-          let accessible = false;
-          
-          if (item.module === null || item.module === "oms") {
-            accessible = true; // Dashboard and OMS are always accessible
-          } else if (features) {
-            accessible = !!features[item.module as keyof typeof features];
-          } else {
-            // Legacy plan fallback
-            accessible = plan === "professional" || plan === "complete";
-          }
-
           const href = item.href(studioSlug);
           const isActive = pathname === href;
-          const activeClass = item.module && MODULE_ACTIVE_CLASSES[item.module]
-            ? MODULE_ACTIVE_CLASSES[item.module]
-            : MODULE_ACTIVE_CLASSES.default;
-
-          if (!accessible) {
-            return (
-              <Link
-                key={item.key}
-                href={`/checkout?studio=${studioSlug}&upgrade=${item.module || ""}`}
-                onClick={onLinkClick}
-                title={`Unlock ${item.label} in your studio configuration`}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition text-text-tertiary hover:bg-orange-50/70 hover:text-brand-orange-primary"
-              >
-                <span className="text-text-tertiary group-hover:text-brand-orange-primary">{item.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate group-hover:text-brand-orange-primary">{item.label}</p>
-                  {item.sublabel && <p className="text-[10px] text-text-tertiary">{item.sublabel}</p>}
-                </div>
-                <span className="rounded bg-brand-orange-background px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-brand-orange-primary">
-                  PRO
-                </span>
-              </Link>
-            );
-          }
 
           return (
             <Link
@@ -264,17 +204,17 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
               href={href}
               prefetch={true}
               onClick={onLinkClick}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
-                isActive
-                  ? activeClass
-                  : "text-text-secondary hover:bg-surface-app hover:text-text-primary"
+              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                isActive ? ACTIVE_NAV_CLASS : INACTIVE_NAV_CLASS
               }`}
             >
-              <span>{item.icon}</span>
+              <span className={isActive ? "text-slate-200" : "text-slate-400 group-hover:text-slate-200 transition-colors"}>
+                {item.icon}
+              </span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate">{item.label}</p>
+                <p className="text-xs font-medium truncate">{item.label}</p>
                 {item.sublabel && (
-                  <p className={`text-[10px] ${isActive ? "text-white/80" : "text-text-tertiary"}`}>
+                  <p className={`text-[10px] ${isActive ? "text-slate-400" : "text-slate-500 group-hover:text-slate-400"}`}>
                     {item.sublabel}
                   </p>
                 )}
@@ -285,13 +225,13 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       </nav>
 
       {/* Bottom: Sign Out */}
-      <div className="border-t border-border-divider px-3 py-3 flex flex-col gap-2">
+      <div className="border-t border-[#262A32] px-3 py-3 flex flex-col gap-2">
         <button
           onClick={() => {
             if (onLinkClick) onLinkClick();
             void handleSignOut();
           }}
-          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-text-secondary transition hover:bg-red-50 hover:text-red-600 text-left"
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-400 transition hover:bg-[#22262E] hover:text-red-400 border border-transparent text-left"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -305,11 +245,11 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
   return (
     <>
       {/* Mobile Top Header */}
-      <div className="flex h-13 w-full items-center justify-between border-b border-border-default bg-white px-3 sm:px-4 md:hidden shrink-0 z-30">
+      <div className="flex h-13 w-full items-center justify-between border-b border-[#262A32] bg-[#181B20] px-3 sm:px-4 md:hidden shrink-0 z-30">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-1.5 text-text-secondary hover:bg-slate-100"
+            className="rounded-lg p-1.5 text-slate-300 hover:bg-[#22262E] transition"
             aria-label="Open navigation menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,17 +257,17 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
             </svg>
           </button>
           <Link href="/" className="flex items-center shrink-0" title="Focoman Home">
-            <FocomanLogo className="h-6 sm:h-7 w-auto shrink-0" showStudiosSuffix={true} />
+            <FocomanLogo className="h-6 sm:h-7 w-auto shrink-0" showStudiosSuffix={true} variant="dark" />
           </Link>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <span className="text-[11px] sm:text-xs font-bold text-text-primary max-w-[70px] sm:max-w-[120px] truncate" title={studioName}>
+          <span className="text-[11px] sm:text-xs font-medium text-slate-200 max-w-[70px] sm:max-w-[120px] truncate" title={studioName}>
             {studioName}
           </span>
           <Link
             href="/workspaces"
             prefetch={true}
-            className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary hover:text-brand-blue-primary hover:bg-brand-blue-50 transition"
+            className="rounded-md bg-[#22262E] px-1.5 py-0.5 text-[10px] font-medium text-slate-300 hover:text-slate-100 hover:bg-[#282D36] transition"
           >
             Switch
           </Link>
@@ -338,17 +278,17 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative flex w-72 max-w-[80vw] flex-1 flex-col shadow-xl">
+          <div className="relative flex w-72 max-w-[80vw] flex-1 flex-col shadow-2xl bg-[#181B20]">
             {navContent(() => setMobileOpen(false))}
           </div>
         </div>
       )}
 
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-border-default bg-white md:flex">
+      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-[#262A32] bg-[#181B20] md:flex">
         {navContent()}
       </aside>
     </>

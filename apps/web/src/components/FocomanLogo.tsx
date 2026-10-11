@@ -3,10 +3,15 @@ import React from "react";
 export function FocomanLogo({
   className = "h-14 w-auto",
   showStudiosSuffix = true,
+  variant = "light",
 }: {
   className?: string;
   showStudiosSuffix?: boolean;
+  variant?: "light" | "dark";
 }) {
+  const focoTextColor = variant === "dark" ? "#CBD5E1" : "#111827";
+  const studiosTextColor = variant === "dark" ? "#94A3B8" : "#4B5563";
+
   return (
     <svg
       viewBox={showStudiosSuffix ? "0 0 310 52" : "0 0 230 52"}
@@ -76,10 +81,10 @@ export function FocomanLogo({
         fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         letterSpacing="-0.03em"
       >
-        <tspan fill="#111827" fontWeight="900" fontSize="38">Foco</tspan>
+        <tspan fill={focoTextColor} fontWeight="900" fontSize="38">Foco</tspan>
         <tspan fill="#F97316" fontWeight="900" fontSize="38">Man</tspan>
         {showStudiosSuffix && (
-          <tspan fill="#4B5563" fontWeight="600" fontSize="17" letterSpacing="-0.01em">Studios</tspan>
+          <tspan fill={studiosTextColor} fontWeight="600" fontSize="17" letterSpacing="-0.01em">Studios</tspan>
         )}
       </text>
     </svg>
