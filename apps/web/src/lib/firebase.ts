@@ -8,9 +8,22 @@ import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
  * Project: focoman (https://focoman.firebaseapp.com)
  */
 
+function getAuthDomain(): string {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    // On production/custom domains (e.g. focoman.vercel.app), use window.location.host
+    // so that Firebase Auth requests route through the Next.js reverse-proxy rewrite (/__/auth/*).
+    // This ensures same-origin cookie & IndexedDB storage, preventing 3rd-party partition blocks.
+    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return window.location.host;
+    }
+  }
+  return process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "focoman.firebaseapp.com";
+}
+
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAukfeW5FnsojfxV6KxF2Fe1piRBE6uGlA",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "focoman.firebaseapp.com",
+  authDomain: getAuthDomain(),
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "focoman",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "focoman.firebasestorage.app",
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "959249421269",

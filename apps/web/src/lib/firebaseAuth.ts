@@ -89,7 +89,7 @@ export async function signInWithGoogle(forceRedirect = false): Promise<UserCrede
     return credential;
   }
 
-  console.log("[Focoman Auth] Production environment detected. Initiating same-tab signInWithRedirect...");
+  console.log("[Focoman Auth] Initiating same-tab signInWithRedirect (authDomain:", auth.config?.authDomain || "default", ")...");
   await signInWithRedirect(auth, googleProvider);
 }
 
