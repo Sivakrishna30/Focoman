@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   signInWithGoogle,
-  signInWithGooglePopup,
   handleRedirectAuth,
   subscribeToAuthState,
   syncServerSession,
@@ -46,7 +45,7 @@ function SignInContent() {
           window.location.href = finalUrl;
         } else if (hadPendingRedirect && !credential?.user && isMounted) {
           console.warn("[SignInPage] Redirect completed but no user credential was found in storage.");
-          setAuthError("Sign-in redirect returned without session credentials. Browser storage may have been isolated. Try Google Sign-In with Popup below.");
+          setAuthError("Sign-in redirect completed without session credentials. Please try signing in again.");
           setIsSigningIn(false);
         }
       })
@@ -126,25 +125,6 @@ function SignInContent() {
     }
   };
 
-  const handleFallbackPopupSignIn = async () => {
-    try {
-      setIsSigningIn(true);
-      setAuthError(null);
-      if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
-      console.log("[SignInPage] Triggering popup fallback sign-in...");
-      const credential = await signInWithGooglePopup();
-      if (credential?.user) {
-        const target = redirectUrl || "/dashboard";
-        window.location.href = target;
-      }
-    } catch (err: unknown) {
-      setIsSigningIn(false);
-      console.error("[SignInPage] Popup sign-in error:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setAuthError(errorMessage || "Popup sign-in failed.");
-    }
-  };
-
   return (
     <div className="w-full max-w-lg rounded-3xl border border-border-default bg-white p-8 shadow-sm sm:p-12">
       <div className="text-center">
@@ -170,13 +150,6 @@ function SignInContent() {
           {authError && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left">
               <p>{authError}</p>
-              <button
-                type="button"
-                onClick={handleFallbackPopupSignIn}
-                className="mt-2 block text-xs font-bold text-brand-blue-primary underline hover:text-sky-700"
-              >
-                Or try Google Sign-In with Popup →
-              </button>
             </div>
           )}
           
@@ -215,15 +188,6 @@ function SignInContent() {
                   <span>Continue with Google</span>
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFallbackPopupSignIn}
-              disabled={isSigningIn}
-              className="text-xs font-semibold text-text-secondary hover:text-brand-blue-primary underline transition disabled:opacity-50"
-            >
-              Prefer a pop-up window? Sign in with Popup →
             </button>
 
             <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-2">
