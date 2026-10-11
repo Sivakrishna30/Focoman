@@ -16,7 +16,7 @@ export function RetroHeroVisual() {
   const { scrollY } = useScroll();
 
   // Progress from 0 to 1 as the user scrolls over extended distance for cinematic pacing
-  const progress = useTransform(scrollY, [0, windowHeight * 2.0], [0, 1]);
+  const progress = useTransform(scrollY, [0, windowHeight * 1.7], [0, 1]);
 
   // ── PHASE 1: CHAOS SECTIONS EXIT ONE-BY-ONE ──
   // 1. Spreadsheet Exits First (lifts upward with gentle tilt and fade)

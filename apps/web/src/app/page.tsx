@@ -51,9 +51,9 @@ export default async function HomePage() {
         {/* 2. Hero Section */}
         <section
           id="home"
-          className="relative h-[340vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
+          className="relative h-[240vh] sm:h-[280vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
         >
-          <div className="sticky top-0 flex h-screen min-h-[100dvh] w-full flex-col items-center justify-start sm:justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-10 lg:pt-0 pb-2 sm:pb-4 lg:pb-0">
+          <div className="sticky top-0 flex h-screen min-h-[100dvh] w-full flex-col items-center justify-start sm:justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-8 lg:pt-0 pb-2 sm:pb-4 lg:pb-0">
             <div className="relative z-10 mx-auto max-w-7xl w-full mt-2 sm:mt-0 lg:-mt-10 xl:-mt-16">
               <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-12 lg:items-center">
                 {/* Left Column: Hero Copy & Actions */}
@@ -104,9 +104,9 @@ export default async function HomePage() {
       </section>
 
         {/* 3. Challenge & Solution Section (Why Focoman / Modules) */}
-        <section id="modules" className="mx-auto max-w-7xl px-3.5 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-[#D8D2C4] scroll-mt-14 sm:scroll-mt-16">
+        <section id="modules" className="mx-auto max-w-7xl px-3.5 sm:px-6 lg:px-8 pt-6 pb-12 sm:pt-10 sm:pb-16 scroll-mt-14 sm:scroll-mt-16">
           <span id="challenge" className="sr-only" />
-          <div className="mx-auto max-w-3xl text-center mb-10 sm:mb-14">
+          <div className="mx-auto max-w-3xl text-center mb-6 sm:mb-10">
             <span className="inline-flex items-center gap-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-brand-orange-primary px-3 py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft">
               [ Why Focoman? ]
             </span>
