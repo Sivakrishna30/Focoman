@@ -39,6 +39,7 @@ export async function checkStudioSlugAvailabilityAction(slug: string): Promise<{
 export async function registerStudioAction(input: {
   name: string;
   city: string;
+  logoUrl?: string;
   website?: string;
   instagram?: string;
   idToken: string;
@@ -56,6 +57,9 @@ export async function registerStudioAction(input: {
     const name = input.name.trim();
     const city = input.city.trim();
     if (!name) return { success: false, error: "Studio name is required." };
+    if ((name.match(/[a-zA-Z]/g) || []).length < 3) {
+      return { success: false, error: "Studio name must have at least 3 letters." };
+    }
     if (!city) return { success: false, error: "City is required." };
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -69,6 +73,9 @@ export async function registerStudioAction(input: {
       ownerId: ownerUid,
       ownerName,
       ownerEmail,
+      ...(input.logoUrl?.trim() ? { logoUrl: input.logoUrl.trim() } : {}),
+      ...(input.website?.trim() ? { website: input.website.trim() } : {}),
+      ...(input.instagram?.trim() ? { instagram: input.instagram.trim() } : {}),
       features: {
         oms: true,
         crm: true,
@@ -126,6 +133,7 @@ export async function updateStudioAction(input: {
   updates: {
     name?: string;
     city?: string;
+    logoUrl?: string;
     website?: string;
     instagram?: string;
     features?: Partial<Studio['features']>;
@@ -139,6 +147,7 @@ export async function updateStudioAction(input: {
     const updated = await updateStudio(input.studioSlug, {
       ...(input.updates.name ? { name: input.updates.name.trim() } : {}),
       ...(input.updates.city ? { city: input.updates.city.trim() } : {}),
+      ...(input.updates.logoUrl !== undefined ? { logoUrl: input.updates.logoUrl.trim() } : {}),
       ...(input.updates.website !== undefined ? { website: input.updates.website.trim() } : {}),
       ...(input.updates.instagram !== undefined ? { instagram: input.updates.instagram.trim() } : {}),
       ...(input.updates.features ? { features: input.updates.features as any } : {}),

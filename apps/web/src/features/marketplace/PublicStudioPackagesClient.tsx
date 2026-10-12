@@ -330,13 +330,21 @@ export function PublicStudioPackagesClient({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-text-primary mb-1">Event Date *</label>
+                    <label htmlFor="package-event-date" className="block text-xs font-semibold text-text-primary mb-1 cursor-pointer">
+                      Event Date *
+                    </label>
                     <input
+                      id="package-event-date"
                       type="date"
                       required
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
-                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary"
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker?.();
+                        } catch {}
+                      }}
+                      className="w-full rounded-xl border border-border-input px-3 py-2 text-xs focus:ring-1 focus:ring-brand-blue-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>

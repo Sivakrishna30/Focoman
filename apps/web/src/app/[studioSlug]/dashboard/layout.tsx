@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { StudioWorkspaceProvider } from "@/components/StudioWorkspaceProvider";
 import { DashboardTopNav } from "@/components/DashboardTopNav";
-import { getStudioBySlug } from "@focoman/db";
+import { getStudioBySlug, getMembershipsByUid } from "@focoman/db";
 import { Studio } from "@focoman/types";
 import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
@@ -26,6 +26,17 @@ export default async function DashboardLayout({
     notFound();
   }
 
+  const userMemberships = access?.membership?.uid
+    ? await getMembershipsByUid(access.membership.uid)
+    : [];
+  const workspacesList = userMemberships
+    .filter((m) => !m.isDeleted)
+    .map((m) => ({
+      studioId: m.studioId,
+      studioName: m.studioName,
+      role: m.role,
+    }));
+
   const isProPlan =
     studio.planInfo?.plan === "COMPLETE" ||
     studio.planInfo?.plan === "PROFESSIONAL" ||
@@ -34,6 +45,7 @@ export default async function DashboardLayout({
   const serializedStudio: Studio = {
     id: studio.id,
     name: studio.name,
+    logoUrl: studio.logoUrl,
     city: studio.city || "",
     ownerId: studio.ownerId,
     ownerName: access?.membership.role === "STUDIO_OWNER" ? studio.ownerName : "Studio Owner",
@@ -53,9 +65,11 @@ export default async function DashboardLayout({
           role={access?.membership.role || "STUDIO_OWNER"}
           plan={isProPlan ? "complete" : "basic"}
           studioName={serializedStudio.name}
+          studioLogoUrl={serializedStudio.logoUrl}
           ownerName={serializedStudio.ownerName}
           features={serializedStudio.features}
           appEnv={APP_ENV}
+          workspaces={workspacesList}
         />
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">
           <DashboardTopNav role={access?.membership.role || "STUDIO_OWNER"} planInfo={studio.planInfo} />

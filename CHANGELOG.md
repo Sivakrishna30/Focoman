@@ -110,7 +110,7 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
   3. **Phone Number Country Code Preset & Customer Updates Checkbox**:
      - Added a country code selector with `+91 (IN)` preset by default, supporting international codes (+1, +971, +65, etc.).
      - Marked phone and email as `(Optional)` with clean placeholder `e.g. Ramesh & Ananya`.
-     - Added a compact opt-in checkbox below contact info: `Send automated order updates to customer via WhatsApp & SMS` (checked by default).
+     - Added compact opt-in checkboxes below contact info: `Send automated order updates to customer via WhatsApp` and `Send automated order updates to customer via Email` (SMS is deferred to post-Phase 1).
   4. **Advance Amount vs. Confirmed Price Validation**:
      - Added client-side financial validation preventing advance amount from exceeding the final confirmed price.
      - Form displays an inline error warning and disables the submit button if advance > confirmed price.

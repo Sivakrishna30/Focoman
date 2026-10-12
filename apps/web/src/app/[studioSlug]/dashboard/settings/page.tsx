@@ -25,7 +25,9 @@ export default function StudioSettingsPage() {
   // Edit Studio Form State
   const [name, setName] = useState(studio.name || "");
   const [city, setCity] = useState(studio.city || "");
-  const [website, setWebsite] = useState(studio.website || "");
+  const [logoUrl, setLogoUrl] = useState(studio.logoUrl || "");
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [website, setWebsite] = useState((studio.website || "").replace(/^https?:\/\//i, ""));
   const [instagram, setInstagram] = useState(studio.instagram || "");
   const [features, setFeatures] = useState(studio.features || {
     oms: true,
@@ -72,6 +74,31 @@ export default function StudioSettingsPage() {
     setTimeout(() => setDefaultToast(null), 3000);
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError(null);
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Please select a valid image file (PNG, JPG, WebP, SVG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Logo image size must be under 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setLogoUrl(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoUrl("");
+    setLogoError(null);
+  };
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOwner) return;
@@ -83,12 +110,16 @@ export default function StudioSettingsPage() {
       const token = await getIdToken();
       if (!token) throw new Error("Authentication token unavailable.");
 
+      const cleanWebsite = website.trim().replace(/^https?:\/\//i, "");
+      const formattedWebsite = cleanWebsite ? `https://${cleanWebsite}` : "";
+
       const res = await updateStudioAction({
         studioSlug,
         updates: {
           name,
           city,
-          website,
+          logoUrl,
+          website: formattedWebsite,
           instagram,
           features,
         },
@@ -97,6 +128,7 @@ export default function StudioSettingsPage() {
 
       if (res.success) {
         setSaveSuccess(true);
+        router.refresh();
         setTimeout(() => setSaveSuccess(false), 4000);
       } else {
         setSaveError(res.error || "Failed to update studio settings.");
@@ -239,7 +271,68 @@ export default function StudioSettingsPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSaveSettings} className="space-y-4">
+        <form onSubmit={handleSaveSettings} className="space-y-5">
+          {/* Studio Logo Upload (Optional) */}
+          <div className="rounded-2xl border border-border-default bg-surface-app/40 p-4 sm:p-5">
+            <label className="block text-xs font-bold text-text-primary mb-1">
+              Studio Logo (Optional)
+            </label>
+            <p className="text-[11px] text-text-secondary mb-3">
+              Displayed near your studio name in the dashboard panel and public marketplace listings.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {logoUrl ? (
+                <div className="relative group">
+                  <img
+                    src={logoUrl}
+                    alt="Studio Logo Preview"
+                    className="w-16 h-16 rounded-2xl object-cover border border-border-default shadow-xs bg-white"
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-brand-blue-background border border-dashed border-brand-blue-light flex items-center justify-center text-brand-blue-primary font-extrabold text-xl">
+                  {name ? name.charAt(0).toUpperCase() : "S"}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-border-default bg-white px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-slate-50 transition shadow-2xs">
+                    <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>{logoUrl ? "Change Logo" : "Upload Logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={!isOwner || isSaving}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      disabled={!isOwner || isSaving}
+                      className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-text-tertiary">
+                  PNG, JPG, WebP, or SVG up to 2MB. Square ratio recommended.
+                </p>
+                {logoError && (
+                  <p className="text-[11px] font-semibold text-red-600 mt-1">{logoError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-bold text-text-primary">Studio Name</label>
@@ -266,15 +359,20 @@ export default function StudioSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-primary">Website URL (Optional)</label>
-              <input
-                type="url"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                disabled={!isOwner || isSaving}
-                placeholder="https://yourstudio.com"
-                className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2.5 text-xs text-text-primary outline-none focus:border-brand-blue-primary disabled:bg-slate-50"
-              />
+              <label className="block text-xs font-bold text-text-primary">Website (Optional)</label>
+              <div className="mt-1 flex rounded-xl border border-border-default bg-white overflow-hidden focus-within:border-brand-blue-primary focus-within:ring-1 focus-within:ring-brand-blue-primary">
+                <span className="inline-flex items-center px-3 bg-slate-50 text-text-muted text-xs font-medium border-r border-border-default select-none">
+                  https://
+                </span>
+                <input
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value.replace(/^https?:\/\//i, ''))}
+                  disabled={!isOwner || isSaving}
+                  placeholder="yourstudio.com"
+                  className="w-full px-3.5 py-2.5 text-xs text-text-primary outline-none bg-transparent disabled:bg-slate-50 placeholder:text-text-muted"
+                />
+              </div>
             </div>
 
             <div>

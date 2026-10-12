@@ -7,7 +7,7 @@ import {
   UpdateTaskStatusSchema,
   UpdatePaymentSchema,
 } from "@focoman/validation";
-import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate, isContactMatch } from "@focoman/domain";
+import { canCompleteOrder, generateWorkflowTasks, toCustomerTrackingView, getStudioCalendarDate, getStudioTimestampIST, isContactMatch } from "@focoman/domain";
 import {
   getOrdersByStudio,
   getDeletedOrdersByStudio,
@@ -36,7 +36,7 @@ import {
   getCustomersByStudio,
   updateCustomer,
 } from "@focoman/db";
-import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus, OrderCollaborator } from "@focoman/types";
+import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus, OrderCollaborator, OrderInstallment, OrderAuditEntry } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember, requireStudioOwner, getAdminAuthInstance } from "@/lib/serverAuth";
 
 /**
@@ -94,7 +94,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       validated.advanceAmount >= validated.finalConfirmedPrice && validated.finalConfirmedPrice > 0
         ? "PAID"
         : validated.advanceAmount > 0
-        ? "PARTIAL"
+        ? "ADVANCE_RECEIVED"
         : "PENDING";
 
     const customerPhone = validated.customerPhone?.trim() || undefined;
@@ -120,6 +120,39 @@ export async function createOrderAction(rawInput: unknown): Promise<{
     );
     const effectiveCustomerId = matchedCustomer ? matchedCustomer.id : customerId;
 
+    // Automatic background assignment: query ERP members and match skills to booked services
+    const existingMembers = await getMembersByStudio(validated.studioId);
+    const autoAssignedResources: Array<{ memberId: string; memberName: string; skill: string; availabilityConfirmed: null }> = [];
+
+    const findMemberForCategory = (catKeyword: string) => {
+      return existingMembers.find((m) => {
+        if (m.isDeleted || m.status === "INACTIVE") return false;
+        const skills = (m.skills || []).map((s) => s.toLowerCase());
+        return skills.some((s) => s.includes(catKeyword) || catKeyword.includes(s));
+      });
+    };
+
+    const photoMember = findMemberForCategory("photo") || findMemberForCategory("album");
+    const videoMember = findMemberForCategory("video") || findMemberForCategory("cinemat");
+    const droneMember = findMemberForCategory("drone") || findMemberForCategory("aerial");
+
+    for (const svc of validated.services) {
+      const sLower = svc.toLowerCase();
+      let matched: StudioMember | undefined;
+      if (sLower.includes("drone")) matched = droneMember || photoMember;
+      else if (sLower.includes("video") || sLower.includes("cinemat")) matched = videoMember;
+      else if (sLower.includes("photo") || sLower.includes("album")) matched = photoMember;
+
+      if (matched) {
+        autoAssignedResources.push({
+          memberId: matched.id,
+          memberName: matched.name,
+          skill: svc,
+          availabilityConfirmed: null,
+        });
+      }
+    }
+
     const newOrder: Order = {
       id: orderId,
       studioId: validated.studioId.toLowerCase(),
@@ -139,16 +172,43 @@ export async function createOrderAction(rawInput: unknown): Promise<{
         estimatedPrice: validated.estimatedPrice,
         finalConfirmedPrice: validated.finalConfirmedPrice,
         advanceAmount: validated.advanceAmount,
+        advanceDate: nowIso.split("T")[0],
+        installments: [],
         remainingAmount,
       },
       paymentStatus: initialPaymentStatus,
       orderStatus: initialOrderStatus,
-      assignedResources: [],
+      assignedResources: autoAssignedResources,
       trackingPasskey: finalPasskey,
+      ...(passkeyPin ? { passkeyPin } : {}),
       ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
       ...(validated.notifySms !== undefined ? { notifySms: validated.notifySms } : {}),
       ...(validated.notifyEmail !== undefined ? { notifyEmail: validated.notifyEmail } : {}),
       isDeleted: false,
+      createdBy: decoded.name || decoded.email || "Studio Owner",
+      createdByRole: "Owner",
+      auditLog: [
+        {
+          id: `audit_${Date.now()}_created`,
+          timestamp: getStudioTimestampIST(now),
+          actorName: decoded.name || decoded.email || "Studio Owner",
+          actorRole: "Owner",
+          action: "Order Registered",
+          details: `Registered confirmed order for ${validated.eventType} · Confirmed Price: ₹${validated.finalConfirmedPrice.toLocaleString()}`,
+        },
+        ...(validated.advanceAmount > 0
+          ? [
+              {
+                id: `audit_${Date.now() + 1000}_adv`,
+                timestamp: getStudioTimestampIST(new Date(now.getTime() + 1000)),
+                actorName: decoded.name || decoded.email || "Studio Owner",
+                actorRole: "Owner" as const,
+                action: "Advance Payment Recorded",
+                details: `Recorded advance payment of ₹${validated.advanceAmount.toLocaleString()}`,
+              },
+            ]
+          : []),
+      ],
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -156,9 +216,28 @@ export async function createOrderAction(rawInput: unknown): Promise<{
     const workflowTasks = generateWorkflowTasks(orderId, validated.studioId, validated.services).map((t, idx) => {
       const { dateStamp, timeStamp } = generateTimestampDigits(now);
       const seqSuffix = String(idx + 1).padStart(2, "0");
+
+      let assignedId = t.assignedMemberId;
+      let assignedName = t.assignedMemberName;
+
+      const titleLower = t.title.toLowerCase();
+      if (t.serviceCategory === "PHOTOGRAPHY" || t.serviceCategory === "ALBUM" || titleLower.includes("photo") || titleLower.includes("raw") || titleLower.includes("album")) {
+        if (photoMember) {
+          assignedId = photoMember.id;
+          assignedName = photoMember.name;
+        }
+      } else if (t.serviceCategory === "VIDEOGRAPHY" || titleLower.includes("video")) {
+        if (videoMember) {
+          assignedId = videoMember.id;
+          assignedName = videoMember.name;
+        }
+      }
+
       return {
         ...t,
         id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}-${seqSuffix}`,
+        assignedMemberId: assignedId,
+        assignedMemberName: assignedName,
         createdAt: nowIso,
         updatedAt: nowIso,
         isDeleted: false,
@@ -252,12 +331,25 @@ export async function getOrderAction(
     const todayStr = getStudioCalendarDate();
     let currentOrder = order;
     if (order.orderStatus === "AWAITING_EVENT" && order.eventDate < todayStr) {
+      const autoEventLog: OrderAuditEntry = {
+        id: `audit_${Date.now()}_auto_event`,
+        timestamp: `${order.eventDate} 00:00`,
+        actorName: "Automated System",
+        actorRole: "System",
+        action: "Event Date Passed",
+        details: `Event date reached — Post-event production workflow started automatically`,
+      };
+      const existingAudit = order.auditLog || [];
+      const updatedAudit = existingAudit.some((a) => a.action === "Event Date Passed")
+        ? existingAudit
+        : [...existingAudit, autoEventLog];
       currentOrder = {
         ...order,
         orderStatus: "POST_EVENT_IN_PROGRESS",
+        auditLog: updatedAudit,
         updatedAt: new Date().toISOString(),
       };
-      void updateOrder(order.id, { orderStatus: "POST_EVENT_IN_PROGRESS" });
+      void updateOrder(order.id, { orderStatus: "POST_EVENT_IN_PROGRESS", auditLog: updatedAudit });
     }
     const tasks = await getTasksByOrder(order.id);
     return { order: currentOrder, tasks };
@@ -512,6 +604,48 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
     if (!linkedOrder || linkedOrder.studioId !== studioId.toLowerCase()) {
       return { success: false, error: "Order not found in authorized studio." };
     }
+
+    const todayStr = getStudioCalendarDate();
+    const isEventUpcoming = linkedOrder.eventDate > todayStr || (linkedOrder.eventDate >= todayStr && linkedOrder.orderStatus === "AWAITING_EVENT");
+    if (isEventUpcoming && validated.status !== "ASSIGNED" && validated.status !== "AWAITING_EVENT") {
+      return {
+        success: false,
+        error: `Production tasks are locked until the event shoot date (${linkedOrder.eventDate}) has completed.`,
+      };
+    }
+
+    // Sequential pipeline prerequisite validation
+    if (validated.status && validated.status !== "ASSIGNED") {
+      const allOrderTasks = await getTasksByOrder(validated.orderId);
+      if (existingTask.title.toLowerCase().includes("photo editing")) {
+        const rawTask = allOrderTasks.find((t) => t.title.toLowerCase().includes("raw photo"));
+        if (rawTask && rawTask.status !== "COMPLETED") {
+          return {
+            success: false,
+            error: "Cannot proceed with Photo Editing until Raw Photo Selection is completed by the customer.",
+          };
+        }
+      }
+      if (existingTask.serviceCategory === "ALBUM" || existingTask.title.toLowerCase().includes("album")) {
+        const photoEditTask = allOrderTasks.find((t) => t.title.toLowerCase().includes("photo editing"));
+        if (photoEditTask && photoEditTask.status !== "COMPLETED") {
+          return {
+            success: false,
+            error: "Cannot proceed with Album Design until Photo Editing is completed and approved.",
+          };
+        }
+      }
+      if (existingTask.title.toLowerCase().includes("final delivery")) {
+        const pendingOthers = allOrderTasks.filter((t) => t.id !== existingTask.id && t.status !== "COMPLETED");
+        if (pendingOthers.length > 0 && validated.status === "COMPLETED") {
+          return {
+            success: false,
+            error: `Cannot complete Final Delivery until all ${pendingOthers.length} preceding production task(s) are completed.`,
+          };
+        }
+      }
+    }
+
     if (membership.role !== "STUDIO_OWNER") {
       const member = await findActiveMemberRecord(studioId, decoded.email);
       if (!member || existingTask.assignedMemberId !== member.id) {
@@ -532,18 +666,41 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
     let newOrderStatus: OrderStatus | undefined = undefined;
 
     if (order) {
+      const taskAudit: OrderAuditEntry = {
+        id: `audit_${Date.now()}_task`,
+        timestamp: getStudioTimestampIST(new Date()),
+        actorName: decoded.name || decoded.email || existingTask.assignedMemberName || "Crew Member",
+        actorRole: membership.role === "STUDIO_OWNER" ? "Owner" : "Member",
+        action: "Task Status Updated",
+        details: `Updated task "${existingTask.title}" (${existingTask.serviceCategory}) status to ${validated.status}`,
+      };
+
       const allTasks = await getTasksByOrder(validated.orderId);
       const isCompletable = canCompleteOrder(order.paymentStatus, allTasks);
 
       if (isCompletable && order.orderStatus !== "COMPLETED") {
-        await updateOrder(validated.orderId, { orderStatus: "COMPLETED" });
+        await updateOrder(validated.orderId, {
+          orderStatus: "COMPLETED",
+          auditLog: [...(order.auditLog || []), taskAudit],
+        });
         newOrderStatus = "COMPLETED";
       } else if (!isCompletable && order.orderStatus === "AWAITING_EVENT") {
         const hasStarted = allTasks.some((t) => t.status !== "ASSIGNED");
         if (hasStarted) {
-          await updateOrder(validated.orderId, { orderStatus: "POST_EVENT_IN_PROGRESS" });
+          await updateOrder(validated.orderId, {
+            orderStatus: "POST_EVENT_IN_PROGRESS",
+            auditLog: [...(order.auditLog || []), taskAudit],
+          });
           newOrderStatus = "POST_EVENT_IN_PROGRESS";
+        } else {
+          await updateOrder(validated.orderId, {
+            auditLog: [...(order.auditLog || []), taskAudit],
+          });
         }
+      } else {
+        await updateOrder(validated.orderId, {
+          auditLog: [...(order.auditLog || []), taskAudit],
+        });
       }
     }
 
@@ -648,39 +805,112 @@ export async function updatePaymentStatusAction(rawInput: unknown): Promise<{
     let calculatedStatus: PaymentStatus | undefined = validated.paymentStatus as PaymentStatus | undefined;
     let newAdvance = validated.advanceAmount !== undefined ? validated.advanceAmount : currentPricing.advanceAmount;
     let previousAdvance = currentPricing.previousAdvanceAmount ?? (currentPricing.advanceAmount < currentPricing.finalConfirmedPrice ? currentPricing.advanceAmount : 0);
+    const newInstallments = validated.installments !== undefined ? validated.installments : (currentPricing.installments || []);
 
     if (validated.advanceAmount !== undefined && validated.advanceAmount < newConfirmed) {
       previousAdvance = validated.advanceAmount;
     }
 
+    let finalInstallments = [...newInstallments];
+    let installmentsTotal = finalInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+
     if (calculatedStatus === "PAID") {
-      // When marking as PAID, remember the previous advance if it wasn't already full price
-      if (existingOrder.paymentStatus !== "PAID") {
-        previousAdvance = currentPricing.advanceAmount < currentPricing.finalConfirmedPrice ? currentPricing.advanceAmount : 0;
+      // When marking as PAID, keep the original advance amount intact.
+      // Automatically record a new payment installment for the remaining balance.
+      const currentPaid = newAdvance + installmentsTotal;
+      const remainingToPay = Math.max(0, newConfirmed - currentPaid);
+      if (remainingToPay > 0 && validated.installments === undefined) {
+        const autoPayment: OrderInstallment = {
+          id: `inst_${Date.now()}_auto`,
+          amount: remainingToPay,
+          date: new Date().toISOString().split("T")[0],
+          notes: "Final Payment (Marked Paid)",
+          createdAt: new Date().toISOString(),
+          recordedBy: decoded.name || decoded.email || "Studio Owner",
+          recordedByRole: "Owner",
+        };
+        finalInstallments = [...finalInstallments, autoPayment];
+        installmentsTotal += remainingToPay;
       }
-      newAdvance = newConfirmed;
     } else if (calculatedStatus === "PENDING" && existingOrder.paymentStatus === "PAID" && validated.advanceAmount === undefined) {
-      // Mark Unpaid: Restore previous advance amount instead of resetting to zero
-      newAdvance = previousAdvance;
-      calculatedStatus = newAdvance > 0 && newAdvance < newConfirmed ? "PARTIAL" : "PENDING";
+      // Mark Unpaid: Remove the auto-generated Final Payment installment if present
+      finalInstallments = finalInstallments.filter((inst) => !inst.notes?.includes("Marked Paid"));
+      installmentsTotal = finalInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+      const totalPaid = newAdvance + installmentsTotal;
+      calculatedStatus = totalPaid > 0 && totalPaid < newConfirmed
+        ? (finalInstallments.length > 0 ? "PARTIAL" : "ADVANCE_RECEIVED")
+        : (totalPaid >= newConfirmed && newConfirmed > 0 ? "PAID" : "PENDING");
     } else if (!calculatedStatus) {
-      if (newAdvance >= newConfirmed && newConfirmed > 0) {
+      const totalPaid = newAdvance + installmentsTotal;
+      if (totalPaid >= newConfirmed && newConfirmed > 0) {
         calculatedStatus = "PAID";
-      } else if (newAdvance > 0) {
+      } else if (finalInstallments.length > 0) {
         calculatedStatus = "PARTIAL";
+      } else if (newAdvance > 0) {
+        calculatedStatus = "ADVANCE_RECEIVED";
       } else {
         calculatedStatus = "PENDING";
       }
     }
 
-    const newRemaining = Math.max(0, newConfirmed - newAdvance);
+    const newRemaining = Math.max(0, newConfirmed - (newAdvance + installmentsTotal));
+
+    const actorName = decoded.name || decoded.email || "Studio Owner";
+    const newAuditEntries: OrderAuditEntry[] = [];
+    const nowStamp = getStudioTimestampIST(new Date());
+
+    if (calculatedStatus === "PAID" && existingOrder.paymentStatus !== "PAID") {
+      newAuditEntries.push({
+        id: `audit_${Date.now()}_paid`,
+        timestamp: nowStamp,
+        actorName,
+        actorRole: "Owner",
+        action: "Order Marked Paid",
+        details: `Recorded final payment and marked order as Paid. Total confirmed: ₹${newConfirmed.toLocaleString()}`,
+      });
+    } else if (finalInstallments.length > (existingOrder.pricing.installments?.length || 0)) {
+      const latestInst = finalInstallments[finalInstallments.length - 1];
+      newAuditEntries.push({
+        id: `audit_${Date.now()}_inst`,
+        timestamp: getStudioTimestampIST(latestInst.createdAt || new Date()),
+        actorName,
+        actorRole: "Owner",
+        action: "Payment Recorded",
+        details: `Recorded installment payment of ₹${latestInst.amount.toLocaleString()}${latestInst.notes ? ` (${latestInst.notes})` : ""}`,
+      });
+    } else if (newConfirmed !== currentPricing.finalConfirmedPrice) {
+      newAuditEntries.push({
+        id: `audit_${Date.now()}_price`,
+        timestamp: nowStamp,
+        actorName,
+        actorRole: "Owner",
+        action: "Confirmed Price Updated",
+        details: `Updated confirmed price from ₹${currentPricing.finalConfirmedPrice.toLocaleString()} to ₹${newConfirmed.toLocaleString()}`,
+      });
+    } else if (newAdvance !== currentPricing.advanceAmount) {
+      newAuditEntries.push({
+        id: `audit_${Date.now()}_adv_upd`,
+        timestamp: nowStamp,
+        actorName,
+        actorRole: "Owner",
+        action: "Advance Payment Updated",
+        details: `Updated advance payment from ₹${currentPricing.advanceAmount.toLocaleString()} to ₹${newAdvance.toLocaleString()}`,
+      });
+    }
+
+    const updatedAuditLog = [...(existingOrder.auditLog || []), ...newAuditEntries];
 
     const updatedOrder = await updateOrder(validated.orderId, {
       paymentStatus: calculatedStatus,
+      updatedBy: actorName,
+      updatedByRole: "Owner",
+      auditLog: updatedAuditLog,
       pricing: {
         ...currentPricing,
         finalConfirmedPrice: newConfirmed,
         advanceAmount: newAdvance,
+        advanceDate: validated.advanceDate || currentPricing.advanceDate || existingOrder.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
+        installments: finalInstallments,
         remainingAmount: newRemaining,
         previousAdvanceAmount: previousAdvance,
       },
@@ -729,23 +959,76 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
     }
 
     const currentAssignments = existingOrder.assignedResources || [];
+    const isUnassign =
+      validated.memberId === "unassigned" ||
+      validated.memberName === "Unassigned" ||
+      !validated.memberId.trim();
+
+    // Replace any previous assignment for the same service
     const filtered = currentAssignments.filter(
-      (r) => !(r.memberId === validated.memberId && r.skill === validated.skill)
+      (r) => r.skill.toLowerCase() !== validated.skill.toLowerCase()
     );
 
-    const newAssignments = [
-      ...filtered,
-      {
-        memberId: validated.memberId,
-        memberName: validated.memberName,
-        skill: validated.skill,
-        availabilityConfirmed: null,
-      },
-    ];
+    const newAssignments = isUnassign
+      ? filtered
+      : [
+          ...filtered,
+          {
+            memberId: validated.memberId,
+            memberName: validated.memberName,
+            skill: validated.skill,
+            availabilityConfirmed: null,
+          },
+        ];
+
+    const assignAudit: OrderAuditEntry = {
+      id: `audit_${Date.now()}_assign`,
+      timestamp: getStudioTimestampIST(new Date()),
+      actorName: decoded.name || decoded.email || "Studio Owner",
+      actorRole: "Owner",
+      action: isUnassign ? "Crew Unassigned" : "Crew Assigned",
+      details: isUnassign
+        ? `Unassigned crew from ${validated.skill}`
+        : `Assigned ${validated.memberName} to ${validated.skill}`,
+    };
 
     const updatedOrder = await updateOrder(validated.orderId, {
       assignedResources: newAssignments,
+      auditLog: [...(existingOrder.auditLog || []), assignAudit],
     });
+
+    // Cascade shoot service assignment to downstream production tasks
+    try {
+      const svcLower = validated.skill.toLowerCase();
+      const allOrderTasks = await getTasksByOrder(validated.orderId);
+      for (const t of allOrderTasks) {
+        const tLower = t.title.toLowerCase();
+        const isPhotoTask =
+          t.serviceCategory === "PHOTOGRAPHY" ||
+          t.serviceCategory === "ALBUM" ||
+          tLower.includes("photo") ||
+          tLower.includes("raw") ||
+          tLower.includes("album");
+        const isVideoTask =
+          t.serviceCategory === "VIDEOGRAPHY" ||
+          tLower.includes("video") ||
+          tLower.includes("reel");
+
+        const shouldAssign =
+          ((svcLower.includes("photo") || svcLower.includes("album")) && isPhotoTask) ||
+          ((svcLower.includes("video") || svcLower.includes("cinemat")) && isVideoTask) ||
+          svcLower === tLower;
+
+        if (shouldAssign) {
+          await updateTask(t.id, {
+            assignedMemberId: isUnassign ? "unassigned" : validated.memberId,
+            assignedMemberName: isUnassign ? "Unassigned" : validated.memberName,
+          });
+        }
+      }
+    } catch (cascadeErr) {
+      console.warn("[assignResourceAction] Task cascade assignment warning:", cascadeErr);
+    }
 
     return { success: true, order: updatedOrder || undefined };
   } catch (err: unknown) {
@@ -753,6 +1036,54 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
     return {
       success: false,
       error: (err as any)?.errors?.[0]?.message || (err instanceof Error ? err.message : "Failed to assign resource"),
+    };
+  }
+}
+
+export async function assignTaskCrewAction(rawInput: {
+  orderId: string;
+  studioId: string;
+  taskId: string;
+  memberId: string;
+  memberName: string;
+  idToken: string;
+}): Promise<{ success: boolean; task?: Task; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(rawInput.idToken);
+    const studioId = rawInput.studioId.toLowerCase();
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+
+    const existingTask = await getTaskById(rawInput.taskId);
+    if (!existingTask || existingTask.studioId !== studioId || existingTask.orderId !== rawInput.orderId) {
+      return { success: false, error: "Task not found in authorized studio." };
+    }
+
+    const updatedTask = await updateTask(rawInput.taskId, {
+      assignedMemberId: rawInput.memberId,
+      assignedMemberName: rawInput.memberName,
+    });
+
+    const existingOrder = await getOrderById(rawInput.orderId);
+    if (existingOrder) {
+      const assignAudit: OrderAuditEntry = {
+        id: `audit_${Date.now()}_task_crew`,
+        timestamp: getStudioTimestampIST(new Date()),
+        actorName: decoded.name || decoded.email || "Studio Owner",
+        actorRole: "Owner",
+        action: "Task Assigned",
+        details: `Assigned task "${existingTask.title}" (${existingTask.serviceCategory}) to ${rawInput.memberName}`,
+      };
+      await updateOrder(rawInput.orderId, {
+        auditLog: [...(existingOrder.auditLog || []), assignAudit],
+      });
+    }
+
+    return { success: true, task: updatedTask || undefined };
+  } catch (err: unknown) {
+    console.error("[assignTaskCrewAction] Error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to assign crew to task",
     };
   }
 }
@@ -852,11 +1183,21 @@ export async function cancelOrderAction(input: {
       return { success: false, error: "Unauthorized: Order belongs to another studio." };
     }
 
+    const cancelLog: OrderAuditEntry = {
+      id: `audit_${Date.now()}_cancelled`,
+      timestamp: getStudioTimestampIST(new Date()),
+      actorName: decoded.name || decoded.email || "Studio Owner",
+      actorRole: "Owner",
+      action: "Order Cancelled",
+      details: `Cancelled order — Reason: "${input.cancellationReason?.trim() || "Cancelled by studio owner"}"`,
+    };
+
     const updated = await updateOrder(input.orderId, {
       orderStatus: "CANCELLED",
+      auditLog: [...(existingOrder.auditLog || []), cancelLog],
       cancellationInfo: {
         cancellationReason: input.cancellationReason?.trim() || "Cancelled by studio owner",
-        cancelledBy: decoded.uid,
+        cancelledBy: decoded.name || decoded.email || "Studio Owner",
         cancelledAt: new Date().toISOString(),
         refundNotes: input.refundNotes,
       },

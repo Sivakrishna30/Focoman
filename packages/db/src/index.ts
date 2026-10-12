@@ -166,6 +166,24 @@ export async function updateStudio(studioId: string, updates: Partial<Studio>): 
   const firestore = getFirestoreServerInstance();
   const ref = firestore.collection('studios').doc(studioId);
   await ref.update({ ...updates, updatedAt: new Date().toISOString() });
+
+  // Sync studio details to marketplace profile if it exists
+  try {
+    if (updates.logoUrl !== undefined || updates.name || updates.city) {
+      const mpRef = firestore.collection('marketplace_profiles').doc(studioId);
+      const mpSnap = await mpRef.get();
+      if (mpSnap.exists) {
+        const mpUpdates: Record<string, any> = { updatedAt: new Date().toISOString() };
+        if (updates.logoUrl !== undefined) mpUpdates.logoUrl = updates.logoUrl;
+        if (updates.name) mpUpdates.name = updates.name;
+        if (updates.city) mpUpdates.city = updates.city;
+        await mpRef.update(mpUpdates);
+      }
+    }
+  } catch (err) {
+    console.warn('[updateStudio] Error syncing with marketplace profile:', err);
+  }
+
   const snap = await ref.get();
   return snap.exists ? (snap.data() as Studio) : null;
 }
@@ -376,6 +394,15 @@ export async function getOrderByPasskey(identifier: string): Promise<Order | nul
     .where('trackingPasskey', '==', clean)
     .limit(1)
     .get();
+
+  // 1b. If identifier is a 6-digit PIN, try passkeyPin directly
+  if (snap.empty && /^\d{6}$/.test(clean)) {
+    snap = await firestore
+      .collection('orders')
+      .where('passkeyPin', '==', clean)
+      .limit(1)
+      .get();
+  }
 
   if (snap.empty) {
     // 2. Try orderNumber (e.g. ORD-TES-260928-172054)
@@ -1154,6 +1181,7 @@ export async function upsertMarketplaceProfile(
         description: profileData.description || '',
         tags: profileData.tags || [],
         coverImageUrl: profileData.coverImageUrl || '',
+        logoUrl: profileData.logoUrl || studioData.logoUrl || '',
         isVisible: profileData.isVisible ?? false,
         isDeleted: false,
         verifiedMetrics: {

@@ -8,6 +8,7 @@ import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 const TASK_STATUSES: TaskStatus[] = ["ASSIGNED", "IN_PROGRESS", "REVIEW", "REWORK", "COMPLETED"];
 
 const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  AWAITING_EVENT: "Awaiting Event",
   ASSIGNED: "Assigned",
   IN_PROGRESS: "In Progress",
   REVIEW: "In Review",

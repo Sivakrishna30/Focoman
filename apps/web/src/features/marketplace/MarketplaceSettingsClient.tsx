@@ -20,6 +20,7 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
 
   // Profile State
   const [profile, setProfile] = useState<Partial<MarketplaceProfile>>({});
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -77,6 +78,31 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
     loadData();
   }, [loadData]);
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError(null);
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Please select an image file (PNG, JPG, WebP, SVG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Logo image size must be under 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setProfile((prev) => ({ ...prev, logoUrl: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setProfile((prev) => ({ ...prev, logoUrl: "" }));
+    setLogoError(null);
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -94,6 +120,7 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
       {
         name: profile.name,
         city: profile.city,
+        logoUrl: profile.logoUrl,
         description: profile.description,
         tags: profile.tags || [],
         isVisible: profile.isVisible || false,
@@ -296,7 +323,66 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
             </div>
           </div>
 
+          {/* Studio Logo (Optional) */}
           <div className="border-t border-border-divider pt-6">
+            <label className="block text-sm font-semibold text-text-primary mb-1">
+              Studio Logo (Optional)
+            </label>
+            <p className="text-xs text-text-secondary mb-3">
+              Displayed near your studio name on your public marketplace listing cards and studio profile page.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {profile.logoUrl ? (
+                <img
+                  src={profile.logoUrl}
+                  alt="Marketplace logo preview"
+                  className="w-14 h-14 rounded-2xl object-cover border border-border-default shadow-xs bg-white shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-brand-blue-background border border-dashed border-brand-blue-light flex items-center justify-center text-brand-blue-primary font-extrabold text-xl shrink-0">
+                  {profile.name ? profile.name.charAt(0).toUpperCase() : "S"}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-border-default bg-white px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-slate-50 transition shadow-2xs">
+                    <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>{profile.logoUrl ? "Change Logo" : "Upload Logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={saving}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {profile.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      disabled={saving}
+                      className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-text-tertiary">
+                  PNG, JPG, WebP, or SVG up to 2MB. Square ratio recommended.
+                </p>
+                {logoError && (
+                  <p className="text-[11px] font-semibold text-red-600 mt-1">{logoError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-semibold text-text-primary">Public Studio Name</label>
             <input
               type="text"

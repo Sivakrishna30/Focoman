@@ -58,19 +58,34 @@ export default async function StudioPublicProfilePage(props: {
 
         <div className="bg-white rounded-3xl border border-border-default shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-brand-blue-background via-white to-brand-purple-background p-8 sm:p-12 border-b border-border-divider">
-            <span className="inline-block rounded-full bg-brand-blue-background border border-brand-blue-light/50 px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-widest mb-3">
-              Verified Studio Profile
-            </span>
-            <h1 className="text-3xl font-extrabold text-text-primary tracking-tight sm:text-4xl">
-              {profile.name}
-            </h1>
-            <p className="mt-2 flex items-center gap-2 text-sm text-text-secondary font-medium">
-              <svg className="h-4 w-4 text-brand-blue-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              {profile.city}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              {profile.logoUrl ? (
+                <img
+                  src={profile.logoUrl}
+                  alt={`${profile.name} logo`}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-border-default shadow-sm bg-white shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-brand-blue-background border border-brand-blue-light/50 text-brand-blue-primary font-bold text-2xl sm:text-3xl flex items-center justify-center shrink-0">
+                  {profile.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <span className="inline-block rounded-full bg-brand-blue-background border border-brand-blue-light/50 px-3 py-1 text-[10px] font-bold text-brand-blue-primary uppercase tracking-widest mb-2">
+                  Verified Studio Profile
+                </span>
+                <h1 className="text-3xl font-extrabold text-text-primary tracking-tight sm:text-4xl truncate">
+                  {profile.name}
+                </h1>
+                <p className="mt-1 flex items-center gap-2 text-sm text-text-secondary font-medium">
+                  <svg className="h-4 w-4 text-brand-blue-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {profile.city}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="p-8 sm:p-12 grid gap-10 lg:grid-cols-3">

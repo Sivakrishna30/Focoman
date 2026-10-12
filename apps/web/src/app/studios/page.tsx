@@ -103,11 +103,24 @@ export default async function StudiosPage({
                     className="group flex flex-col rounded-2xl border border-border-default bg-white p-5 shadow-sm transition hover:border-brand-blue-light hover:shadow-md"
                   >
                     <div className="flex items-start justify-between">
-                      <h2 className="font-bold text-text-primary text-lg group-hover:text-brand-blue-primary transition">
-                        {p.name}
-                      </h2>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {p.logoUrl ? (
+                          <img
+                            src={p.logoUrl}
+                            alt={`${p.name} logo`}
+                            className="w-10 h-10 rounded-xl object-cover border border-border-default shadow-xs shrink-0 bg-surface-app"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-brand-blue-background border border-brand-blue-light/30 text-brand-blue-primary font-bold text-sm flex items-center justify-center shrink-0">
+                            {p.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <h2 className="font-bold text-text-primary text-lg group-hover:text-brand-blue-primary transition truncate">
+                          {p.name}
+                        </h2>
+                      </div>
                       {p.verifiedMetrics && (
-                        <div className="flex flex-col items-end">
+                        <div className="flex flex-col items-end shrink-0 ml-2">
                           <span className="text-[10px] font-bold text-status-success bg-green-50 px-2 py-0.5 rounded-full">
                             {p.verifiedMetrics.onTimeDeliveryPercentage}% On-Time
                           </span>

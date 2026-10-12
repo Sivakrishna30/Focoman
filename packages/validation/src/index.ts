@@ -8,10 +8,13 @@ import { z } from 'zod';
 export const CreateOrderSchema = z.object({
   idToken: z.string().min(1, 'Authentication required. No identity token provided.').optional(),
   studioId: z.string().min(1, 'Studio ID is required'),
-  customerName: z.string().min(1, 'Customer name is required'),
+  customerName: z.string().min(1, 'Customer name is required').refine(
+    (val) => (val.match(/[a-zA-Z]/g) || []).length >= 3,
+    { message: 'Name must have at least 3 letters.' }
+  ),
   customerPhone: z.string().optional().or(z.literal('')),
   customerEmail: z.string().email().optional().or(z.literal('')),
-  passkeyPin: z.string().optional().or(z.literal('')),
+  passkeyPin: z.string().regex(/^\d{6}$/, "Guest access PIN must be exactly 6 digits").optional().or(z.literal('')),
   notifyWhatsApp: z.boolean().optional(),
   notifySms: z.boolean().optional(),
   notifyEmail: z.boolean().optional(),
@@ -44,11 +47,21 @@ export const UpdateTaskStatusSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
   studioId: z.string().min(1, 'Studio ID is required'),
   idToken: z.string().min(1, 'Identity token is required'),
-  status: z.enum(['ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'REWORK', 'COMPLETED']),
+  status: z.enum(['AWAITING_EVENT', 'ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'REWORK', 'COMPLETED']),
   reworkNotes: z.string().optional()
 });
 
 export type UpdateTaskStatusInput = z.infer<typeof UpdateTaskStatusSchema>;
+
+export const OrderInstallmentSchema = z.object({
+  id: z.string(),
+  amount: z.number().nonnegative(),
+  date: z.string(),
+  notes: z.string().optional(),
+  createdAt: z.string().optional(),
+  recordedBy: z.string().optional(),
+  recordedByRole: z.string().optional(),
+});
 
 export const UpdatePaymentSchema = z.object({
   idToken: z.string().optional(),
@@ -56,11 +69,14 @@ export const UpdatePaymentSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
   finalConfirmedPrice: z.number().nonnegative().optional(),
   advanceAmount: z.number().nonnegative().optional(),
+  advanceDate: z.string().optional(),
+  installments: z.array(OrderInstallmentSchema).optional(),
   paymentStatus: z.enum([
     'PENDING',
     'PAYMENT_SUBMITTED',
     'PENDING_VERIFICATION',
     'PARTIAL',
+    'ADVANCE_RECEIVED',
     'PAID',
     'OVERDUE',
     'PAYMENT_PENDING',
@@ -163,6 +179,9 @@ export const UpdateStudioSchema = z.object({
   studioId: z.string().min(1, 'Studio ID is required'),
   name: z.string().min(1).optional(),
   city: z.string().min(1).optional(),
+  logoUrl: z.string().optional(),
+  website: z.string().optional(),
+  instagram: z.string().optional(),
   ownerPhone: z.string().optional(),
   features: z.object({
     oms: z.boolean().optional(),

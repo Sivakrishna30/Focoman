@@ -94,13 +94,14 @@ export type BookingStatus =
 
 export type OrderStatus = 'AWAITING_EVENT' | 'POST_EVENT_IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
-export type TaskStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'REVIEW' | 'REWORK' | 'COMPLETED';
+export type TaskStatus = 'AWAITING_EVENT' | 'ASSIGNED' | 'IN_PROGRESS' | 'REVIEW' | 'REWORK' | 'COMPLETED';
 
 export type PaymentStatus =
   | 'PENDING'
   | 'PAYMENT_SUBMITTED'
   | 'PENDING_VERIFICATION'
   | 'PARTIAL'
+  | 'ADVANCE_RECEIVED'
   | 'PAID'
   | 'OVERDUE';
 
@@ -240,6 +241,7 @@ export interface CustomerOrderView {
   orderStatus: OrderStatus;
   bookingStatus?: BookingStatus;
   trackingPasskey: string;
+  passkeyPin?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -258,6 +260,7 @@ export interface CustomerTrackingView {
     studioOwnerEmail?: string;
     orderNumber: string;
     trackingPasskey: string;
+    passkeyPin?: string;
     studioName: string;
     customerName: string;
     customerEmail?: string;
@@ -310,6 +313,7 @@ export interface MemberWorkView {
 export interface Studio extends SoftDeletable {
   id: string;
   name: string;
+  logoUrl?: string;
   // Plan information (CHG-026)
   planInfo?: StudioPlan;
 
@@ -340,6 +344,7 @@ export interface MarketplaceProfile extends SoftDeletable {
   slug: string;
   city: string;
   description?: string;
+  logoUrl?: string;
   tags: string[]; // e.g. ['WEDDING', 'PORTRAIT', 'CORPORATE']
   coverImageUrl?: string;
   isVisible: boolean;
@@ -450,12 +455,33 @@ export interface ResourceAssignment {
   availabilityConfirmed: boolean | null; // null = pending, true = confirmed, false = rejected
 }
 
+export interface OrderInstallment {
+  id: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  notes?: string;
+  createdAt?: string;
+  recordedBy?: string;
+  recordedByRole?: string;
+}
+
 export interface OrderPricing {
   estimatedPrice: number;
   finalConfirmedPrice: number;
   advanceAmount: number;
+  advanceDate?: string;
   remainingAmount: number;
   previousAdvanceAmount?: number;
+  installments?: OrderInstallment[];
+}
+
+export interface OrderAuditEntry {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorRole: 'Owner' | 'Member' | 'Customer' | 'System';
+  action: string;
+  details: string;
 }
 
 export interface Order extends SoftDeletable {
@@ -485,10 +511,16 @@ export interface Order extends SoftDeletable {
   preflightReport?: PreflightConflictReport;
   cancellationInfo?: CancellationInfo;
   trackingPasskey: string;
+  passkeyPin?: string;
   notifyWhatsApp?: boolean;
   notifySms?: boolean;
   notifyEmail?: boolean;
   collaborators?: OrderCollaborator[];
+  createdBy?: string;
+  createdByRole?: string;
+  updatedBy?: string;
+  updatedByRole?: string;
+  auditLog?: OrderAuditEntry[];
   createdAt: string;
   updatedAt: string;
 }

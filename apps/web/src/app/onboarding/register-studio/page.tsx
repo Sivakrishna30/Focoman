@@ -17,9 +17,11 @@ export default function RegisterStudioPage() {
   const [form, setForm] = useState({
     name: "",
     city: "",
+    logoUrl: "",
     website: "",
     instagram: "",
   });
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const [slugPreview, setSlugPreview] = useState("");
   const [availability, setAvailability] = useState<{ checked: boolean; available: boolean; message?: string }>({
@@ -30,6 +32,31 @@ export default function RegisterStudioPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError(null);
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Please select an image file (PNG, JPG, WebP, SVG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Logo image size must be under 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setForm((prev) => ({ ...prev, logoUrl: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setForm((prev) => ({ ...prev, logoUrl: "" }));
+    setLogoError(null);
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((user) => {
@@ -48,9 +75,10 @@ export default function RegisterStudioPage() {
       return;
     }
 
-    if (slugPreview.length < 3) {
+    const letterCount = (slugPreview.match(/[a-z]/g) || []).length;
+    if (letterCount < 3) {
       setIsChecking(false);
-      setAvailability({ checked: true, available: false, message: "Name must be at least 3 characters." });
+      setAvailability({ checked: true, available: false, message: "Name must have at least 3 letters." });
       return;
     }
 
@@ -101,10 +129,14 @@ export default function RegisterStudioPage() {
       return;
     }
 
+    const cleanWebsite = form.website.trim().replace(/^https?:\/\//i, "");
+    const formattedWebsite = cleanWebsite ? `https://${cleanWebsite}` : undefined;
+
     const res = await registerStudioAction({
       name: form.name,
       city: form.city,
-      website: form.website || undefined,
+      logoUrl: form.logoUrl || undefined,
+      website: formattedWebsite,
       instagram: form.instagram || undefined,
       idToken,
     });
@@ -183,6 +215,65 @@ export default function RegisterStudioPage() {
               )}
             </div>
 
+            {/* Studio Logo (Optional) */}
+            <div className="rounded-2xl border border-border-default bg-surface-app/40 p-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">
+                Studio Logo (Optional)
+              </label>
+              <p className="text-xs text-text-muted mb-3">
+                Appears next to your studio name across your dashboard and marketplace listings.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4">
+                {form.logoUrl ? (
+                  <img
+                    src={form.logoUrl}
+                    alt="Logo preview"
+                    className="w-14 h-14 rounded-2xl object-cover border border-border-default shadow-xs bg-white shrink-0"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-2xl bg-brand-orange-background border border-dashed border-brand-orange-light flex items-center justify-center text-brand-orange-primary font-extrabold text-xl shrink-0">
+                    {form.name ? form.name.charAt(0).toUpperCase() : "S"}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-border-default bg-white px-3.5 py-2 text-xs font-semibold text-text-primary hover:bg-slate-50 transition shadow-2xs">
+                      <svg className="w-4 h-4 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>{form.logoUrl ? "Change Logo" : "Upload Logo"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={isSubmitting}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {form.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        disabled={isSubmitting}
+                        className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-text-tertiary">
+                    PNG, JPG, WebP, or SVG up to 2MB. Square ratio recommended.
+                  </p>
+                  {logoError && (
+                    <p className="text-[11px] font-semibold text-red-600 mt-1">{logoError}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="studio-city" className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 City / Primary Location *
@@ -202,14 +293,19 @@ export default function RegisterStudioPage() {
               <label htmlFor="studio-website" className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Website (Optional)
               </label>
-              <input
-                id="studio-website"
-                type="url"
-                placeholder="https://luminaryweddings.com"
-                value={form.website}
-                onChange={(e) => setForm({ ...form, website: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-border-default px-4 py-2.5 text-sm outline-none focus:border-brand-orange-primary focus:ring-1 focus:ring-brand-orange-primary"
-              />
+              <div className="mt-1.5 flex rounded-xl border border-border-default bg-white overflow-hidden focus-within:border-brand-orange-primary focus-within:ring-1 focus-within:ring-brand-orange-primary">
+                <span className="inline-flex items-center px-3.5 bg-slate-50 text-text-muted text-xs font-medium border-r border-border-default select-none">
+                  https://
+                </span>
+                <input
+                  id="studio-website"
+                  type="text"
+                  placeholder="luminaryweddings.com"
+                  value={form.website}
+                  onChange={(e) => setForm({ ...form, website: e.target.value.replace(/^https?:\/\//i, '') })}
+                  className="w-full px-3.5 py-2.5 text-sm outline-none bg-transparent text-text-primary placeholder:text-text-muted"
+                />
+              </div>
             </div>
 
             <div>

@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
-import { signOutUser } from "@/lib/firebaseAuth";
+import { signOutUser, subscribeToAuthState } from "@/lib/firebaseAuth";
+import { getUserWorkspacesAction } from "@/actions/studioActions";
 
 export type Plan = "basic" | "professional" | "complete";
+
+export interface WorkspaceItem {
+  studioId: string;
+  studioName: string;
+  role: "STUDIO_OWNER" | "STUDIO_MEMBER";
+  logoUrl?: string;
+}
 
 export interface DashboardSidebarProps {
   studioSlug: string;
   role: "STUDIO_OWNER" | "STUDIO_MEMBER";
   plan: Plan;
   studioName: string;
-  ownerName: string;
+  studioLogoUrl?: string;
+  ownerName?: string;
   features?: {
     oms: boolean;
     crm: boolean;
@@ -23,15 +32,75 @@ export interface DashboardSidebarProps {
     reports?: boolean;
   };
   appEnv?: string;
+  workspaces?: WorkspaceItem[];
 }
 
 const ACTIVE_NAV_CLASS = "bg-[#242932] text-slate-200 border border-slate-700/60 font-medium shadow-2xs";
 const INACTIVE_NAV_CLASS = "text-slate-400 hover:text-slate-200 hover:bg-[#22262E] border border-transparent transition-colors";
 
-export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName, features, appEnv }: DashboardSidebarProps) {
+export function DashboardSidebar({ studioSlug, role, plan, studioName, studioLogoUrl, ownerName, features, appEnv, workspaces }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [workspacesList, setWorkspacesList] = useState<WorkspaceItem[]>(workspaces || []);
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
+  const [defaultStudioId, setDefaultStudioId] = useState<string | null>(null);
+  const switchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsub = subscribeToAuthState(async (user) => {
+      if (user) {
+        const stored = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
+        if (stored && stored !== "__cleared__") {
+          setDefaultStudioId(stored);
+        } else if (!stored && workspacesList.length > 0) {
+          setDefaultStudioId(workspacesList[0].studioId);
+        }
+      }
+    });
+    return () => unsub();
+  }, [workspacesList]);
+
+  useEffect(() => {
+    if (workspaces && workspaces.length > 0) {
+      setWorkspacesList(workspaces);
+      return;
+    }
+    const unsub = subscribeToAuthState(async (user) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          const data = await getUserWorkspacesAction(token);
+          if (data && data.length > 0) {
+            setWorkspacesList(
+              data.map((w) => ({
+                studioId: w.studioId,
+                studioName: w.studioName,
+                role: w.role,
+              }))
+            );
+          }
+        } catch {
+          // ignore
+        }
+      }
+    });
+    return () => unsub();
+  }, [workspaces]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (switchRef.current && !switchRef.current.contains(e.target as Node)) {
+        setIsSwitchOpen(false);
+      }
+    }
+    if (isSwitchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSwitchOpen]);
 
   const navItems = [
     {
@@ -171,23 +240,149 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
         )}
       </div>
 
-      {/* Studio Info (Clean, no paywalls, all accounts full access) */}
-      <div className="border-b border-[#262A32] px-5 py-3 bg-[#1C1F26]/50">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-slate-200 truncate">{studioName}</p>
-          <Link
+      {/* Studio Info & Quick Switcher */}
+      <div className="relative border-b border-[#262A32] px-4 py-2.5 bg-[#1C1F26]/60" ref={switchRef}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {studioLogoUrl ? (
+              <img
+                src={studioLogoUrl}
+                alt={`${studioName} logo`}
+                className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0 bg-black/40"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0">
+                {studioName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-200 truncate" title={studioName}>
+                {studioName}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    role === "STUDIO_OWNER"
+                      ? "bg-amber-400/10 text-amber-400 border border-amber-400/20"
+                      : "bg-blue-400/10 text-blue-400 border border-blue-400/20"
+                  }`}
+                >
+                  {role === "STUDIO_OWNER" ? "Owner" : "Member"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
             id="tour-sidebar-switch"
-            href="/workspaces"
-            prefetch={true}
-            onClick={onLinkClick}
-            className="text-[10px] font-medium text-slate-400 hover:text-slate-200 hover:underline shrink-0 transition"
-            title="Switch Workspace"
+            type="button"
+            onClick={() => setIsSwitchOpen((prev) => !prev)}
+            className="flex items-center gap-1 rounded-lg bg-[#222731] hover:bg-[#2A303D] px-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-white border border-slate-700/60 shadow-2xs transition shrink-0"
+            title="Switch Studio Workspace"
           >
-            Switch
-          </Link>
+            <span>Switch</span>
+            <svg
+              className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${
+                isSwitchOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
-        {role === "STUDIO_OWNER" && (
-          <p className="text-[11px] text-slate-500 truncate mt-0.5">{ownerName}</p>
+
+        {/* Quick Switch Dropdown */}
+        {isSwitchOpen && (
+          <div className="absolute left-2 right-2 top-full mt-1.5 z-50 rounded-xl bg-[#181B21] border border-[#2F3542] shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="px-2 py-1 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-[#262B35] pb-1.5">
+              <span>Your Studios</span>
+            </div>
+
+            <div className="max-h-52 overflow-y-auto space-y-0.5 py-0.5">
+              {workspacesList.length > 0 ? (
+                workspacesList.map((w) => {
+                  const isCurrent = w.studioId.toLowerCase() === studioSlug.toLowerCase();
+                  const isDefault = Boolean(defaultStudioId && w.studioId.toLowerCase() === defaultStudioId.toLowerCase());
+                  return (
+                    <button
+                      key={w.studioId}
+                      type="button"
+                      onClick={() => {
+                        setIsSwitchOpen(false);
+                        if (!isCurrent) {
+                          if (onLinkClick) onLinkClick();
+                          router.push(`/${w.studioId}/dashboard`);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition ${
+                        isCurrent
+                          ? "bg-[#252B36] text-white font-bold border border-slate-600/50"
+                          : "text-slate-300 hover:bg-[#20252E] hover:text-white"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                            isCurrent
+                              ? "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                              : "bg-slate-700/40 text-slate-400"
+                          }`}
+                        >
+                          {w.studioName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="truncate text-xs">{w.studioName}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isDefault && (
+                          <span className="text-[9px] text-amber-300 bg-amber-400/10 border border-amber-400/25 px-1 py-0.2 rounded font-semibold uppercase tracking-wider" title="Default Workspace">
+                            Default
+                          </span>
+                        )}
+                        <span className="text-[9px] text-slate-400 uppercase font-semibold">
+                          {w.role === "STUDIO_OWNER" ? "Owner" : "Member"}
+                        </span>
+                        {isCurrent && (
+                          <span className="text-emerald-400 text-xs font-bold" title="Current studio">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-center text-xs text-slate-400">
+                  No other studios found
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[#262B35] pt-1 mt-1 space-y-0.5">
+              <Link
+                href="/workspaces"
+                onClick={() => {
+                  setIsSwitchOpen(false);
+                  if (onLinkClick) onLinkClick();
+                }}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-slate-200 hover:bg-[#20252E] transition"
+              >
+                <span>Manage All Workspaces</span>
+                <span>→</span>
+              </Link>
+              <Link
+                href="/onboarding/register-studio"
+                onClick={() => {
+                  setIsSwitchOpen(false);
+                  if (onLinkClick) onLinkClick();
+                }}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 transition"
+              >
+                <span>+ Register New Studio</span>
+              </Link>
+            </div>
+          </div>
         )}
       </div>
 
@@ -264,13 +459,15 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, ownerName
           <span className="text-[11px] sm:text-xs font-medium text-slate-200 max-w-[70px] sm:max-w-[120px] truncate" title={studioName}>
             {studioName}
           </span>
-          <Link
-            href="/workspaces"
-            prefetch={true}
-            className="rounded-md bg-[#22262E] px-1.5 py-0.5 text-[10px] font-medium text-slate-300 hover:text-slate-100 hover:bg-[#282D36] transition"
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-md bg-[#22262E] px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:text-slate-100 hover:bg-[#282D36] transition flex items-center gap-1"
+            title="Switch Workspace"
           >
-            Switch
-          </Link>
+            <span>Switch</span>
+            <span className="text-[8px] text-slate-400">▾</span>
+          </button>
         </div>
       </div>
 

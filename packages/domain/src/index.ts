@@ -49,6 +49,7 @@ export function canConfirmBooking(
   if (
     paymentStatus === 'PAID' ||
     paymentStatus === 'PARTIAL' ||
+    paymentStatus === 'ADVANCE_RECEIVED' ||
     paymentStatus === 'PAYMENT_COMPLETED' ||
     verificationStatus === 'VERIFIED'
   ) {
@@ -182,6 +183,7 @@ export function toCustomerOrderView(order: Order, studioName: string): CustomerO
     orderStatus: order.orderStatus,
     bookingStatus: order.bookingStatus,
     trackingPasskey: order.trackingPasskey,
+    passkeyPin: order.passkeyPin,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   };
@@ -207,6 +209,7 @@ export function toCustomerTrackingView(
       studioOwnerEmail: studioInfo?.studioOwnerEmail,
       orderNumber: order.orderNumber,
       trackingPasskey: order.trackingPasskey,
+      passkeyPin: order.passkeyPin,
       studioName,
       customerName: order.customer.name,
       customerEmail: order.customer.email,
@@ -294,6 +297,35 @@ export function getStudioCalendarDate(date: Date = new Date()): string {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  }
+}
+
+/**
+ * Returns current timestamp in Indian Standard Time (Asia/Kolkata) formatted as YYYY-MM-DD HH:mm
+ */
+export function getStudioTimestampIST(dateInput: Date | string | number = new Date()): string {
+  try {
+    const date = typeof dateInput === "string" || typeof dateInput === "number" ? new Date(dateInput) : dateInput;
+    if (isNaN(date.getTime())) return String(dateInput);
+    const formatter = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    const hour = parts.find((p) => p.type === "hour")?.value;
+    const minute = parts.find((p) => p.type === "minute")?.value;
+    return `${year}-${month}-${day} ${hour}:${minute}`;
+  } catch {
+    const d = typeof dateInput === "string" || typeof dateInput === "number" ? new Date(dateInput) : dateInput;
+    return d.toISOString().replace("T", " ").substring(0, 16);
   }
 }
 
