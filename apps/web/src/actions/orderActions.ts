@@ -18,6 +18,7 @@ import {
   getStudioBySlug,
   saveOrder,
   updateOrder,
+  updateStudio,
   softDeleteOrder,
   restoreOrder,
   getTasksByOrder,
@@ -958,6 +959,32 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
       assignedResources: newAssignments,
       auditLog: [...(existingOrder.auditLog || []), assignAudit],
     });
+
+    if (!isUnassign && (validated.memberId.startsWith("temp_") || validated.memberId.startsWith("temp-"))) {
+      try {
+        const studioDoc = targetStudioId ? await getStudioBySlug(targetStudioId) : null;
+        if (studioDoc) {
+          const existingTemp = studioDoc.temporaryCrew || [];
+          const alreadyExists = existingTemp.some(
+            (t) => t.name.toLowerCase() === validated.memberName.toLowerCase()
+          );
+          if (!alreadyExists) {
+            const updatedTemp = [
+              ...existingTemp,
+              {
+                id: validated.memberId,
+                name: validated.memberName,
+                createdAt: new Date().toISOString(),
+                lastUsedService: validated.skill,
+              },
+            ];
+            await updateStudio(studioDoc.id, { temporaryCrew: updatedTemp });
+          }
+        }
+      } catch (tempErr) {
+        console.warn("[assignResourceAction] Failed to persist temporary crew to studio:", tempErr);
+      }
+    }
 
     return { success: true, order: updatedOrder || undefined };
   } catch (err: unknown) {

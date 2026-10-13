@@ -310,6 +310,13 @@ export interface MemberWorkView {
   tasks: MemberTaskSummary[];
 }
 
+export interface TemporaryCrewMember {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedService?: string;
+}
+
 export interface Studio extends SoftDeletable {
   id: string;
   name: string;
@@ -324,6 +331,7 @@ export interface Studio extends SoftDeletable {
   ownerName: string;
   ownerEmail: string;
   ownerPhone?: string;
+  temporaryCrew?: TemporaryCrewMember[];
   whatsappConfig?: Record<string, boolean>;
   features?: {
     oms: boolean;

@@ -203,7 +203,9 @@ export default function OmsPage({
 
   const [studioMembers, setStudioMembers] = useState<StudioMember[]>([]);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addMemberInitialName, setAddMemberInitialName] = useState<string>("");
   const [addMemberInitialSkills, setAddMemberInitialSkills] = useState<string[]>(["PHOTOGRAPHY"]);
+  const [editingCrewService, setEditingCrewService] = useState<string | null>(null);
   const [activeCrewDropdown, setActiveCrewDropdown] = useState<string | null>(null);
   const [crewSearchQuery, setCrewSearchQuery] = useState<Record<string, string>>({});
   const [targetAssignContext, setTargetAssignContext] = useState<{
@@ -235,6 +237,43 @@ export default function OmsPage({
     });
     return list;
   }, [studio, studioSlug, studioMembers, workspaceUser]);
+
+  const temporaryCrewList = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; isTemporary: true }>();
+
+    (studio?.temporaryCrew || []).forEach((t) => {
+      const isRegistered = allSelectableCrew.some(
+        (c) => c.name.toLowerCase() === t.name.toLowerCase() || c.id === t.id
+      );
+      if (!isRegistered && t.name && !t.name.toLowerCase().includes("unassigned")) {
+        map.set(t.name.toLowerCase(), {
+          id: t.id || `temp_${t.name.toLowerCase()}`,
+          name: t.name,
+          isTemporary: true,
+        });
+      }
+    });
+
+    orders.forEach((o) => {
+      (o.assignedResources || []).forEach((r) => {
+        const isRegistered = allSelectableCrew.some(
+          (c) => c.name.toLowerCase() === (r.memberName || "").toLowerCase() || c.id === r.memberId
+        );
+        if (!isRegistered && r.memberName && !r.memberName.toLowerCase().includes("unassigned")) {
+          const key = r.memberName.toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, {
+              id: r.memberId || `temp_${key}`,
+              name: r.memberName,
+              isTemporary: true,
+            });
+          }
+        }
+      });
+    });
+
+    return Array.from(map.values());
+  }, [studio, orders, allSelectableCrew]);
 
   const handleOpenCreateModal = useCallback(() => {
     setNewOrderForm({
@@ -729,7 +768,7 @@ export default function OmsPage({
     }
   };
 
-  const openErpWizardForService = (serviceName?: string) => {
+  const openErpWizardForService = (serviceName?: string, memberName?: string) => {
     let initialSkills = ["PHOTOGRAPHY"];
     if (serviceName) {
       const s = serviceName.toLowerCase();
@@ -737,6 +776,7 @@ export default function OmsPage({
       else if (s.includes("album")) initialSkills = ["ALBUM_DESIGN"];
       else if (s.includes("photo")) initialSkills = ["PHOTOGRAPHY"];
     }
+    setAddMemberInitialName(memberName || "");
     setAddMemberInitialSkills(initialSkills);
     setTargetAssignContext(serviceName ? { serviceName } : null);
     setShowAddMemberModal(true);
@@ -768,6 +808,8 @@ export default function OmsPage({
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
       setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
+      setEditingCrewService(null);
+      setActiveCrewDropdown(null);
     } else {
       alert(res.error || "Failed to assign crew member");
     }
@@ -790,6 +832,8 @@ export default function OmsPage({
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
       setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
+      setEditingCrewService(null);
+      setActiveCrewDropdown(null);
     } else {
       alert(res.error || "Failed to unassign crew member");
     }
@@ -814,6 +858,8 @@ export default function OmsPage({
 
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+      setEditingCrewService(null);
+      setActiveCrewDropdown(null);
     } else {
       alert(res.error || "Failed to assign crew member");
     }
@@ -850,6 +896,8 @@ export default function OmsPage({
       await loadOrders();
       setShowAddMemberModal(false);
       setTargetAssignContext(null);
+      setAddMemberInitialName("");
+      setEditingCrewService(null);
       return;
     }
 
@@ -883,6 +931,8 @@ export default function OmsPage({
     await loadOrders();
     setShowAddMemberModal(false);
     setTargetAssignContext(null);
+    setAddMemberInitialName("");
+    setEditingCrewService(null);
   };
 
   const handleConfirmCancelOrder = async () => {
@@ -1210,6 +1260,13 @@ export default function OmsPage({
                         );
                       });
 
+                      const isTempAssigned = Boolean(
+                        assignedRes &&
+                        (assignedRes.memberId.startsWith("temp_") ||
+                         temporaryCrewList.some((t) => t.name.toLowerCase() === assignedRes.memberName.toLowerCase()))
+                      );
+                      const isEditingThis = !assignedRes || editingCrewService === svcName;
+
                       const currentQuery = crewSearchQuery[svcName] ?? "";
                       const matchingCrewForService = allSelectableCrew.filter((m) => {
                         if (!currentQuery.trim()) return true;
@@ -1221,6 +1278,11 @@ export default function OmsPage({
                         );
                       });
 
+                      const matchingTemporaryCrew = temporaryCrewList.filter((t) => {
+                        if (!currentQuery.trim()) return true;
+                        return t.name.toLowerCase().includes(currentQuery.toLowerCase());
+                      });
+
                       const isDropdownOpen = activeCrewDropdown === svcName;
 
                       return (
@@ -1229,152 +1291,243 @@ export default function OmsPage({
                             {svcName}
                           </td>
                           <td className="py-2.5 px-3 align-middle">
-                            <div className="flex items-center gap-2.5 flex-wrap">
-                              {assignedRes ? (
+                            {assignedRes && !isEditingThis ? (
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-emerald-800 font-bold text-xs shrink-0">
                                   <span>{assignedRes.memberName}</span>
+                                  {isTempAssigned && (
+                                    <span className="rounded bg-amber-100 text-amber-800 border border-amber-200 px-1 py-0.2 text-[9px] font-bold">
+                                      Temporary
+                                    </span>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => void handleUnassignService(svcName)}
-                                    className="text-emerald-600 hover:text-red-600 transition ml-1 text-xs leading-none cursor-pointer"
+                                    className="text-emerald-600 hover:text-red-600 transition ml-0.5 text-xs leading-none cursor-pointer"
                                     title="Unassign crew"
                                   >
                                     ✕
                                   </button>
                                 </div>
-                              ) : (
-                                <span className="text-slate-400 italic text-xs shrink-0">Unassigned</span>
-                              )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCrewService(svcName);
+                                    setActiveCrewDropdown(svcName);
+                                  }}
+                                  className="rounded-lg border border-border-default bg-white px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-brand-blue-primary hover:border-brand-blue-primary transition cursor-pointer shadow-2xs"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {!assignedRes && (
+                                  <span className="text-slate-400 italic text-xs shrink-0">Unassigned</span>
+                                )}
 
-                              <div className="relative flex-1 min-w-[200px] max-w-[340px]">
-                                <div className="relative">
-                                  <input
-                                    type="text"
-                                    placeholder={
-                                      assignedRes
-                                        ? "Change crew or type temporary name..."
-                                        : "Select crew or type temporary name..."
-                                    }
-                                    value={currentQuery}
-                                    onFocus={() => setActiveCrewDropdown(svcName)}
-                                    onChange={(e) => {
-                                      setCrewSearchQuery((prev) => ({ ...prev, [svcName]: e.target.value }));
-                                      setActiveCrewDropdown(svcName);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        if (currentQuery.trim()) {
-                                          void handleCommitCrewAssignment(svcName, currentQuery.trim());
-                                          setActiveCrewDropdown(null);
-                                        }
+                                <div className="relative flex-1 min-w-[200px] max-w-[340px]">
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      placeholder={
+                                        assignedRes
+                                          ? "Change crew or type name..."
+                                          : "Select crew or type name..."
                                       }
-                                    }}
-                                    className="w-full rounded-xl border border-border-default px-3 py-1.5 pr-8 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary bg-white shadow-2xs"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setActiveCrewDropdown((prev) => (prev === svcName ? null : svcName))
-                                    }
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-brand-blue-primary p-0.5"
-                                    tabIndex={-1}
-                                    title="Toggle crew list"
-                                  >
-                                    <svg
-                                      className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </button>
-                                </div>
-
-                                {isDropdownOpen && (
-                                  <>
-                                    <div
-                                      className="fixed inset-0 z-30"
-                                      onClick={() => setActiveCrewDropdown(null)}
+                                      value={currentQuery}
+                                      onFocus={() => setActiveCrewDropdown(svcName)}
+                                      onChange={(e) => {
+                                        setCrewSearchQuery((prev) => ({ ...prev, [svcName]: e.target.value }));
+                                        setActiveCrewDropdown(svcName);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          if (currentQuery.trim()) {
+                                            void handleCommitCrewAssignment(svcName, currentQuery.trim());
+                                            setActiveCrewDropdown(null);
+                                            setEditingCrewService(null);
+                                          }
+                                        }
+                                      }}
+                                      className="w-full rounded-xl border border-border-default px-3 py-1.5 pr-8 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary bg-white shadow-2xs"
                                     />
-                                    <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-2xl border border-border-default bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
-                                      <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-                                        <span>Select Crew or Type New</span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setActiveCrewDropdown(null)}
-                                          className="text-brand-blue-primary hover:underline lowercase font-semibold"
-                                        >
-                                          close
-                                        </button>
-                                      </div>
-                                      <div className="space-y-0.5 pt-1">
-                                        {matchingCrewForService.map((c) => (
-                                          <div
-                                            key={c.id}
-                                            onClick={() => {
-                                              void handleCommitCrewAssignment(svcName, c.name);
-                                              setActiveCrewDropdown(null);
-                                            }}
-                                            className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left"
-                                          >
-                                            <div className="min-w-0">
-                                              <p className="font-bold text-text-primary truncate">{c.name}</p>
-                                              <p className="text-[10px] text-text-secondary truncate">
-                                                {c.role} {c.skills && c.skills.length > 0 ? `· ${c.skills.join(", ")}` : ""}
-                                              </p>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0 ml-2">
-                                              Assign
-                                            </span>
-                                          </div>
-                                        ))}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setActiveCrewDropdown((prev) => (prev === svcName ? null : svcName))
+                                      }
+                                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-brand-blue-primary p-0.5"
+                                      tabIndex={-1}
+                                      title="Toggle crew list"
+                                    >
+                                      <svg
+                                        className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </button>
+                                  </div>
 
-                                        {currentQuery.trim().length > 0 &&
-                                          !allSelectableCrew.some(
-                                            (c) => (c.name || "").toLowerCase() === currentQuery.trim().toLowerCase()
-                                          ) && (
+                                  {isDropdownOpen && (
+                                    <>
+                                      <div
+                                        className="fixed inset-0 z-30"
+                                        onClick={() => setActiveCrewDropdown(null)}
+                                      />
+                                      <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-2xl border border-border-default bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
+                                        <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                                          <span>Select Crew or Type New</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setActiveCrewDropdown(null)}
+                                            className="text-brand-blue-primary hover:underline lowercase font-semibold"
+                                          >
+                                            close
+                                          </button>
+                                        </div>
+                                        <div className="space-y-0.5 pt-1">
+                                          {matchingCrewForService.map((c) => (
                                             <div
+                                              key={c.id}
                                               onClick={() => {
-                                                void handleCommitCrewAssignment(svcName, currentQuery.trim());
+                                                void handleCommitCrewAssignment(svcName, c.name);
                                                 setActiveCrewDropdown(null);
+                                                setEditingCrewService(null);
                                               }}
-                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left border-t border-dashed border-border-default/60 my-0.5"
+                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left"
                                             >
-                                              <div className="min-w-0 pr-2">
-                                                <p className="font-bold text-text-primary truncate">
-                                                  Assign &ldquo;{currentQuery.trim()}&rdquo;
+                                              <div className="min-w-0">
+                                                <p className="font-bold text-text-primary truncate">{c.name}</p>
+                                                <p className="text-[10px] text-text-secondary truncate">
+                                                  {c.role} {c.skills && c.skills.length > 0 ? `· ${c.skills.join(", ")}` : ""}
                                                 </p>
                                               </div>
-                                              <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0">
+                                              <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0 ml-2">
                                                 Assign
                                               </span>
                                             </div>
-                                          )}
+                                          ))}
 
-                                        {/* Last option in the dropdown */}
-                                        <div
-                                          onClick={() => {
-                                            setActiveCrewDropdown(null);
-                                            openErpWizardForService(svcName);
-                                          }}
-                                          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs hover:bg-brand-purple-background/60 cursor-pointer transition text-left border-t border-border-default/80 mt-1 text-brand-purple-primary font-bold"
-                                        >
-                                          <div className="flex items-center gap-1.5 min-w-0">
-                                            <span className="text-sm leading-none font-extrabold">+</span>
-                                            <span className="truncate">Add New Member</span>
+                                          {matchingTemporaryCrew.map((t) => (
+                                            <div
+                                              key={t.id}
+                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-amber-50/80 transition text-left border-l-2 border-amber-400 bg-amber-50/20"
+                                            >
+                                              <div
+                                                className="min-w-0 flex-1 cursor-pointer"
+                                                onClick={() => {
+                                                  void handleCommitCrewAssignment(svcName, t.name);
+                                                  setActiveCrewDropdown(null);
+                                                  setEditingCrewService(null);
+                                                }}
+                                              >
+                                                <div className="flex items-center gap-1.5">
+                                                  <p className="font-bold text-text-primary truncate">{t.name}</p>
+                                                  <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
+                                                    Temporary
+                                                  </span>
+                                                </div>
+                                                <p className="text-[10px] text-text-secondary truncate">
+                                                  Saved temporary crew
+                                                </p>
+                                              </div>
+                                              <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    void handleCommitCrewAssignment(svcName, t.name);
+                                                    setActiveCrewDropdown(null);
+                                                    setEditingCrewService(null);
+                                                  }}
+                                                  className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 hover:bg-brand-blue-200/60 px-2 py-0.5 rounded-full transition cursor-pointer"
+                                                >
+                                                  Assign
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveCrewDropdown(null);
+                                                    setEditingCrewService(null);
+                                                    openErpWizardForService(svcName, t.name);
+                                                  }}
+                                                  className="text-[10px] font-bold text-brand-purple-primary bg-brand-purple-soft/40 hover:bg-brand-purple-soft px-2 py-0.5 rounded-full transition cursor-pointer"
+                                                  title="Convert temporary member to certified ERP crew"
+                                                >
+                                                  + ERP
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+
+                                          {currentQuery.trim().length > 0 &&
+                                            !allSelectableCrew.some(
+                                              (c) => (c.name || "").toLowerCase() === currentQuery.trim().toLowerCase()
+                                            ) &&
+                                            !temporaryCrewList.some(
+                                              (t) => t.name.toLowerCase() === currentQuery.trim().toLowerCase()
+                                            ) && (
+                                              <div
+                                                onClick={() => {
+                                                  void handleCommitCrewAssignment(svcName, currentQuery.trim());
+                                                  setActiveCrewDropdown(null);
+                                                  setEditingCrewService(null);
+                                                }}
+                                                className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left border-t border-dashed border-border-default/60 my-0.5"
+                                              >
+                                                <div className="min-w-0 pr-2">
+                                                  <p className="font-bold text-text-primary truncate">
+                                                    Assign &ldquo;{currentQuery.trim()}&rdquo;
+                                                  </p>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0">
+                                                  Assign
+                                                </span>
+                                              </div>
+                                            )}
+
+                                          {/* Last option in the dropdown */}
+                                          <div
+                                            onClick={() => {
+                                              setActiveCrewDropdown(null);
+                                              setEditingCrewService(null);
+                                              openErpWizardForService(svcName, currentQuery.trim() || undefined);
+                                            }}
+                                            className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs hover:bg-brand-purple-background/60 cursor-pointer transition text-left border-t border-border-default/80 mt-1 text-brand-purple-primary font-bold"
+                                          >
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                              <span className="text-sm leading-none font-extrabold">+</span>
+                                              <span className="truncate">Add New Member</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-brand-purple-primary bg-brand-purple-soft/40 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                                              ERP
+                                            </span>
                                           </div>
-                                          <span className="text-[10px] font-bold text-brand-purple-primary bg-brand-purple-soft/40 px-2 py-0.5 rounded-full shrink-0 ml-2">
-                                            ERP
-                                          </span>
                                         </div>
                                       </div>
-                                    </div>
-                                  </>
+                                    </>
+                                  )}
+                                </div>
+
+                                {assignedRes && editingCrewService === svcName && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingCrewService(null);
+                                      setActiveCrewDropdown(null);
+                                    }}
+                                    className="text-[11px] font-medium text-text-tertiary hover:text-text-primary px-1.5 py-1 cursor-pointer shrink-0"
+                                  >
+                                    Cancel
+                                  </button>
                                 )}
                               </div>
-                            </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1673,9 +1826,7 @@ export default function OmsPage({
             const renderTaskCard = (task: Task) => {
               const prereq = getPrerequisite(task);
               const taskAge = calculateTaskAgeBadge(task);
-              const displayTitle = task.title.includes("Raw")
-                ? "Raw Photo Selection (with customer)"
-                : task.title.replace("&", "and");
+              const displayTitle = task.title.replace("&", "and");
 
               const hasAssignedCrew = Boolean(task.assignedMemberName && !task.assignedMemberName.toLowerCase().includes("unassigned"));
               const effectiveStatus: TaskStatus = isEventLocked ? "AWAITING_EVENT" : (task.status === "AWAITING_EVENT" ? "ASSIGNED" : task.status);
@@ -3714,8 +3865,10 @@ export default function OmsPage({
         onClose={() => {
           setShowAddMemberModal(false);
           setTargetAssignContext(null);
+          setAddMemberInitialName("");
         }}
         studioSlug={studioSlug}
+        initialName={addMemberInitialName}
         initialSkills={addMemberInitialSkills}
         onSuccess={handleMemberCreated}
       />

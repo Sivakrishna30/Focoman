@@ -269,6 +269,51 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     });
   }, [allCrew, skillFilter, search]);
 
+  const temporaryCrewList = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; services: string[]; orderCount: number }>();
+
+    (studio?.temporaryCrew || []).forEach((t) => {
+      const isRegistered = allCrew.some(
+        (c) => (c.name || "").toLowerCase() === t.name.toLowerCase() || c.id === t.id
+      );
+      if (!isRegistered && t.name && !t.name.toLowerCase().includes("unassigned")) {
+        map.set(t.name.toLowerCase(), {
+          id: t.id,
+          name: t.name,
+          services: t.lastUsedService ? [t.lastUsedService] : [],
+          orderCount: 0,
+        });
+      }
+    });
+
+    orders.forEach((o) => {
+      (o.assignedResources || []).forEach((r) => {
+        const isRegistered = allCrew.some(
+          (c) => (c.name || "").toLowerCase() === (r.memberName || "").toLowerCase()
+        );
+        if (!isRegistered && r.memberName && !r.memberName.toLowerCase().includes("unassigned")) {
+          const key = r.memberName.toLowerCase();
+          const existing = map.get(key);
+          if (existing) {
+            existing.orderCount += 1;
+            if (r.skill && !existing.services.includes(r.skill)) {
+              existing.services.push(r.skill);
+            }
+          } else {
+            map.set(key, {
+              id: r.memberId || `temp_${key}`,
+              name: r.memberName,
+              services: r.skill ? [r.skill] : [],
+              orderCount: 1,
+            });
+          }
+        }
+      });
+    });
+
+    return Array.from(map.values());
+  }, [studio, orders, allCrew]);
+
   return (
     <div className="flex h-full bg-surface-app">
       {/* Crew Members List Panel */}
@@ -414,6 +459,67 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {/* Temporary Crew Section (Assigned in OMS) */}
+          {temporaryCrewList.length > 0 && (
+            <section className="mb-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                    Temporary Crew ({temporaryCrewList.length})
+                  </h2>
+                  <span className="rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 border border-amber-200">
+                    Assigned in OMS
+                  </span>
+                </div>
+                <span className="text-[11px] text-text-tertiary">
+                  Temporary crew members entered during shoot planning
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {temporaryCrewList.map((temp) => (
+                  <div
+                    key={temp.id}
+                    className="flex items-center justify-between p-3.5 bg-amber-50/50 rounded-2xl border border-amber-200/80 hover:bg-amber-50/80 transition"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-text-primary truncate">{temp.name}</span>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                          Temporary
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-text-secondary mt-0.5 truncate">
+                        {temp.services.length > 0 ? `Services: ${temp.services.join(", ")}` : "Assigned in shoot planning"}
+                        {temp.orderCount > 0 ? ` · In ${temp.orderCount} order(s)` : ""}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({
+                          name: temp.name,
+                          email: "",
+                          phone: "",
+                          claimCode: Math.floor(100000 + Math.random() * 900000).toString(),
+                          skills: temp.services.some((s) => s.toLowerCase().includes("video"))
+                            ? ["VIDEOGRAPHY"]
+                            : ["PHOTOGRAPHY"],
+                        });
+                        setModalError(null);
+                        setShowModal(true);
+                      }}
+                      className="rounded-xl bg-brand-purple-primary text-white font-bold text-xs px-3.5 py-2 hover:bg-brand-purple-hover transition shrink-0 shadow-xs cursor-pointer"
+                    >
+                      Convert to ERP
+                    </button>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 

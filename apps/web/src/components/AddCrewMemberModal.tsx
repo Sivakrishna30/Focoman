@@ -17,6 +17,7 @@ export interface AddCrewMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   studioSlug: string;
+  initialName?: string;
   initialSkills?: string[];
   onSuccess?: (member: {
     id: string;
@@ -33,6 +34,7 @@ export function AddCrewMemberModal({
   isOpen,
   onClose,
   studioSlug,
+  initialName,
   initialSkills = ["PHOTOGRAPHY"],
   onSuccess,
 }: AddCrewMemberModalProps) {
@@ -40,7 +42,7 @@ export function AddCrewMemberModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "",
+    name: initialName || "",
     email: "",
     phone: "",
     claimCode: "",
@@ -50,7 +52,7 @@ export function AddCrewMemberModal({
   useEffect(() => {
     if (isOpen) {
       setForm({
-        name: "",
+        name: initialName || "",
         email: "",
         phone: "",
         claimCode: Math.floor(100000 + Math.random() * 900000).toString(),
@@ -58,7 +60,7 @@ export function AddCrewMemberModal({
       });
       setModalError(null);
     }
-  }, [isOpen, initialSkills]);
+  }, [isOpen, initialName, initialSkills]);
 
   if (!isOpen) return null;
 
