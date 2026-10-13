@@ -14,9 +14,10 @@ import {
   cancelOrderAction,
   deleteOrderAction,
 } from "@/actions/orderActions";
-import { getStudioMembersAction, createMemberAction } from "@/actions/memberActions";
+import { getStudioMembersAction } from "@/actions/memberActions";
 import { getStudioCustomersAction } from "@/actions/customerActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import { AddCrewMemberModal } from "@/components/AddCrewMemberModal";
 import { getEventDaysRemaining, calculateOrderAging, calculateTaskAgeBadge } from "@/utils/dateUtils";
 import { getStudioTimestampIST, getStudioCalendarDate } from "@focoman/domain";
 
@@ -202,16 +203,9 @@ export default function OmsPage({
 
   const [studioMembers, setStudioMembers] = useState<StudioMember[]>([]);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [newMemberForm, setNewMemberForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    claimCode: "",
-    skills: ["PHOTOGRAPHY"] as string[],
-  });
-  const [tempCrewInput, setTempCrewInput] = useState<Record<string, string>>({});
-  const [newMemberError, setNewMemberError] = useState<string | null>(null);
-  const [isCreatingMember, setIsCreatingMember] = useState(false);
+  const [addMemberInitialSkills, setAddMemberInitialSkills] = useState<string[]>(["PHOTOGRAPHY"]);
+  const [activeCrewDropdown, setActiveCrewDropdown] = useState<string | null>(null);
+  const [crewSearchQuery, setCrewSearchQuery] = useState<Record<string, string>>({});
   const [targetAssignContext, setTargetAssignContext] = useState<{
     serviceName?: string;
     taskId?: string;
@@ -741,14 +735,7 @@ export default function OmsPage({
       else if (s.includes("album")) initialSkills = ["ALBUM_DESIGN"];
       else if (s.includes("photo")) initialSkills = ["PHOTOGRAPHY"];
     }
-    setNewMemberForm({
-      name: "",
-      email: "",
-      phone: "",
-      claimCode: Math.floor(100000 + Math.random() * 900000).toString(),
-      skills: initialSkills,
-    });
-    setNewMemberError(null);
+    setAddMemberInitialSkills(initialSkills);
     setTargetAssignContext(serviceName ? { serviceName } : null);
     setShowAddMemberModal(true);
   };
@@ -778,7 +765,7 @@ export default function OmsPage({
 
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
-      setTempCrewInput((prev) => ({ ...prev, [serviceName]: "" }));
+      setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
       const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
       setSelectedTasks(updatedTasks);
     } else {
@@ -802,7 +789,7 @@ export default function OmsPage({
 
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
-      setTempCrewInput((prev) => ({ ...prev, [serviceName]: "" }));
+      setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
       const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
       setSelectedTasks(updatedTasks);
     } else {
@@ -861,80 +848,40 @@ export default function OmsPage({
     }
   };
 
-  const handleCreateAndAssignMember = async () => {
-    if (!newMemberForm.name.trim()) {
-      setNewMemberError("Member name is required.");
-      return;
-    }
-    const email = newMemberForm.email.trim();
-    const claimCode = newMemberForm.claimCode.trim();
-    if (!email && !/^\d{6}$/.test(claimCode)) {
-      setNewMemberError("A 6-digit passcode is required when no email is provided.");
-      return;
-    }
-    if (newMemberForm.skills.length === 0) {
-      setNewMemberError("Please select at least one certified skill.");
-      return;
-    }
-
-    setIsCreatingMember(true);
-    setNewMemberError(null);
-    const token = (await getIdToken(true)) ?? workspaceToken;
-    if (!token) {
-      setIsCreatingMember(false);
-      setNewMemberError("Authentication error. Please re-sign in.");
-      return;
-    }
-
-    const res = await createMemberAction({
-      studioId: studioSlug,
-      name: newMemberForm.name.trim(),
-      email: email || undefined,
-      phone: newMemberForm.phone.trim() || undefined,
-      claimCode: claimCode || undefined,
-      skills: newMemberForm.skills,
-      idToken: token,
-    });
-
-    setIsCreatingMember(false);
-    if (res.success) {
+  const handleMemberCreated = async (newMember: { id: string; name: string }) => {
+    const token = (await getIdToken(false)) ?? workspaceToken;
+    if (!token || !selected) {
       await loadOrders();
-      if (targetAssignContext?.serviceName && res.invitation) {
-        await assignResourceAction({
-          orderId: selected!.id,
-          memberId: res.invitation.id,
-          memberName: newMemberForm.name.trim(),
-          skill: targetAssignContext.serviceName,
-          studioId: studioSlug,
-          idToken: token,
-        });
-        await loadOrders();
-        const updatedTasks = await getOrderTasksAction(selected!.id, studioSlug, token);
-        setSelectedTasks(updatedTasks);
-      } else if (targetAssignContext?.taskId && res.invitation) {
-        await assignTaskCrewAction({
-          orderId: selected!.id,
-          studioId: studioSlug,
-          taskId: targetAssignContext.taskId,
-          memberId: res.invitation.id,
-          memberName: newMemberForm.name.trim(),
-          idToken: token,
-        });
-        await loadOrders();
-      }
-
       setShowAddMemberModal(false);
-      setNewMemberForm({
-        name: "",
-        email: "",
-        phone: "",
-        claimCode: "",
-        skills: ["PHOTOGRAPHY"],
-      });
       setTargetAssignContext(null);
-    } else {
-      setNewMemberError(res.error || "Failed to create studio member.");
+      return;
     }
+
+    if (targetAssignContext?.serviceName) {
+      await assignResourceAction({
+        orderId: selected.id,
+        memberId: newMember.id,
+        memberName: newMember.name,
+        skill: targetAssignContext.serviceName,
+        studioId: studioSlug,
+        idToken: token,
+      });
+      const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
+      setSelectedTasks(updatedTasks);
+    } else if (targetAssignContext?.taskId) {
+      await assignTaskCrewAction({
+        orderId: selected.id,
+        studioId: studioSlug,
+        taskId: targetAssignContext.taskId,
+        memberId: newMember.id,
+        memberName: newMember.name,
+        idToken: token,
+      });
+    }
+
+    await loadOrders();
+    setShowAddMemberModal(false);
+    setTargetAssignContext(null);
   };
 
   const handleConfirmCancelOrder = async () => {
@@ -1234,20 +1181,13 @@ export default function OmsPage({
           {/* Pre-Event Shoot Planning (Placed Above Order Lifecycle State) */}
           {selected.services && selected.services.length > 0 && (
             <div className="rounded-2xl border border-border-default bg-[#FAF8F5] p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between pb-1 border-b border-border-default/60">
+              <div className="pb-1 border-b border-border-default/60">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
                   Pre-Event Shoot Planning
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => openErpWizardForService()}
-                  className="text-xs font-bold text-brand-blue-primary hover:underline hover:text-sky-700 transition cursor-pointer"
-                >
-                  + Add Member in ERP
-                </button>
               </div>
 
-              <div className="rounded-xl border border-border-default bg-white overflow-hidden">
+              <div className="rounded-xl border border-border-default bg-white">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-border-default bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
@@ -1269,7 +1209,18 @@ export default function OmsPage({
                         );
                       });
 
-                      const currentInputVal = tempCrewInput[svcName] ?? "";
+                      const currentQuery = crewSearchQuery[svcName] ?? "";
+                      const matchingCrewForService = allSelectableCrew.filter((m) => {
+                        if (!currentQuery.trim()) return true;
+                        const q = currentQuery.toLowerCase();
+                        return (
+                          m.name.toLowerCase().includes(q) ||
+                          m.role.toLowerCase().includes(q) ||
+                          m.skills.some((s) => s.toLowerCase().includes(q))
+                        );
+                      });
+
+                      const isDropdownOpen = activeCrewDropdown === svcName;
 
                       return (
                         <tr key={svcName} className="hover:bg-slate-50/50 transition">
@@ -1277,9 +1228,9 @@ export default function OmsPage({
                             {svcName}
                           </td>
                           <td className="py-2.5 px-3 align-middle">
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2.5 flex-wrap">
                               {assignedRes ? (
-                                <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200 px-2 py-1 text-emerald-800 font-bold text-xs">
+                                <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-emerald-800 font-bold text-xs shrink-0">
                                   <span>{assignedRes.memberName}</span>
                                   <button
                                     type="button"
@@ -1291,51 +1242,140 @@ export default function OmsPage({
                                   </button>
                                 </div>
                               ) : (
-                                <span className="text-slate-400 italic text-[11px]">Unassigned</span>
+                                <span className="text-slate-400 italic text-xs shrink-0">Unassigned</span>
                               )}
 
-                              <div className="relative flex-1 min-w-[170px] max-w-[260px]">
-                                <input
-                                  type="text"
-                                  list={`crew-options-${svcName.replace(/\s+/g, "-")}`}
-                                  placeholder={assignedRes ? "Change crew..." : "Select crew or type temporary name..."}
-                                  value={currentInputVal}
-                                  onChange={(e) =>
-                                    setTempCrewInput((prev) => ({ ...prev, [svcName]: e.target.value }))
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      void handleCommitCrewAssignment(svcName, currentInputVal);
+                              <div className="relative flex-1 min-w-[200px] max-w-[340px]">
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    placeholder={
+                                      assignedRes
+                                        ? "Change crew or type temporary name..."
+                                        : "Select crew or type temporary name..."
                                     }
-                                  }}
-                                  className="w-full text-xs bg-white border border-border-default rounded-lg px-2.5 py-1.5 outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                                />
-                                <datalist id={`crew-options-${svcName.replace(/\s+/g, "-")}`}>
-                                  {allSelectableCrew.map((m) => (
-                                    <option key={m.id} value={m.name}>
-                                      {m.name} ({m.role})
-                                    </option>
-                                  ))}
-                                </datalist>
+                                    value={currentQuery}
+                                    onFocus={() => setActiveCrewDropdown(svcName)}
+                                    onChange={(e) => {
+                                      setCrewSearchQuery((prev) => ({ ...prev, [svcName]: e.target.value }));
+                                      setActiveCrewDropdown(svcName);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        if (currentQuery.trim()) {
+                                          void handleCommitCrewAssignment(svcName, currentQuery.trim());
+                                          setActiveCrewDropdown(null);
+                                        }
+                                      }
+                                    }}
+                                    className="w-full rounded-xl border border-border-default px-3 py-1.5 pr-8 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary bg-white shadow-2xs"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveCrewDropdown((prev) => (prev === svcName ? null : svcName))
+                                    }
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-brand-blue-primary p-0.5"
+                                    tabIndex={-1}
+                                    title="Toggle crew list"
+                                  >
+                                    <svg
+                                      className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </button>
+                                </div>
+
+                                {isDropdownOpen && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-30"
+                                      onClick={() => setActiveCrewDropdown(null)}
+                                    />
+                                    <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-2xl border border-border-default bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
+                                      <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+                                        <span>Select Crew or Type New</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setActiveCrewDropdown(null)}
+                                          className="text-brand-blue-primary hover:underline lowercase font-semibold"
+                                        >
+                                          close
+                                        </button>
+                                      </div>
+                                      <div className="space-y-0.5 pt-1">
+                                        {matchingCrewForService.map((c) => (
+                                          <div
+                                            key={c.id}
+                                            onClick={() => {
+                                              void handleCommitCrewAssignment(svcName, c.name);
+                                              setActiveCrewDropdown(null);
+                                            }}
+                                            className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left"
+                                          >
+                                            <div className="min-w-0">
+                                              <p className="font-bold text-text-primary truncate">{c.name}</p>
+                                              <p className="text-[10px] text-text-secondary truncate">
+                                                {c.role} {c.skills && c.skills.length > 0 ? `· ${c.skills.join(", ")}` : ""}
+                                              </p>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                                              Assign
+                                            </span>
+                                          </div>
+                                        ))}
+
+                                        {currentQuery.trim().length > 0 &&
+                                          !allSelectableCrew.some(
+                                            (c) => c.name.toLowerCase() === currentQuery.trim().toLowerCase()
+                                          ) && (
+                                            <div
+                                              onClick={() => {
+                                                void handleCommitCrewAssignment(svcName, currentQuery.trim());
+                                                setActiveCrewDropdown(null);
+                                              }}
+                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-amber-50 cursor-pointer transition text-left border-t border-dashed border-border-default/60 my-0.5"
+                                            >
+                                              <div className="min-w-0">
+                                                <p className="font-bold text-amber-900 truncate">
+                                                  Assign Temporary: &ldquo;{currentQuery.trim()}&rdquo;
+                                                </p>
+                                                <p className="text-[10px] text-amber-700 truncate">
+                                                  Free text name (not registered)
+                                                </p>
+                                              </div>
+                                              <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                                                Temporary
+                                              </span>
+                                            </div>
+                                          )}
+
+                                        {/* Last option in the dropdown */}
+                                        <div
+                                          onClick={() => {
+                                            setActiveCrewDropdown(null);
+                                            openErpWizardForService(svcName);
+                                          }}
+                                          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs hover:bg-brand-purple-background/60 cursor-pointer transition text-left border-t border-border-default/80 mt-1 text-brand-purple-primary font-bold"
+                                        >
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <span className="text-sm leading-none font-extrabold">+</span>
+                                            <span className="truncate">Add New Member</span>
+                                          </div>
+                                          <span className="text-[10px] font-bold text-brand-purple-primary bg-brand-purple-soft/40 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                                            ERP Wizard
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-
-                              <button
-                                type="button"
-                                onClick={() => void handleCommitCrewAssignment(svcName, currentInputVal)}
-                                className="rounded-lg bg-slate-100 hover:bg-slate-200 text-text-primary text-[11px] font-bold px-2.5 py-1.5 border border-border-default transition cursor-pointer"
-                              >
-                                Assign
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => openErpWizardForService(svcName)}
-                                className="text-[11px] font-bold text-brand-blue-primary hover:underline transition cursor-pointer whitespace-nowrap"
-                                title="Open ERP wizard to create certified member profile"
-                              >
-                                + Add Member in ERP
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -3670,195 +3710,17 @@ export default function OmsPage({
         </div>
       )}
 
-      {/* Studio ERP Member Wizard Dialog */}
-      {showAddMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-border-default animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-border-default">
-              <div>
-                <h3 className="text-base font-bold text-text-primary">Add Studio Member (ERP)</h3>
-                <p className="text-xs text-text-secondary mt-0.5">
-                  Register member in studio ERP and assign to task
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddMemberModal(false);
-                  setNewMemberError(null);
-                  setTargetAssignContext(null);
-                }}
-                className="text-text-tertiary hover:text-text-primary p-1.5 rounded-lg hover:bg-surface-app transition cursor-pointer"
-                aria-label="Close dialog"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {newMemberError && (
-              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                {newMemberError}
-              </div>
-            )}
-
-            <div className="py-4 space-y-3">
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rahul Sharma"
-                  value={newMemberForm.name}
-                  onChange={(e) => setNewMemberForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-xl border border-border-default px-3 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1">
-                  Email (Optional)
-                </label>
-                <input
-                  type="email"
-                  placeholder="rahul@example.com"
-                  value={newMemberForm.email}
-                  onChange={(e) =>
-                    setNewMemberForm((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                      claimCode: e.target.value
-                        ? ""
-                        : prev.claimCode || Math.floor(100000 + Math.random() * 900000).toString(),
-                    }))
-                  }
-                  className="w-full rounded-xl border border-border-default px-3 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                />
-                <p className="mt-1 text-[10px] text-text-tertiary">
-                  {newMemberForm.email.trim()
-                    ? "Member will authenticate directly via Google email."
-                    : "Leave blank to use 6-digit PIN below for instant login."}
-                </p>
-              </div>
-
-              {!newMemberForm.email.trim() && (
-                <div className="rounded-xl border border-brand-blue-soft/60 bg-blue-50/30 p-3 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold text-brand-blue-primary block">
-                      6-Digit Guest Access PIN *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setNewMemberForm((prev) => ({
-                          ...prev,
-                          claimCode: Math.floor(100000 + Math.random() * 900000).toString(),
-                        }))
-                      }
-                      className="text-[10px] font-bold text-brand-blue-primary hover:underline cursor-pointer"
-                    >
-                      Regenerate PIN
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="e.g. 543210"
-                    value={newMemberForm.claimCode}
-                    onChange={(e) =>
-                      setNewMemberForm((prev) => ({
-                        ...prev,
-                        claimCode: e.target.value.replace(/\D/g, "").slice(0, 6),
-                      }))
-                    }
-                    className="w-full rounded-xl border border-border-default bg-white px-3 py-2 text-xs font-mono font-bold tracking-wider outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                  />
-                  <p className="text-[10px] text-text-tertiary">
-                    Crew member uses this PIN to log in without a Google email.
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1">
-                  Phone (Optional)
-                </label>
-                <input
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  value={newMemberForm.phone}
-                  onChange={(e) => setNewMemberForm((prev) => ({ ...prev, phone: e.target.value }))}
-                  className="w-full rounded-xl border border-border-default px-3 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1.5">
-                  Certified Skills *
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: "PHOTOGRAPHY", label: "Photographer" },
-                    { id: "VIDEOGRAPHY", label: "Videographer" },
-                    { id: "PHOTO_EDITING", label: "Photo Editor" },
-                    { id: "ALBUM_DESIGN", label: "Album Designer" },
-                  ].map((skill) => (
-                    <label
-                      key={skill.id}
-                      className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2 text-[11px] font-semibold transition ${
-                        newMemberForm.skills.includes(skill.id)
-                          ? "border-brand-blue-primary bg-blue-50/50 text-brand-blue-primary"
-                          : "border-border-default text-text-secondary hover:bg-surface-app"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={newMemberForm.skills.includes(skill.id)}
-                        onChange={() =>
-                          setNewMemberForm((prev) => {
-                            const exists = prev.skills.includes(skill.id);
-                            const next = exists
-                              ? prev.skills.filter((s) => s !== skill.id)
-                              : [...prev.skills, skill.id];
-                            return { ...prev, skills: next };
-                          })
-                        }
-                        className="rounded text-brand-blue-primary"
-                      />
-                      <span>{skill.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-default">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddMemberModal(false);
-                  setNewMemberError(null);
-                  setTargetAssignContext(null);
-                }}
-                className="btn-brand-outline cursor-pointer"
-                disabled={isCreatingMember}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateAndAssignMember}
-                disabled={isCreatingMember || !newMemberForm.name.trim()}
-                className="rounded-xl bg-brand-blue-primary px-4 py-2 text-xs font-bold text-white hover:bg-sky-600 disabled:opacity-50 transition cursor-pointer"
-              >
-                {isCreatingMember ? "Registering..." : "Register & Assign"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Studio ERP Member Wizard Dialog — Reusable Component */}
+      <AddCrewMemberModal
+        isOpen={showAddMemberModal}
+        onClose={() => {
+          setShowAddMemberModal(false);
+          setTargetAssignContext(null);
+        }}
+        studioSlug={studioSlug}
+        initialSkills={addMemberInitialSkills}
+        onSuccess={handleMemberCreated}
+      />
     </div>
   );
 }
