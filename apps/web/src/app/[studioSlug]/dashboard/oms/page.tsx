@@ -1341,18 +1341,15 @@ export default function OmsPage({
                                                 void handleCommitCrewAssignment(svcName, currentQuery.trim());
                                                 setActiveCrewDropdown(null);
                                               }}
-                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-amber-50 cursor-pointer transition text-left border-t border-dashed border-border-default/60 my-0.5"
+                                              className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-brand-blue-50/80 cursor-pointer transition text-left border-t border-dashed border-border-default/60 my-0.5"
                                             >
-                                              <div className="min-w-0">
-                                                <p className="font-bold text-amber-900 truncate">
-                                                  Assign Temporary: &ldquo;{currentQuery.trim()}&rdquo;
-                                                </p>
-                                                <p className="text-[10px] text-amber-700 truncate">
-                                                  Free text name (not registered)
+                                              <div className="min-w-0 pr-2">
+                                                <p className="font-bold text-text-primary truncate">
+                                                  Assign &ldquo;{currentQuery.trim()}&rdquo;
                                                 </p>
                                               </div>
-                                              <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full shrink-0 ml-2">
-                                                Temporary
+                                              <span className="text-[10px] font-bold text-brand-blue-primary bg-brand-blue-100/60 px-2 py-0.5 rounded-full shrink-0">
+                                                Assign
                                               </span>
                                             </div>
                                           )}
