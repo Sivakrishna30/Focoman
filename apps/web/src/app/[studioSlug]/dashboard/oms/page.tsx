@@ -768,8 +768,6 @@ export default function OmsPage({
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
       setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
-      const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
-      setSelectedTasks(updatedTasks);
     } else {
       alert(res.error || "Failed to assign crew member");
     }
@@ -792,8 +790,6 @@ export default function OmsPage({
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
       setCrewSearchQuery((prev) => ({ ...prev, [serviceName]: "" }));
-      const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
-      setSelectedTasks(updatedTasks);
     } else {
       alert(res.error || "Failed to unassign crew member");
     }
@@ -818,8 +814,6 @@ export default function OmsPage({
 
     if (res.success && res.order) {
       setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
-      const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
-      setSelectedTasks(updatedTasks);
     } else {
       alert(res.error || "Failed to assign crew member");
     }
@@ -860,7 +854,7 @@ export default function OmsPage({
     }
 
     if (targetAssignContext?.serviceName) {
-      await assignResourceAction({
+      const res = await assignResourceAction({
         orderId: selected.id,
         memberId: newMember.id,
         memberName: newMember.name,
@@ -868,17 +862,22 @@ export default function OmsPage({
         studioId: studioSlug,
         idToken: token,
       });
-      const updatedTasks = await getOrderTasksAction(selected.id, studioSlug, token);
-      setSelectedTasks(updatedTasks);
+      if (res.success && res.order) {
+        setOrders((prev) => prev.map((o) => (o.id === res.order!.id ? res.order! : o)));
+      }
     } else if (targetAssignContext?.taskId) {
-      await assignTaskCrewAction({
+      const targetTaskId = targetAssignContext.taskId;
+      const res = await assignTaskCrewAction({
         orderId: selected.id,
         studioId: studioSlug,
-        taskId: targetAssignContext.taskId,
+        taskId: targetTaskId,
         memberId: newMember.id,
         memberName: newMember.name,
         idToken: token,
       });
+      if (res.success && res.task) {
+        setSelectedTasks((prev) => prev.map((t) => (t.id === targetTaskId ? res.task! : t)));
+      }
     }
 
     await loadOrders();

@@ -120,39 +120,6 @@ export async function createOrderAction(rawInput: unknown): Promise<{
     );
     const effectiveCustomerId = matchedCustomer ? matchedCustomer.id : customerId;
 
-    // Automatic background assignment: query ERP members and match skills to booked services
-    const existingMembers = await getMembersByStudio(validated.studioId);
-    const autoAssignedResources: Array<{ memberId: string; memberName: string; skill: string; availabilityConfirmed: null }> = [];
-
-    const findMemberForCategory = (catKeyword: string) => {
-      return existingMembers.find((m) => {
-        if (m.isDeleted || m.status === "INACTIVE") return false;
-        const skills = (m.skills || []).map((s) => s.toLowerCase());
-        return skills.some((s) => s.includes(catKeyword) || catKeyword.includes(s));
-      });
-    };
-
-    const photoMember = findMemberForCategory("photo") || findMemberForCategory("album");
-    const videoMember = findMemberForCategory("video") || findMemberForCategory("cinemat");
-    const droneMember = findMemberForCategory("drone") || findMemberForCategory("aerial");
-
-    for (const svc of validated.services) {
-      const sLower = svc.toLowerCase();
-      let matched: StudioMember | undefined;
-      if (sLower.includes("drone")) matched = droneMember || photoMember;
-      else if (sLower.includes("video") || sLower.includes("cinemat")) matched = videoMember;
-      else if (sLower.includes("photo") || sLower.includes("album")) matched = photoMember;
-
-      if (matched) {
-        autoAssignedResources.push({
-          memberId: matched.id,
-          memberName: matched.name,
-          skill: svc,
-          availabilityConfirmed: null,
-        });
-      }
-    }
-
     const newOrder: Order = {
       id: orderId,
       studioId: validated.studioId.toLowerCase(),
@@ -178,7 +145,7 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       },
       paymentStatus: initialPaymentStatus,
       orderStatus: initialOrderStatus,
-      assignedResources: autoAssignedResources,
+      assignedResources: [],
       trackingPasskey: finalPasskey,
       ...(passkeyPin ? { passkeyPin } : {}),
       ...(validated.notifyWhatsApp !== undefined ? { notifyWhatsApp: validated.notifyWhatsApp } : {}),
@@ -217,27 +184,11 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       const { dateStamp, timeStamp } = generateTimestampDigits(now);
       const seqSuffix = String(idx + 1).padStart(2, "0");
 
-      let assignedId = t.assignedMemberId;
-      let assignedName = t.assignedMemberName;
-
-      const titleLower = t.title.toLowerCase();
-      if (t.serviceCategory === "PHOTOGRAPHY" || t.serviceCategory === "ALBUM" || titleLower.includes("photo") || titleLower.includes("raw") || titleLower.includes("album")) {
-        if (photoMember) {
-          assignedId = photoMember.id;
-          assignedName = photoMember.name;
-        }
-      } else if (t.serviceCategory === "VIDEOGRAPHY" || titleLower.includes("video")) {
-        if (videoMember) {
-          assignedId = videoMember.id;
-          assignedName = videoMember.name;
-        }
-      }
-
       return {
         ...t,
         id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}-${seqSuffix}`,
-        assignedMemberId: assignedId,
-        assignedMemberName: assignedName,
+        assignedMemberId: t.assignedMemberId || "",
+        assignedMemberName: t.assignedMemberName || "Unassigned",
         createdAt: nowIso,
         updatedAt: nowIso,
         isDeleted: false,
@@ -1007,39 +958,6 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
       assignedResources: newAssignments,
       auditLog: [...(existingOrder.auditLog || []), assignAudit],
     });
-
-    // Cascade shoot service assignment to downstream production tasks
-    try {
-      const svcLower = (validated.skill || "").toLowerCase();
-      const allOrderTasks = await getTasksByOrder(validated.orderId);
-      for (const t of allOrderTasks) {
-        const tLower = (t.title || "").toLowerCase();
-        const isPhotoTask =
-          t.serviceCategory === "PHOTOGRAPHY" ||
-          t.serviceCategory === "ALBUM" ||
-          tLower.includes("photo") ||
-          tLower.includes("raw") ||
-          tLower.includes("album");
-        const isVideoTask =
-          t.serviceCategory === "VIDEOGRAPHY" ||
-          tLower.includes("video") ||
-          tLower.includes("reel");
-
-        const shouldAssign =
-          ((svcLower.includes("photo") || svcLower.includes("album")) && isPhotoTask) ||
-          ((svcLower.includes("video") || svcLower.includes("cinemat")) && isVideoTask) ||
-          svcLower === tLower;
-
-        if (shouldAssign) {
-          await updateTask(t.id, {
-            assignedMemberId: isUnassign ? "unassigned" : validated.memberId,
-            assignedMemberName: isUnassign ? "Unassigned" : validated.memberName,
-          });
-        }
-      }
-    } catch (cascadeErr) {
-      console.warn("[assignResourceAction] Task cascade assignment warning:", cascadeErr);
-    }
 
     return { success: true, order: updatedOrder || undefined };
   } catch (err: unknown) {
