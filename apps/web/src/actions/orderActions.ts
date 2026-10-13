@@ -947,14 +947,25 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
   try {
     const validated = AssignResourceSchema.parse(rawInput);
 
-    const decoded = await requireVerifiedUser((validated as any).idToken);
-    await requireStudioOwner(decoded.uid, (validated as any).studioId);
-
     const existingOrder = await getOrderById(validated.orderId);
     if (!existingOrder) {
       return { success: false, error: "Order not found" };
     }
-    if (existingOrder.studioId !== (validated as any).studioId.toLowerCase()) {
+
+    const targetStudioId = (
+      validated.studioId ||
+      (rawInput as any)?.studioId ||
+      existingOrder.studioId ||
+      ""
+    ).trim().toLowerCase();
+
+    const token = validated.idToken || (rawInput as any)?.idToken;
+    const decoded = await requireVerifiedUser(token);
+    if (targetStudioId) {
+      await requireStudioOwner(decoded.uid, targetStudioId);
+    }
+
+    if (targetStudioId && existingOrder.studioId.toLowerCase() !== targetStudioId) {
       return { success: false, error: "Unauthorized: Order belongs to another studio." };
     }
 
@@ -966,7 +977,7 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
 
     // Replace any previous assignment for the same service
     const filtered = currentAssignments.filter(
-      (r) => r.skill.toLowerCase() !== validated.skill.toLowerCase()
+      (r) => (r.skill || "").toLowerCase() !== (validated.skill || "").toLowerCase()
     );
 
     const newAssignments = isUnassign
@@ -999,10 +1010,10 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
 
     // Cascade shoot service assignment to downstream production tasks
     try {
-      const svcLower = validated.skill.toLowerCase();
+      const svcLower = (validated.skill || "").toLowerCase();
       const allOrderTasks = await getTasksByOrder(validated.orderId);
       for (const t of allOrderTasks) {
-        const tLower = t.title.toLowerCase();
+        const tLower = (t.title || "").toLowerCase();
         const isPhotoTask =
           t.serviceCategory === "PHOTOGRAPHY" ||
           t.serviceCategory === "ALBUM" ||
@@ -1050,13 +1061,22 @@ export async function assignTaskCrewAction(rawInput: {
 }): Promise<{ success: boolean; task?: Task; error?: string }> {
   try {
     const decoded = await requireVerifiedUser(rawInput.idToken);
-    const studioId = rawInput.studioId.toLowerCase();
-    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
+    let studioId = (rawInput.studioId || "").trim().toLowerCase();
 
     const existingTask = await getTaskById(rawInput.taskId);
-    if (!existingTask || existingTask.studioId !== studioId || existingTask.orderId !== rawInput.orderId) {
+    if (!existingTask || existingTask.orderId !== rawInput.orderId) {
       return { success: false, error: "Task not found in authorized studio." };
     }
+
+    if (!studioId) {
+      studioId = (existingTask.studioId || "").toLowerCase();
+    }
+
+    if (existingTask.studioId.toLowerCase() !== studioId) {
+      return { success: false, error: "Task not found in authorized studio." };
+    }
+
+    await requireStudioMember(decoded.uid, studioId, "STUDIO_OWNER");
 
     const updatedTask = await updateTask(rawInput.taskId, {
       assignedMemberId: rawInput.memberId,

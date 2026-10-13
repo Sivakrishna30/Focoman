@@ -37,7 +37,9 @@ export const AssignResourceSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
   memberId: z.string().min(1, 'Member ID is required'),
   memberName: z.string().min(1, 'Member name is required'),
-  skill: z.string().min(1, 'Skill is required')
+  skill: z.string().min(1, 'Skill is required'),
+  studioId: z.string().optional(),
+  idToken: z.string().optional(),
 });
 
 export type AssignResourceInput = z.infer<typeof AssignResourceSchema>;

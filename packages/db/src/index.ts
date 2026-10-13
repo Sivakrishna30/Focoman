@@ -311,6 +311,7 @@ export async function getMembershipByUidAndStudio(
   uid: string,
   studioId: string
 ): Promise<StudioMembership | null> {
+  if (!studioId || !uid) return null;
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
     .collection('memberships')
@@ -326,6 +327,7 @@ export async function getMembershipByUidAndStudio(
 export async function getMembershipsByStudio(
   studioId: string
 ): Promise<StudioMembership[]> {
+  if (!studioId) return [];
   const firestore = getFirestoreServerInstance();
   const snap = await firestore
     .collection('memberships')

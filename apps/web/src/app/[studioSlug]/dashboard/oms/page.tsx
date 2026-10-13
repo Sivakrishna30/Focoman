@@ -213,26 +213,28 @@ export default function OmsPage({
 
   const allSelectableCrew = useMemo(() => {
     const list: Array<{ id: string; name: string; skills: string[]; role: string }> = [];
-    if (studio?.ownerName) {
+    const ownerDisplayName = studio?.ownerName || workspaceUser?.displayName || "Studio Owner";
+    if (ownerDisplayName) {
       list.push({
-        id: `owner-${studio.id || studioSlug}`,
-        name: `${studio.ownerName} (Owner)`,
+        id: `owner-${studio?.id || studioSlug}`,
+        name: `${ownerDisplayName} (Owner)`,
         skills: ["PHOTOGRAPHY", "VIDEOGRAPHY"],
         role: "Owner",
       });
     }
     studioMembers.forEach((m) => {
-      if (!list.some((existing) => existing.id === m.id || existing.name === m.name)) {
+      const memberName = m.name || m.ownerAssignedName || m.email || "Crew Member";
+      if (!list.some((existing) => existing.id === m.id || existing.name === memberName)) {
         list.push({
           id: m.id,
-          name: m.name,
+          name: memberName,
           skills: m.skills || [],
           role: "Crew",
         });
       }
     });
     return list;
-  }, [studio, studioSlug, studioMembers]);
+  }, [studio, studioSlug, studioMembers, workspaceUser]);
 
   const handleOpenCreateModal = useCallback(() => {
     setNewOrderForm({
@@ -748,7 +750,7 @@ export default function OmsPage({
     const trimmed = enteredName.trim();
     // Check if entered name matches an existing member or owner in allSelectableCrew
     const matchedMember = allSelectableCrew.find(
-      (m) => m.name.toLowerCase() === trimmed.toLowerCase() || m.id === trimmed
+      (m) => (m.name || "").toLowerCase() === trimmed.toLowerCase() || m.id === trimmed
     );
 
     const memberId = matchedMember ? matchedMember.id : `temp_${Date.now()}`;
@@ -1214,9 +1216,9 @@ export default function OmsPage({
                         if (!currentQuery.trim()) return true;
                         const q = currentQuery.toLowerCase();
                         return (
-                          m.name.toLowerCase().includes(q) ||
-                          m.role.toLowerCase().includes(q) ||
-                          m.skills.some((s) => s.toLowerCase().includes(q))
+                          (m.name || "").toLowerCase().includes(q) ||
+                          (m.role || "").toLowerCase().includes(q) ||
+                          (m.skills || []).some((s) => (s || "").toLowerCase().includes(q))
                         );
                       });
 
@@ -1332,7 +1334,7 @@ export default function OmsPage({
 
                                         {currentQuery.trim().length > 0 &&
                                           !allSelectableCrew.some(
-                                            (c) => c.name.toLowerCase() === currentQuery.trim().toLowerCase()
+                                            (c) => (c.name || "").toLowerCase() === currentQuery.trim().toLowerCase()
                                           ) && (
                                             <div
                                               onClick={() => {
@@ -1823,7 +1825,7 @@ export default function OmsPage({
                     </div>
 
                     <select
-                      value={hasAssignedCrew ? (allSelectableCrew.find((m) => m.name === task.assignedMemberName)?.id || "") : ""}
+                      value={hasAssignedCrew ? (allSelectableCrew.find((m) => m.id === task.assignedMemberId || m.name === task.assignedMemberName)?.id || "") : ""}
                       onChange={(e) => {
                         if (e.target.value === "__add_new__") {
                           setTargetAssignContext({ taskId: task.id });
