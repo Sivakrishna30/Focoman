@@ -216,15 +216,21 @@ export function AddCrewMemberModal({
                 inputMode="numeric"
                 autoComplete="off"
                 required
-                pattern="[0-9]{6}"
                 maxLength={6}
                 placeholder="e.g. 492015"
                 value={form.claimCode}
                 onChange={(e) =>
                   setForm({ ...form, claimCode: e.target.value.replace(/\D/g, "").slice(0, 6) })
                 }
-                className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                className={`w-full rounded-xl bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none transition ${
+                  form.claimCode.length !== 6
+                    ? "border border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                    : "border border-border-default focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                }`}
               />
+              {form.claimCode.length !== 6 && (
+                <p className="mt-1 text-[11px] font-medium text-rose-600">PIN must be 6 digits.</p>
+              )}
               <p className="text-[11px] text-text-secondary">
                 Share this 6-digit PIN alongside the invitation link with your crew member to join the studio without a Google email account.
               </p>

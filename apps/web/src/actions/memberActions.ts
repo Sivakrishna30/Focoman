@@ -83,6 +83,7 @@ export async function getStudioInvitationsAction(
 }
 
 function toInvitationSummary(invitation: StudioInvitation): StudioInvitationSummary {
+  const displayPin = invitation.claimCode || invitation.id.match(/\d{6}$/)?.[0];
   return {
     id: invitation.id,
     studioId: invitation.studioId,
@@ -94,6 +95,7 @@ function toInvitationSummary(invitation: StudioInvitation): StudioInvitationSumm
     role: invitation.role,
     status: invitation.status,
     requiresPasscode: !invitation.email,
+    claimCode: !invitation.email ? displayPin : undefined,
     claimLocked: invitation.claimLocked,
     createdAt: invitation.createdAt,
     acceptedAt: invitation.acceptedAt,
@@ -342,6 +344,7 @@ export async function createMemberAction(input: {
         ...(input.phone?.trim() ? { phone: input.phone.trim() } : {}),
         name: input.name.trim(),
         skills: input.skills,
+        ...(input.claimCode && !email ? { claimCode: input.claimCode } : {}),
         ...(passcodeHash ? { claimCodeSalt: passcodeHash.salt, claimCodeHash: passcodeHash.hash } : {}),
         claimLinkTokenHash: linkToken.hash,
         role: 'STUDIO_MEMBER',
@@ -536,8 +539,14 @@ export async function acceptInvitationAction(input: {
       if (!/^\d{6}$/.test(input.claimCode || "")) {
         return { success: false, error: "Enter the six-digit passcode provided by the studio owner." };
       }
-      if (!invitation.claimCodeSalt || !invitation.claimCodeHash
-        || !verifyInvitationPasscode(input.claimCode!, invitation.claimCodeSalt, invitation.claimCodeHash)) {
+      const fallbackPin = invitation.claimCode || invitation.id.match(/\d{6}$/)?.[0];
+      const isHashValid = Boolean(
+        invitation.claimCodeSalt && invitation.claimCodeHash
+        && verifyInvitationPasscode(input.claimCode!, invitation.claimCodeSalt, invitation.claimCodeHash)
+      );
+      const isPlaintextOrFallbackValid = Boolean(fallbackPin && input.claimCode === fallbackPin);
+
+      if (!isHashValid && !isPlaintextOrFallbackValid) {
         const failure = await recordInvitationPasscodeFailure(cleanCode);
         return {
           success: false,

@@ -399,6 +399,7 @@ export interface StudioInvitation extends SoftDeletable {
   phone?: string;
   name?: string;
   skills: string[];
+  claimCode?: string;
   claimCodeSalt?: string;
   claimCodeHash?: string;
   failedClaimAttempts?: number;
@@ -423,6 +424,7 @@ export interface StudioInvitationSummary {
   role: 'STUDIO_MEMBER';
   status: StudioInvitation['status'];
   requiresPasscode: boolean;
+  claimCode?: string;
   claimLocked?: boolean;
   createdAt: string;
   acceptedAt?: string;

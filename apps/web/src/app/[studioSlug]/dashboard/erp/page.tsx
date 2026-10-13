@@ -52,6 +52,8 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   });
   const [createdInvite, setCreatedInvite] = useState<{ code: string; email?: string; name: string; claimCode?: string; linkToken?: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   // Check URL query parameters (e.g. ?action=add-crew or ?addCrew=true)
   useEffect(() => {
@@ -412,9 +414,37 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                       </p>
                       {invitation.claimLocked ? (
                         <p className="mt-1 text-[10px] font-semibold text-red-800">Passcode attempts exceeded. Revoke and create a replacement invitation.</p>
-                      ) : invitation.requiresPasscode && (
-                        <p className="mt-1 text-[10px] text-amber-900">Passcode is shown only when created. If lost, revoke this invitation and create a replacement.</p>
-                      )}
+                      ) : invitation.requiresPasscode ? (
+                        <div className="mt-2.5 max-w-md rounded-xl border border-amber-300/80 bg-white/90 p-2.5 space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900">
+                              6-Digit Guest Access PIN *
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs font-extrabold tracking-widest text-brand-purple-primary bg-brand-purple-background/70 border border-brand-purple-soft/60 px-2 py-0.5 rounded">
+                                {invitation.claimCode || invitation.id.match(/\d{6}$/)?.[0] || "••••••"}
+                              </span>
+                              {(invitation.claimCode || invitation.id.match(/\d{6}$/)?.[0]) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const pin = invitation.claimCode || invitation.id.match(/\d{6}$/)?.[0] || "";
+                                    void navigator.clipboard.writeText(pin);
+                                    setCopiedPinId(invitation.id);
+                                    setTimeout(() => setCopiedPinId(null), 2000);
+                                  }}
+                                  className="rounded px-2 py-0.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                                >
+                                  {copiedPinId === invitation.id ? "Copied PIN!" : "Copy PIN"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-amber-900/90 leading-snug">
+                            Share this 6-digit PIN alongside the invitation link with your crew member to join the studio without a Google email account.
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <button
@@ -422,10 +452,12 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                         onClick={() => {
                           const link = `${window.location.origin}/onboarding/join-studio?code=${encodeURIComponent(invitation.id)}`;
                           void navigator.clipboard.writeText(link);
+                          setCopiedLinkId(invitation.id);
+                          setTimeout(() => setCopiedLinkId(null), 2000);
                         }}
                         className="rounded-lg border border-border-default bg-white px-3 py-2 text-[11px] font-semibold text-text-primary hover:bg-surface-app"
                       >
-                        Copy link
+                        {copiedLinkId === invitation.id ? "Copied link!" : "Copy link"}
                       </button>
                       <button
                         type="button"
@@ -863,15 +895,21 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                     inputMode="numeric"
                     autoComplete="off"
                     required
-                    pattern="[0-9]{6}"
                     maxLength={6}
                     placeholder="e.g. 492015"
                     value={form.claimCode}
                     onChange={(e) =>
                       setForm({ ...form, claimCode: e.target.value.replace(/\D/g, "").slice(0, 6) })
                     }
-                    className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                    className={`w-full rounded-xl bg-white px-3.5 py-2 font-mono text-sm font-extrabold tracking-widest text-text-primary outline-none transition ${
+                      form.claimCode.length !== 6
+                        ? "border border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                        : "border border-border-default focus:border-brand-purple-primary focus:ring-1 focus:ring-brand-purple-primary"
+                    }`}
                   />
+                  {form.claimCode.length !== 6 && (
+                    <p className="mt-1 text-[11px] font-medium text-rose-600">PIN must be 6 digits.</p>
+                  )}
                   <p className="text-[11px] text-text-secondary">
                     Share this 6-digit PIN alongside the invitation link with your crew member to join the studio without a Google email account.
                   </p>
