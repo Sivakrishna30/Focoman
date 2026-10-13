@@ -1368,7 +1368,7 @@ export default function OmsPage({
                                             <span className="truncate">Add New Member</span>
                                           </div>
                                           <span className="text-[10px] font-bold text-brand-purple-primary bg-brand-purple-soft/40 px-2 py-0.5 rounded-full shrink-0 ml-2">
-                                            ERP Wizard
+                                            ERP
                                           </span>
                                         </div>
                                       </div>
