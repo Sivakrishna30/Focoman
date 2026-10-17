@@ -51,16 +51,16 @@ export default async function HomePage() {
         {/* 2. Hero Section */}
         <section
           id="home"
-          className="relative min-h-[175vh] sm:min-h-[190vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
+          className="relative min-h-[135vh] sm:min-h-[160vh] lg:min-h-[190vh] border-b border-[#D8D2C4] bg-[#FAF7F2]"
         >
-          <div className="sticky top-0 min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3.5 sm:px-6 lg:px-8 py-6 lg:py-0">
-            <div className="relative z-10 mx-auto max-w-7xl w-full">
-              <div className="grid gap-8 sm:gap-10 lg:gap-10 xl:gap-12 lg:grid-cols-12 lg:items-center">
+          <div className="sticky top-0 min-h-[calc(100dvh-3.5rem)] lg:min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[#FAF7F2] via-white to-[#FAF7F2] px-3 xs:px-4 sm:px-6 lg:px-8 py-2.5 xs:py-3.5 sm:py-6 lg:py-0">
+            <div className="relative z-10 mx-auto max-w-7xl w-full my-auto">
+              <div className="grid gap-3.5 xs:gap-5 sm:gap-8 lg:gap-10 xl:gap-12 lg:grid-cols-12 lg:items-center">
                 {/* Left Column: Hero Copy & Actions */}
                 <div className="lg:col-span-5 xl:col-span-5 text-center lg:text-left relative z-30">
                   {/* Brand themed badge */}
-                  <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft">
-                    <span className="font-mono text-[10px] sm:text-xs font-bold uppercase tracking-[0.16em] sm:tracking-[0.2em] text-brand-orange-primary">
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 mb-1.5 xs:mb-2 sm:mb-4 px-2.5 py-0.5 sm:py-1 rounded-full bg-brand-orange-background border border-brand-orange-soft">
+                    <span className="font-mono text-[9.5px] xs:text-[10px] sm:text-xs font-bold uppercase tracking-[0.16em] sm:tracking-[0.2em] text-brand-orange-primary">
                       [ Focus beyond the frames ]
                     </span>
                   </div>
@@ -72,22 +72,22 @@ export default async function HomePage() {
                     </span>
                   </h1>
 
-                  <p className="mx-auto lg:mx-0 mt-2.5 sm:mt-4 max-w-lg text-xs sm:text-sm md:text-base lg:text-lg text-[#57534E] leading-relaxed font-normal">
+                  <p className="mx-auto lg:mx-0 mt-1.5 xs:mt-2.5 sm:mt-4 max-w-lg text-xs sm:text-sm md:text-base lg:text-lg text-[#57534E] leading-relaxed font-normal">
                     Bring your studio’s work, people, and orders together in one place and spend less time managing the work, more time creating.
                   </p>
 
                   {/* Hero CTA Buttons - Isolated & elevated to prevent any visual overlap */}
-                  <div className="mt-5 sm:mt-6 relative z-30 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-3.5">
+                  <div className="mt-3 xs:mt-4 sm:mt-6 relative z-30 flex flex-col xs:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-2 sm:gap-3.5">
                     <Link
                       href="/sign-in"
-                      className="text-center rounded-xl bg-[#E85D04] px-5 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm md:text-base font-bold text-white shadow-[0_3px_0_#B84600] active:translate-y-[2px] active:shadow-none transition hover:bg-[#D95304] flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                      className="text-center rounded-xl bg-[#E85D04] px-4 py-2.5 sm:px-6 sm:py-3.5 text-xs sm:text-sm md:text-base font-bold text-white shadow-[0_3px_0_#B84600] active:translate-y-[2px] active:shadow-none transition hover:bg-[#D95304] flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
                     >
                       <span>Start 30-Day Free Trial</span>
                       <span>→</span>
                     </Link>
                     <Link
                       href="/#how-it-works"
-                      className="text-center rounded-xl border border-[#D8D2C4] bg-white px-5 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm md:text-base font-bold text-[#1C1917] shadow-[0_2px_0_#C4BCAB] active:translate-y-[2px] active:shadow-none transition hover:bg-[#FAF7F2] flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                      className="text-center rounded-xl border border-[#D8D2C4] bg-white px-4 py-2.5 sm:px-6 sm:py-3.5 text-xs sm:text-sm md:text-base font-bold text-[#1C1917] shadow-[0_2px_0_#C4BCAB] active:translate-y-[2px] active:shadow-none transition hover:bg-[#FAF7F2] flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
                     >
                       <span>▶ How It Works</span>
                       <span className="text-[#8C857B]">↓</span>

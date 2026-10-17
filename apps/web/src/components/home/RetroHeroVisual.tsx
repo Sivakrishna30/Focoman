@@ -188,14 +188,14 @@ export function RetroHeroVisual() {
   if (!isMounted) {
     return (
       <div
-        className="relative mx-auto w-full max-w-[760px] h-[375px] xs:h-[395px] sm:h-[425px] md:h-[460px] lg:h-[495px] xl:h-[520px] select-none rounded-2xl bg-[#FAF7F2] border border-[#D8D2C4]"
+        className="relative mx-auto w-full max-w-[760px] h-[290px] min-[390px]:h-[315px] xs:h-[345px] sm:h-[400px] md:h-[455px] lg:h-[495px] xl:h-[520px] select-none rounded-2xl bg-[#FAF7F2] border border-[#D8D2C4]"
       />
     );
   }
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[760px] h-[375px] xs:h-[395px] sm:h-[425px] md:h-[460px] lg:h-[495px] xl:h-[520px] select-none perspective-1000 overflow-hidden rounded-2xl"
+      className="relative mx-auto w-full max-w-[760px] h-[290px] min-[390px]:h-[315px] xs:h-[345px] sm:h-[400px] md:h-[455px] lg:h-[495px] xl:h-[520px] select-none perspective-1000 overflow-hidden rounded-2xl"
     >
       
       {/* ───────────────────────────────────────────────────────────── */}
@@ -425,31 +425,31 @@ export function RetroHeroVisual() {
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center">
           {/* Sequential 2 words per line question */}
           <motion.div style={{ opacity: qLine1Opacity, y: qLine1Y }}>
-            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[34px] min-[390px]:text-[38px] xs:text-[46px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               Tired of
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine2Opacity, y: qLine2Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[36px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[30px] min-[390px]:text-[34px] xs:text-[44px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               handling business
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine3Opacity, y: qLine3Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[38px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[32px] min-[390px]:text-[36px] xs:text-[44px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               across sheets,
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine4Opacity, y: qLine4Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[34px] min-[390px]:text-[38px] xs:text-[46px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               notes, and
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine5Opacity, y: qLine5Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[34px] min-[390px]:text-[38px] xs:text-[46px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               chats?
             </span>
           </motion.div>
@@ -468,19 +468,19 @@ export function RetroHeroVisual() {
       >
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center">
           <motion.div style={{ opacity: sLine1Opacity, y: sLine1Y }}>
-            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-brand-orange-primary leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[34px] min-[390px]:text-[38px] xs:text-[46px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-brand-orange-primary leading-[1.04] tracking-tight drop-shadow-sm block">
               Focoman brings
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: sLine2Opacity, y: sLine2Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[36px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[30px] min-[390px]:text-[34px] xs:text-[44px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               everything inside
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: sLine3Opacity, y: sLine3Y }} className="mt-0.5 sm:mt-1">
-            <span className="retro-serif-heading text-[38px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+            <span className="retro-serif-heading text-[32px] min-[390px]:text-[36px] xs:text-[44px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
               a single tool.
             </span>
           </motion.div>
@@ -507,7 +507,7 @@ export function RetroHeroVisual() {
           scale: dashboardContainerScale,
           filter: dashboardFilter,
         }}
-        className="absolute inset-0 p-1.5 xs:p-2 sm:p-2.5 md:p-3 flex flex-col justify-start z-30 overflow-hidden"
+        className="absolute inset-0 p-1 xs:p-1.5 sm:p-2.5 md:p-3 flex flex-col justify-center z-30 overflow-hidden"
       >
         <div className="w-full rounded-xl sm:rounded-2xl border border-[#D8D2C4] sm:border-2 bg-white shadow-[0_12px_40px_rgba(28,25,23,0.10)] overflow-hidden flex flex-col">
           
