@@ -1,79 +1,149 @@
-# Hero Dashboard OMS Table Mobile Fit & Google Sign-In 403 Fix
+# Unified Vertical Order Workflow Across OMS and Order Tracking
 
-Align and zoom out the hero panel dashboard preview OMS table so all columns fit on mobile viewports, and resolve the Google OAuth 403 "We're sorry, but you do not have access to this page" error by restoring canonical authorized authDomain and adding resilient popup fallback.
+Unify the order workflow UI in Focoman into a single, cohesive Vertical Workflow Pipeline shared between the OMS Order Details drawer and the Customer-Facing Order Tracking portal.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following choices were confirmed during Phase 1 clarification:
-> - **Table Scope**: Fix column alignment and zoom-out specifically for the **Hero Panel Dashboard Preview OMS Table** (Stage 4 in `RetroHeroVisual.tsx`) so columns like `Order`, `Customer`, `Event`, `Date`, `Status`, `Amount`, and `Balance` fit without cutting off on mobile screens.
-> - **Sign-In Flow**: Retain **same-tab redirect** (`signInWithRedirect`) as the primary sign-in mechanism, with **popup sign-in** (`signInWithPopup`) operating as the automatic fallback if redirect encounters authorization/iframe restrictions.
+> The following design decisions were confirmed during Phase 1 interactive clarification:
+> - **Default Phase Expansion**: Expand the currently active phase by default while collapsing completed and upcoming phases to keep the screen concise and readable. Users can freely expand or collapse any individual phase.
+> - **OMS Task Interaction**: Provide inline status action buttons (e.g., Start, Send for Review, Complete) directly within compact task rows for authorized studio owners and assigned crew members.
+> - **Customer Tracking Privacy & View-Only Mode**: The customer-facing tracking view will render the identical vertical pipeline structure but strictly in view-only mode, without exposing internal crew contact lists, private staff identifiers, or administrative mutation buttons.
 
 ---
 
 ## 1. Overview & Core Concept
 
-- **Problem 1 (Mobile Table Cutoff)**: In the hero dashboard preview, the authentic orders table currently sets `min-w-[420px]`. On mobile screens (<400px width), the rightmost columns (`Amount` and `Balance`) are clipped or pushed off-screen.
-- **Problem 2 (Google Sign-In 403 Error)**: `apps/web/src/lib/firebase.ts` dynamically sets `authDomain = window.location.host`. When accessed on preview or cloud environments (e.g. `ais-dev-...run.app`), Google OAuth rejects the redirect with **"403. That's an error. We're sorry, but you do not have access to this page"** because dynamic hostnames are not registered as authorized redirect URIs in the Google OAuth client. Additionally, when running inside an embedded preview iframe, same-tab redirect to `accounts.google.com` is blocked by Google's frame-ancestors security policies.
-- **Solution Delivered**:
-  1. Scale and zoom out the hero dashboard OMS table on mobile (`scale-[0.74] sm:scale-100 origin-top-left`) so all 7 columns remain visible without right-side clipping.
-  2. Fix `getAuthDomain()` in `firebase.ts` to ensure canonical authorized `focoman.firebaseapp.com` is used for preview domains.
-  3. Keep same-tab redirect as primary in `firebaseAuth.ts`, handling iframe top-level redirects safely, and providing a clean, automatic fallback to popup sign-in if redirect fails.
+Currently, order progression is displayed inconsistently:
+- OMS features a horizontal 3-node lifecycle stepper (`Awaiting Event` → `Post-Event` → `Completed`) with a separate `Pre-Event Shoot Planning` table above it and post-event tasks below it.
+- The Customer Order Tracking page (`TrackOrderClient.tsx`) duplicates another horizontal stepper and displays a flat task list.
+- Converted leads / marketplace bookings and directly registered orders are not visually differentiated in their origin pipeline.
+
+### The Unified Solution
+We introduce a single, production-grade **Unified Vertical Workflow Component** (`OrderVerticalWorkflow.tsx`) shared across both surfaces:
+1. **OMS Orders Page** (`apps/web/src/app/[studioSlug]/dashboard/oms/page.tsx`): Full interactive workflow inside the order details drawer with inline status transitions, crew assignments, dependency warnings, and event locks.
+2. **Order Tracking Page** (`apps/web/src/app/track/[passkey]/TrackOrderClient.tsx`): Clean, branded client timeline showing the exact same phases, progress metrics, and deliverable review stages with customer-safe access control.
 
 ---
 
 ## 2. User Experience & Visual Design
 
-### Hero Panel Dashboard Table
-- **Mobile Experience**:
-  - The dashboard OMS table displays `#`, `Order ID`, `Customer`, `Event`, `Date`, `Status`, `Amount`, and `Balance` in full view on mobile screens.
-  - Sits inside a proportional wrapper (`w-[136%] origin-top-left scale-[0.735] xs:w-[118%] xs:scale-[0.847] sm:w-full sm:scale-100`) so the entire width matches the card boundary with zero horizontal clipping.
+### The Vertical Pipeline Anatomy
+Each phase is structured vertically with connecting timeline conduits and clear state badges:
+- **Phase Marker**: Numbered circle with state styling:
+  - **Completed (Green)**: Emerald checkmark ring (`bg-emerald-500 text-white`).
+  - **In Progress (Blue)**: Sky-blue pulsing ring (`bg-brand-blue-primary text-white shadow-sm ring-4 ring-blue-100`).
+  - **Pending / Not Started (Grey)**: Slate outline with muted text (`bg-slate-100 text-slate-400 border-slate-300`).
+  - **Attention / Review / Rework (Amber)**: Warning styling (`bg-amber-100 text-amber-800 border-amber-300`).
+  - **Cancelled (Red)**: Terminal cross marker (`bg-rose-500 text-white`).
+- **Phase Header**: Title, short description, phase status pill, task count badge (`2/4 done`), and expand/collapse chevron.
+- **Phase Content (Collapsible)**:
+  - Compact task rows displaying task title, category, assignee (in OMS), status badge, and age indicator.
+  - In OMS: inline status buttons (`Start`, `Send for Review`, `Complete`, `Rework`).
+  - In Customer Tracking: clean status indicators and review submission affordances.
 
-### Sign-In Experience
-- **Primary Action**: User clicks "Continue with Google" -> initiates same-tab redirect via canonical authorized Firebase auth domain.
-- **Fallback Action**: If redirected inside an iframe or if an error occurs, the user is offered an instant "Sign in using Popup Window" button, ensuring they can always authenticate without error screens.
+### Two Distinct Order Entry Paths
+```
+A. Lead / Marketplace Booking Path (Order has bookingRequestId)
+┌─────────────────────────────────────────────────────────────┐
+│ Phase 0: Inquiry & Advance Booking (Collapsible History)    │
+│  - Inquiry Received -> Package Discussion -> Advance Paid   │
+│  - Converted to Confirmed Booking (Checked)                 │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+B. Directly Registered Order   │
+┌──────────────────────────────┴──────────────────────────────┐
+│ Phase 1: Pre-Event Preparation                              │
+│  - Event details & countdown lock                           │
+│  - Dynamic Booked Services to Crew Assignment Mapping       │
+│  - Equipment & Preparation Readiness                        │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────┴──────────────────────────────┐
+│ Phase 2: Event Day Execution                                │
+│  - Shoot Day Status & Event-Date Locking Guard              │
+│  - Crew Check-in / Shoot Coverage                           │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────┴──────────────────────────────┐
+│ Phase 3: Post-Event Production (Parallel Independent Streams)│
+│  ┌───────────────────────────┐ ┌───────────────────────────┐│
+│  │   Photography Pipeline    │ │    Videography Pipeline   ││
+│  │   Raw Culling -> Photo    │ │   Footage Backup -> Video ││
+│  │   Edit -> Album Design    │ │   Edit -> Color Grading   ││
+│  └───────────────────────────┘ └───────────────────────────┘│
+│  - Strict task dependencies (Raw Selection -> Edit -> Album)│
+│  - Independent progress bars per stream                     │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────┴──────────────────────────────┐
+│ Phase 4: Final Deliverables & Handover                      │
+│  - Client Review Proofs & Digital Gallery Delivery          │
+│  - Album Printing & Physical Handover                       │
+│  - Independent Payment Status Clearance                     │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────┴──────────────────────────────┐
+│ Phase 5: Completed (Terminal Milestone)                     │
+│  - Full Order Fulfillment Confirmation                      │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Restoring Canonical `focoman.firebaseapp.com` for Non-Custom Hosts**
-  - *Chosen Approach*: Only use `window.location.host` for known custom production domains (e.g., `focoman.com`). For all preview hosts (`*.run.app`, `localhost`), default to `focoman.firebaseapp.com`.
-  - *Why*: Google Cloud Console OAuth Client IDs only authorize verified production domains and `*.firebaseapp.com`. Using arbitrary dynamic hostnames triggers Google's 403 Forbidden page.
-- **Decision 2: Iframe Detection & Top Navigation for Redirect**
-  - *Chosen Approach*: When running inside an iframe, handle redirect via `window.top` navigation or seamlessly fall back to popup.
-  - *Why*: Google Accounts strictly forbids rendering inside an `<iframe>`.
+- **Decision 1: Shared Presentation Component with Role/Context Props**
+  - *Chosen Approach*: Create `OrderVerticalWorkflow.tsx` accepting `variant: 'oms' | 'tracking'`, `order: Order | CustomerTrackingView['order']`, `tasks: Task[]`, and OMS callback handlers.
+  - *Why*: Guarantees 100% visual and logical alignment between OMS and Customer Tracking while strictly isolating private data and interactive mutations.
+  - *Alternative Considered*: Maintaining separate JSX implementations in both files. Rejected because it inevitably causes drift in status logic, task grouping, or dependency rules.
+
+- **Decision 2: Strict Lead vs Direct Registration Differentiation**
+  - *Chosen Approach*: Inspect `order.bookingRequestId`. If present, render the preceding *Inquiry & Booking* historical phase; if absent (directly created via OMS modal), begin directly at *Phase 1: Pre-Event Preparation*.
+  - *Why*: Accurately reflects existing database models without inventing new schema fields.
+
+- **Decision 3: Independent Photography & Videography Parallel Calculation**
+  - *Chosen Approach*: Separate task categories (`PHOTOGRAPHY`/`ALBUM` vs `VIDEOGRAPHY`) into parallel columns/sections within Phase 3. Photo editing never blocks video editing.
+  - *Why*: Matches real photography studio operations where editors and colorists work concurrently.
+
+- **Decision 4: Terminal Cancellation Isolation**
+  - *Chosen Approach*: When `orderStatus === 'CANCELLED'`, the pipeline displays a dedicated terminal banner and stops active phase indicators, while preserving soft-delete audit history.
 
 ---
 
 ## 4. Technical Architecture & File Changes
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. RetroHeroVisual.tsx (Hero Dashboard OMS Table)           │
-│    - Wrap table in responsive scaling container             │
-│    - Scale factor: 0.735 (mobile) -> 1.0 (desktop)          │
-│    - All columns (Order, Customer, Date, Status, Amt, Bal)  │
-│      fit within mobile view without clipping                │
-└─────────────────────────────────────────────────────────────┘
-                               ▲
-┌─────────────────────────────────────────────────────────────┐
-│ 2. firebase.ts (AuthDomain Configuration)                   │
-│    - Ensure authDomain defaults to 'focoman.firebaseapp.com'│
-│    - Avoid passing unauthorized dynamic run.app hostnames   │
-│      to Google OAuth                                        │
-└─────────────────────────────────────────────────────────────┘
-                               ▲
-┌─────────────────────────────────────────────────────────────┐
-│ 3. firebaseAuth.ts & sign-in/page.tsx                       │
-│    - Primary: same-tab signInWithRedirect                   │
-│    - Fallback: popup sign-in trigger on error/iframe        │
-│    - Clear user-facing error handling and fallback UI       │
-└─────────────────────────────────────────────────────────────┘
+apps/web/src/components/workflow/
+  └── OrderVerticalWorkflow.tsx    <-- NEW: Shared unified vertical timeline component
+
+apps/web/src/app/[studioSlug]/dashboard/oms/
+  └── page.tsx                     <-- UPDATE: Replace horizontal stepper & disparate tables with OrderVerticalWorkflow
+
+apps/web/src/app/track/[passkey]/
+  └── TrackOrderClient.tsx         <-- UPDATE: Replace horizontal stepper with OrderVerticalWorkflow (tracking variant)
+
+ORDER_WORKFLOW_IMPLEMENTATION_CHECKLIST.md <-- NEW: Root checklist tracking all 13 verification scenarios
 ```
 
-### Files to Update
-1. `apps/web/src/components/home/RetroHeroVisual.tsx`: Update Stage 4 dashboard OMS table container to use responsive scaling on mobile.
-2. `apps/web/src/lib/firebase.ts`: Fix `getAuthDomain()` so it uses the canonical authorized Firebase domain for preview hosts.
-3. `apps/web/src/lib/firebaseAuth.ts`: Update `signInWithGoogle` to keep same-tab redirect primary with automatic popup fallback.
-4. `apps/web/src/app/sign-in/page.tsx`: Add popup fallback trigger if redirect is blocked.
+### Component Architecture & State Mapping
+- `OrderVerticalWorkflow.tsx`:
+  - `activePhaseId`: Defaults to the calculated current active phase (`pre_event`, `event_day`, `post_event`, `delivery`, or `completed`).
+  - `expandedPhases`: Set of phase IDs currently expanded.
+  - `getPrerequisite(task)`: Preserves existing dependency graph:
+    1. Event date lock (cannot start post-event tasks before event date).
+    2. Raw photo selection prerequisite for photo editing.
+    3. Photo editing prerequisite for album design.
+    4. All production tasks prerequisite for final delivery.
+  - `handleStatusUpdate(taskId, nextStatus)`: Passed down in OMS mode to trigger `updateTaskStatusAction`.
+  - Service-to-Crew mapping: In OMS mode, supports inline crew assignment and unassignment directly in Phase 1.
+
+### Verification Scenarios to Execute
+1. Directly registered confirmed order starts at Pre-Event Preparation.
+2. Booking request lead conversion retains Inquiry/Booking phase.
+3. Multi-service orders display dynamic photography, videography, and album assignments.
+4. Event date locking locks post-event tasks when event date is in the future.
+5. Independent parallel progress tracking for photography vs videography.
+6. Inline task status buttons in OMS (Start, Send for Review, Complete).
+7. Customer tracking view is read-only, hides crew salaries/internal actions, and maintains customer photo review functionality.
+8. Cancelled orders render clear terminal status on both pages.

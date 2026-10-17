@@ -259,6 +259,7 @@ export interface CustomerTrackingView {
     studioOwnerId?: string;
     studioOwnerEmail?: string;
     orderNumber: string;
+    bookingRequestId?: string;
     trackingPasskey: string;
     passkeyPin?: string;
     studioName: string;

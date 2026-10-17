@@ -9,6 +9,7 @@ import { syncOrderToAccountAction, updateOrderCollaboratorsAction, checkIsStudio
 import { User } from "firebase/auth";
 import Link from "next/link";
 import { getEventDaysRemaining } from "@/utils/dateUtils";
+import { OrderVerticalWorkflow } from "@/components/workflow/OrderVerticalWorkflow";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   AWAITING_EVENT: "Awaiting Event",
@@ -824,13 +825,13 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
             </div>
           </div>
 
-          {/* Order Lifecycle State — Horizontal Pipeline */}
-          <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border-divider">
+          {/* Order Lifecycle Pipeline — Unified Vertical Workflow */}
+          <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-divider">
               <div>
-                <h2 className="text-lg font-bold text-text-primary">Order Lifecycle State</h2>
+                <h2 className="text-lg font-bold text-text-primary">Order Lifecycle Pipeline</h2>
                 <p className="text-xs text-text-tertiary mt-0.5">
-                  Live workflow pipeline and post-event production milestones
+                  Live end-to-end vertical workflow tracking pre-event preparation, shoot execution, and post-event milestones
                 </p>
               </div>
               <div className="self-start sm:self-center">
@@ -843,257 +844,17 @@ export function TrackOrderClient({ view, rawIdentifier }: TrackOrderClientProps)
                     ? "bg-rose-100 text-rose-800 border border-rose-200"
                     : "bg-amber-100 text-amber-800 border border-amber-200"
                 }`}>
-                  {order.orderStatus === "POST_EVENT_IN_PROGRESS" && (
-                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-                  )}
                   {STATUS_LABELS[order.orderStatus]}
                 </span>
               </div>
             </div>
 
-            {/* Horizontal Stepper Pipeline */}
-            <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
-              {/* Stage 1: Awaiting Event */}
-              <div className="flex flex-col items-center text-center w-28 sm:w-36 shrink-0">
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 transition-all ${
-                    order.orderStatus === "AWAITING_EVENT"
-                      ? "border-brand-blue-primary bg-brand-blue-primary text-white shadow-md shadow-blue-500/25 ring-4 ring-blue-100"
-                      : order.orderStatus === "POST_EVENT_IN_PROGRESS" || order.orderStatus === "COMPLETED"
-                      ? "border-emerald-500 bg-emerald-500 text-white shadow-xs"
-                      : "border-slate-200 bg-slate-100 text-slate-400"
-                  }`}
-                >
-                  {order.orderStatus === "POST_EVENT_IN_PROGRESS" || order.orderStatus === "COMPLETED" ? "✓" : "1"}
-                </div>
-                <span
-                  className={`mt-2.5 text-xs sm:text-sm font-bold leading-tight ${
-                    order.orderStatus === "AWAITING_EVENT"
-                      ? "text-brand-blue-primary"
-                      : order.orderStatus === "POST_EVENT_IN_PROGRESS" || order.orderStatus === "COMPLETED"
-                      ? "text-emerald-700"
-                      : "text-text-tertiary"
-                  }`}
-                >
-                  Awaiting Event
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-text-tertiary mt-1">
-                  {order.eventDate ? `Date: ${order.eventDate}` : "Scheduled"}
-                </span>
-                {order.orderStatus === "AWAITING_EVENT" && (() => {
-                  const d = getEventDaysRemaining(order.eventDate);
-                  return d ? (
-                    <span className="text-[10px] sm:text-[11px] font-semibold text-brand-blue-primary mt-0.5">
-                      {d.display}
-                    </span>
-                  ) : null;
-                })()}
-              </div>
-
-              {/* Connector Line 1-2 */}
-              <div className="flex-1 flex items-center mx-2 sm:mx-4 mb-8 sm:mb-10">
-                <div
-                  className={`h-1.5 w-full rounded-full transition-colors ${
-                    order.orderStatus === "POST_EVENT_IN_PROGRESS" || order.orderStatus === "COMPLETED"
-                      ? "bg-emerald-500"
-                      : order.orderStatus === "AWAITING_EVENT"
-                      ? "bg-blue-200"
-                      : "bg-slate-200"
-                  }`}
-                />
-              </div>
-
-              {/* Stage 2: Post-Event In Progress */}
-              <div className="flex flex-col items-center text-center w-36 sm:w-44 shrink-0">
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 transition-all ${
-                    order.orderStatus === "POST_EVENT_IN_PROGRESS"
-                      ? "border-brand-blue-primary bg-brand-blue-primary text-white shadow-md shadow-blue-500/25 ring-4 ring-blue-100 animate-pulse"
-                      : order.orderStatus === "COMPLETED"
-                      ? "border-emerald-500 bg-emerald-500 text-white shadow-xs"
-                      : "border-slate-200 bg-slate-100 text-slate-400"
-                  }`}
-                >
-                  {order.orderStatus === "COMPLETED" ? "✓" : "2"}
-                </div>
-                <span
-                  className={`mt-2.5 text-xs sm:text-sm font-bold leading-tight ${
-                    order.orderStatus === "POST_EVENT_IN_PROGRESS"
-                      ? "text-brand-blue-primary"
-                      : order.orderStatus === "COMPLETED"
-                      ? "text-emerald-700"
-                      : "text-text-tertiary"
-                  }`}
-                >
-                  Post-Event In Progress
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-text-tertiary mt-1">
-                  {order.orderStatus === "AWAITING_EVENT"
-                    ? (() => {
-                        const d = getEventDaysRemaining(order.eventDate);
-                        if (!d) return "Production Stage";
-                        return d.postEventDays > 0 ? d.postEventLabel : "In Progress";
-                      })()
-                    : order.orderStatus === "COMPLETED"
-                    ? "Done"
-                    : "In Progress"}
-                </span>
-              </div>
-
-              {/* Connector Line 2-3 */}
-              <div className="flex-1 flex items-center mx-2 sm:mx-4 mb-8 sm:mb-10">
-                <div
-                  className={`h-1.5 w-full rounded-full transition-colors ${
-                    order.orderStatus === "COMPLETED"
-                      ? "bg-emerald-500"
-                      : order.orderStatus === "POST_EVENT_IN_PROGRESS"
-                      ? "bg-blue-200"
-                      : "bg-slate-200"
-                  }`}
-                />
-              </div>
-
-              {/* Stage 3: Completed / Cancelled */}
-              <div className="flex flex-col items-center text-center w-28 sm:w-36 shrink-0">
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 transition-all ${
-                    order.orderStatus === "COMPLETED"
-                      ? "border-emerald-500 bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-4 ring-emerald-100"
-                      : order.orderStatus === "CANCELLED"
-                      ? "border-rose-500 bg-rose-500 text-white shadow-md shadow-rose-500/25 ring-4 ring-rose-100"
-                      : "border-slate-200 bg-slate-100 text-slate-400"
-                  }`}
-                >
-                  {order.orderStatus === "COMPLETED" ? "✓" : order.orderStatus === "CANCELLED" ? "✕" : "3"}
-                </div>
-                <span
-                  className={`mt-2.5 text-xs sm:text-sm font-bold leading-tight ${
-                    order.orderStatus === "COMPLETED"
-                      ? "text-emerald-700"
-                      : order.orderStatus === "CANCELLED"
-                      ? "text-rose-600"
-                      : "text-text-tertiary"
-                  }`}
-                >
-                  {order.orderStatus === "CANCELLED" ? "Cancelled" : "Completed"}
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-text-tertiary mt-1">
-                  {order.orderStatus === "CANCELLED" ? "Terminated" : "All Deliverables Handed Over"}
-                </span>
-              </div>
-            </div>
-
-            {/* Elaborated Post-Event Production Actions & Tasks */}
-            <div className={`rounded-2xl border p-5 space-y-4 transition-all ${
-              order.orderStatus === "POST_EVENT_IN_PROGRESS"
-                ? "bg-blue-50/40 border-blue-200 ring-1 ring-blue-100/80"
-                : "bg-surface-app/40 border-border-default"
-            }`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
-                    <span>Post-Event Production Tasks & Actions</span>
-                    {order.orderStatus === "POST_EVENT_IN_PROGRESS" && (
-                      <span className="rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5">
-                        Active Stage
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-xs text-text-tertiary mt-0.5">
-                    Individual tasks in progress, review status, and deliverable milestones
-                  </p>
-                </div>
-                {tasks.length > 0 && (
-                  <div className="flex items-center gap-2 sm:text-right">
-                    <span className="text-xs font-bold text-text-primary">
-                      {tasks.filter((t) => t.status === "COMPLETED").length} / {tasks.length} Completed
-                    </span>
-                    <span className="text-xs font-semibold text-text-tertiary">
-                      ({Math.round((tasks.filter((t) => t.status === "COMPLETED").length / tasks.length) * 100)}%)
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Progress Bar */}
-              {tasks.length > 0 && (
-                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      order.orderStatus === "COMPLETED" ? "bg-emerald-500" : "bg-brand-blue-primary"
-                    }`}
-                    style={{
-                      width: `${Math.round((tasks.filter((t) => t.status === "COMPLETED").length / tasks.length) * 100)}%`,
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Task Items Grid / List */}
-              <div className="space-y-2 pt-1">
-                {tasks.length === 0 ? (
-                  <p className="text-xs text-text-tertiary py-2">No production tasks assigned yet.</p>
-                ) : (
-                  tasks.map((task, idx) => {
-                    const isDone = task.status === "COMPLETED";
-                    const isInProgress = task.status === "IN_PROGRESS" || task.status === "REVIEW" || task.status === "REWORK";
-                    return (
-                      <div
-                        key={task.title || idx}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl border transition-all ${
-                          isDone
-                            ? "bg-white border-emerald-200/80 shadow-2xs"
-                            : isInProgress
-                            ? "bg-white border-blue-300 shadow-sm ring-1 ring-blue-100"
-                            : "bg-white/80 border-border-default"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${
-                              isDone
-                                ? "bg-emerald-100 text-emerald-700"
-                                : isInProgress
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            {isDone ? "✓" : idx + 1}
-                          </span>
-                          <div>
-                            <p className="text-xs sm:text-sm font-bold text-text-primary">{task.title}</p>
-                            {task.serviceCategory && (
-                              <p className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider">
-                                {task.serviceCategory}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 sm:mt-0 flex items-center gap-2 self-start sm:self-center">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 ${
-                              isDone
-                                ? "bg-emerald-100 text-emerald-800"
-                                : isInProgress
-                                ? "bg-blue-100 text-brand-blue-primary"
-                                : "bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            {isInProgress && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-brand-blue-primary animate-pulse" />
-                            )}
-                            {TASK_STATUS_LABELS[task.status] || task.status}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+            <OrderVerticalWorkflow
+              order={order}
+              tasks={tasks}
+              variant="tracking"
+            />
           </div>
-
         </div>
       </main>
 

@@ -208,6 +208,7 @@ export function toCustomerTrackingView(
       studioOwnerId: studioInfo?.studioOwnerId,
       studioOwnerEmail: studioInfo?.studioOwnerEmail,
       orderNumber: order.orderNumber,
+      bookingRequestId: order.bookingRequestId,
       trackingPasskey: order.trackingPasskey,
       passkeyPin: order.passkeyPin,
       studioName,
