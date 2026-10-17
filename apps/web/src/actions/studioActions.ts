@@ -81,7 +81,7 @@ export async function registerStudioAction(input: {
         crm: true,
         erp: true,
         whatsapp: true,
-        marketplace: false,
+        marketplace: true,
       },
       isDeleted: false,
       createdAt: now,

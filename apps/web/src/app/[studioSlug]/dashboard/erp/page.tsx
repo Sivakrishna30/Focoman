@@ -54,6 +54,11 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
   const [copied, setCopied] = useState(false);
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   // Check URL query parameters (e.g. ?action=add-crew or ?addCrew=true)
   useEffect(() => {
@@ -1020,7 +1025,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
                 <input
                   readOnly
                   type="text"
-                  value={typeof window !== "undefined" ? `${window.location.origin}/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}` : `/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}`}
+                  value={`${origin}/onboarding/join-studio?code=${createdInvite.code}${createdInvite.linkToken ? `&token=${createdInvite.linkToken}` : ''}`}
                   className="w-full rounded-xl border border-border-default bg-surface-app px-3 py-2 font-mono text-xs text-text-primary outline-none select-all"
                 />
                 <button

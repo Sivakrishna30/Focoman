@@ -11,17 +11,7 @@ export default async function MarketplaceSettingsPage(props: { params: Promise<{
     redirect("/workspaces");
   }
 
-  // Ensure marketplace feature is enabled
-  if (!studio.features?.marketplace) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-text-primary">Studio Marketplace Module Disabled</h2>
-          <p className="mt-2 text-text-secondary">This module is not enabled for your studio. Please contact support to enable the Studio Marketplace module.</p>
-        </div>
-      </div>
-    );
-  }
+  // Studio Marketplace is 100% free for all studios
 
   return (
     <div className="flex-1 overflow-auto bg-surface-app p-4 sm:p-6 lg:p-8">

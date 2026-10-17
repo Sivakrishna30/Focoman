@@ -50,9 +50,15 @@ export default async function DashboardLayout({
     ownerId: studio.ownerId,
     ownerName: access?.membership.role === "STUDIO_OWNER" ? studio.ownerName : "Studio Owner",
     ownerEmail: access?.membership.role === "STUDIO_OWNER" ? studio.ownerEmail : "",
-    ownerPhone: studio.ownerPhone || undefined,
-    features: studio.features,
-    planInfo: studio.planInfo,
+    features: {
+      oms: studio.features?.oms ?? true,
+      crm: studio.features?.crm ?? true,
+      erp: studio.features?.erp ?? true,
+      whatsapp: studio.features?.whatsapp ?? true,
+      reports: studio.features?.reports ?? true,
+      ...studio.features,
+      marketplace: true,
+    },
     createdAt: studio.createdAt || new Date().toISOString(),
     updatedAt: studio.updatedAt || new Date().toISOString(),
   };

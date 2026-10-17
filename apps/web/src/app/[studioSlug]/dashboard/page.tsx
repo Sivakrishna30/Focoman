@@ -41,7 +41,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ stud
     getStudioBySlug(studioSlug),
   ]);
 
-  const hasMarketplace = Boolean(studio?.features?.marketplace);
+  const hasMarketplace = true;
 
   return (
     <DashboardHomeView

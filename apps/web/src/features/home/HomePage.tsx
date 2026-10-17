@@ -201,7 +201,7 @@ export function HomePage() {
             Build Your Plan Around Your Studio Needs
           </h2>
           <p className="mx-auto mt-3 text-sm leading-relaxed text-text-secondary sm:text-base">
-            Basic Order Management is 100% Free forever. Selectively add CRM, Crew, Marketplace, or WhatsApp capabilities as you grow.
+            Basic Order Management &amp; Studio Marketplace are 100% Free for everyone. Selectively add CRM, Crew, Drive Review, or WhatsApp capabilities as you grow.
           </p>
         </div>
 

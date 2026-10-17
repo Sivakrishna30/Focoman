@@ -112,6 +112,11 @@ export default function OmsPage({
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [copiedField, setCopiedField] = useState<"code" | "link" | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const handleCopyText = (text: string, field: "code" | "link") => {
     if (typeof navigator !== "undefined") {
@@ -2733,14 +2738,14 @@ export default function OmsPage({
                   <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-semibold text-text-tertiary block">Direct Tracking Link</span>
                     <span className="font-mono text-xs font-semibold text-brand-blue-primary truncate block">
-                      {typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`}
+                      {`${origin}/track/${selected.orderNumber}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
-                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        const link = `${window.location.origin}/track/${selected.orderNumber}`;
                         handleCopyText(link, "link");
                       }}
                       className="rounded-lg bg-brand-blue-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 transition"
@@ -2750,7 +2755,7 @@ export default function OmsPage({
                     <button
                       type="button"
                       onClick={() => {
-                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        const link = `${window.location.origin}/track/${selected.orderNumber}`;
                         void handleShareText(link, `Order #${selected.orderNumber} Tracking Link`);
                       }}
                       className="rounded-lg border border-border-default bg-white px-2.5 py-1.5 text-xs font-bold text-text-primary hover:bg-surface-app hover:border-brand-blue-primary transition flex items-center gap-1.5"
@@ -2803,14 +2808,14 @@ export default function OmsPage({
                   <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-semibold text-text-tertiary block">Direct Tracking Link</span>
                     <span className="font-mono text-xs font-semibold text-brand-blue-primary truncate block">
-                      {typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`}
+                      {`${origin}/track/${selected.orderNumber}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
-                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        const link = `${window.location.origin}/track/${selected.orderNumber}`;
                         handleCopyText(link, "link");
                       }}
                       className="rounded-lg bg-brand-blue-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 transition"
@@ -2820,7 +2825,7 @@ export default function OmsPage({
                     <button
                       type="button"
                       onClick={() => {
-                        const link = typeof window !== "undefined" ? `${window.location.origin}/track/${selected.orderNumber}` : `/track/${selected.orderNumber}`;
+                        const link = `${window.location.origin}/track/${selected.orderNumber}`;
                         void handleShareText(link, `Order #${selected.orderNumber} Tracking Link`);
                       }}
                       className="rounded-lg border border-border-default bg-white px-2.5 py-1.5 text-xs font-bold text-text-primary hover:bg-surface-app hover:border-brand-blue-primary transition flex items-center gap-1.5"

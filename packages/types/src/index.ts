@@ -16,7 +16,7 @@ export type CapabilityId =
   | 'STUDIO_ERP'             // Studio Operations - ERP (₹299/mo)
   | 'WHATSAPP_ALERTS'        // WhatsApp Notifications (Alerts) (₹499/mo)
   | 'WHATSAPP_BOT'           // WhatsApp Operations & Bot (₹999/mo)
-  | 'STUDIO_MARKETPLACE'     // Studio Marketplace (₹999/mo)
+  | 'STUDIO_MARKETPLACE'     // Studio Marketplace (₹0 - 100% Free for Everyone)
   | 'BUSINESS_REPORTS'       // Business Reports & Analytics (₹299/mo)
   // Backward compatibility legacy aliases
   | 'CUSTOMER_BASIC'         // Alias to Customer CRM

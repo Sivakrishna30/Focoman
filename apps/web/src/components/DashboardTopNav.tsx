@@ -98,12 +98,12 @@ export function DashboardTopNav({
   const hasERP = selectedCaps.includes("STUDIO_ERP");
   const hasReports = selectedCaps.includes("BUSINESS_REPORTS");
   const hasDrive = selectedCaps.includes("DRIVE_CLIENT_REVIEW");
-  const hasMarketplace = selectedCaps.includes("MARKETPLACE");
+  const hasMarketplace = true; // Free for all studios
   const hasWhatsApp =
     selectedCaps.includes("WHATSAPP_NOTIFICATIONS") || selectedCaps.includes("WHATSAPP_OPERATIONS");
 
   const isFullySelected =
-    (hasCRM && hasERP && hasReports && hasDrive && hasMarketplace && hasWhatsApp) ||
+    (hasCRM && hasERP && hasReports && hasDrive && hasWhatsApp) ||
     currentPlanInfo?.plan === "COMPLETE";
 
   const hasAnySubscription =

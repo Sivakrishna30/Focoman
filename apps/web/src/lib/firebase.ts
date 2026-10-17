@@ -9,16 +9,22 @@ import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
  */
 
 function getAuthDomain(): string {
+  const canonicalDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "focoman.firebaseapp.com";
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    // On production/custom domains (e.g. focoman.vercel.app), use window.location.host
-    // so that Firebase Auth requests route through the Next.js reverse-proxy rewrite (/__/auth/*).
-    // This ensures same-origin cookie & IndexedDB storage, preventing 3rd-party partition blocks.
-    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+    // Only use custom host if it's explicitly verified in Google OAuth client, never for dynamic preview domains (*.run.app) or localhost
+    if (
+      hostname &&
+      hostname !== "localhost" &&
+      hostname !== "127.0.0.1" &&
+      !hostname.includes(".run.app") &&
+      !hostname.includes("aistudio") &&
+      (hostname === "focoman.web.app" || hostname === "focoman.com" || hostname === "www.focoman.com")
+    ) {
       return window.location.host;
     }
   }
-  return process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "focoman.firebaseapp.com";
+  return canonicalDomain;
 }
 
 export const firebaseConfig = {

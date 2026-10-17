@@ -75,22 +75,19 @@ export async function syncServerSession(force = false): Promise<boolean> {
 
 /**
  * Initiates Google sign-in.
- * - On localhost: uses signInWithPopup to avoid browser cross-origin third-party storage partitioning blocks.
- * - On deployed production domains: uses same-tab signInWithRedirect for mobile and full-page redirect flow.
+ * Primary: same-tab signInWithRedirect using canonical authorized authDomain.
+ * Fallback: popup sign-in if same-tab redirect throws or is blocked.
  */
-export async function signInWithGoogle(forceRedirect = false): Promise<UserCredential | void> {
-  const isLocalhost = typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-
-  if (isLocalhost && !forceRedirect) {
-    console.log("[Focoman Auth] Localhost detected. Using signInWithPopup to avoid cross-origin cookie partition block.");
+export async function signInWithGoogle(): Promise<UserCredential | void> {
+  console.log("[Focoman Auth] Initiating same-tab signInWithRedirect (authDomain:", auth.config?.authDomain || "focoman.firebaseapp.com", ")...");
+  try {
+    await signInWithRedirect(auth, googleProvider);
+  } catch (error) {
+    console.warn("[Focoman Auth] signInWithRedirect encountered error, attempting fallback popup:", error);
     const credential = await signInWithPopup(auth, googleProvider);
     await syncServerSession(true);
     return credential;
   }
-
-  console.log("[Focoman Auth] Initiating same-tab signInWithRedirect (authDomain:", auth.config?.authDomain || "default", ")...");
-  await signInWithRedirect(auth, googleProvider);
 }
 
 /**

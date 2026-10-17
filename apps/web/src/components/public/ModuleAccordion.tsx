@@ -116,8 +116,8 @@ const MODULES: ModuleData[] = [
     number: "05",
     name: "Studio Marketplace",
     shortDesc: "Independent public studio profile allowing customers to discover your studio near them, view verified operational performance metrics, and submit booking inquiries directly.",
-    tag: "Studio Marketplace",
-    tagColor: "bg-pink-50 text-pink-700 border-pink-200",
+    tag: "Studio Marketplace · 100% Free For Everyone",
+    tagColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
     cards: [
       {
         title: "Public Studio Profile and Direct Inquiries",

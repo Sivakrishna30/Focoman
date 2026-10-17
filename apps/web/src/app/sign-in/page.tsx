@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   signInWithGoogle,
+  signInWithGooglePopup,
   handleRedirectAuth,
   subscribeToAuthState,
   syncServerSession,
@@ -95,7 +96,7 @@ function SignInContent() {
         sessionStorage.setItem("focoman_auth_redirect_pending", "true");
       }
 
-      console.log("[SignInPage] Triggering signInWithGoogle...");
+      console.log("[SignInPage] Triggering primary same-tab signInWithGoogle...");
       const res = await signInWithGoogle();
       if (res && "user" in res && res.user) {
         console.log("[SignInPage] Immediate user credential received:", res.user.email);
@@ -120,7 +121,35 @@ function SignInContent() {
         const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
         setAuthError(`Domain "${domain}" is not authorized. Please add it in Firebase Console.`);
       } else if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
-        setAuthError(errorMessage || "Sign-in failed. Please try again.");
+        setAuthError(errorMessage || "Sign-in redirect failed. You can use popup fallback below.");
+      }
+    }
+  };
+
+  const handleGooglePopupFallback = async () => {
+    try {
+      setIsSigningIn(true);
+      setAuthError(null);
+      console.log("[SignInPage] Triggering popup fallback sign-in...");
+      const res = await signInWithGooglePopup();
+      if (res?.user) {
+        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
+        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
+        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+
+        const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
+        const finalUrl = autoSync
+          ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
+          : effectiveTarget;
+
+        window.location.href = finalUrl;
+      }
+    } catch (err: unknown) {
+      setIsSigningIn(false);
+      console.error("[SignInPage] popup fallback error:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
+        setAuthError(errorMessage || "Popup sign-in failed. Please try again.");
       }
     }
   };
@@ -148,12 +177,20 @@ function SignInContent() {
           </h2>
           
           {authError && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left">
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left space-y-2.5">
               <p>{authError}</p>
+              <button
+                type="button"
+                onClick={handleGooglePopupFallback}
+                disabled={isSigningIn}
+                className="w-full rounded-lg bg-red-600 text-white font-bold py-2 px-3 text-xs shadow-xs hover:bg-red-700 active:translate-y-[1px] transition text-center"
+              >
+                Sign In with Popup Window (Fallback) →
+              </button>
             </div>
           )}
           
-          <div className="mt-6 flex flex-col items-center gap-4">
+          <div className="mt-6 flex flex-col items-center gap-3.5">
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -190,7 +227,17 @@ function SignInContent() {
               )}
             </button>
 
-            <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-2">
+            {/* Popup window fallback if same-tab redirect encounters environment or iframe blocks */}
+            <button
+              type="button"
+              onClick={handleGooglePopupFallback}
+              disabled={isSigningIn}
+              className="text-[11px] font-semibold text-text-tertiary hover:text-brand-orange-primary transition underline decoration-dotted cursor-pointer"
+            >
+              Sign-in redirect blocked? Try popup fallback
+            </button>
+
+            <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-1">
               By signing in, you agree to our{" "}
               <Link href="/terms" className="underline hover:text-text-primary transition">
                 Terms and Conditions

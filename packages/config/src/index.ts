@@ -60,9 +60,27 @@ export const FREE_CORE_CAPABILITY: CapabilityMetadata = {
   features: [
     'Create, view, and edit confirmed orders',
     'Order workflow status tracker for real-time progress updates',
-    'Basic Crew and Customer information associated with each order',
     'Basic orders operational dashboard',
     'Unlimited orders and events forever',
+    'Get your studio discoverable in Studio Marketplace',
+  ],
+  isFreeCore: true,
+  studioScoped: true,
+};
+
+export const FREE_MARKETPLACE_CAPABILITY: CapabilityMetadata = {
+  id: 'MARKETPLACE',
+  name: 'Studio Marketplace',
+  category: 'STUDIO_MARKETPLACE',
+  price: 0,
+  description: 'Public studio showcase profile, service packages, and direct booking inquiries.',
+  valueProp: '100% Free for all studios. Get discovered by new clients in your city and receive direct booking inquiries.',
+  features: [
+    'Public studio showcase page on a unique web URL with portfolio photos',
+    'Publish customizable service packages, pricing, and deliverables',
+    'Receive direct booking inquiries from prospective clients in your city',
+    'Optional price negotiation and custom quote confirmation flow',
+    'Strict operational privacy: internal CRM, notes, and finances remain 100% private',
   ],
   isFreeCore: true,
   studioScoped: true,
@@ -166,25 +184,9 @@ export const PURCHASABLE_CAPABILITIES: CapabilityMetadata[] = [
     ],
     studioScoped: true,
   },
-  {
-    id: 'MARKETPLACE',
-    name: 'Studio Marketplace',
-    category: 'STUDIO_MARKETPLACE',
-    price: 999,
-    description: 'Public studio showcase profile, service packages, and direct booking inquiries.',
-    valueProp: 'Get discovered by new clients in your city and receive direct booking inquiries.',
-    features: [
-      'Public studio showcase page on a unique web URL with portfolio photos',
-      'Publish customizable service packages, pricing, and deliverables',
-      'Receive direct booking inquiries from prospective clients in your city',
-      'Optional price negotiation and custom quote confirmation flow',
-      'Strict operational privacy: internal CRM, notes, and finances remain 100% private',
-    ],
-    studioScoped: true,
-  },
 ];
 
-export const ALL_CAPABILITIES = [FREE_CORE_CAPABILITY, ...PURCHASABLE_CAPABILITIES];
+export const ALL_CAPABILITIES = [FREE_CORE_CAPABILITY, FREE_MARKETPLACE_CAPABILITY, ...PURCHASABLE_CAPABILITIES];
 
 export const WHATSAPP_OPERATIONS_BOT_MONTHLY_LIMIT = 499;
 
@@ -241,14 +243,8 @@ export function calculateMonthlyTotal(selectedCapabilities: CapabilityId[]): num
     total += 499;
   }
 
-  // Studio Marketplace - ₹999
-  if (
-    selectedSet.has('MARKETPLACE') ||
-    selectedSet.has('STUDIO_MARKETPLACE') ||
-    selectedSet.has('MARKETPLACE_PUBLIC')
-  ) {
-    total += 999;
-  }
+  // Studio Marketplace - Free for everyone (₹0)
+  // No subscription charge applied
 
   return total;
 }
@@ -260,9 +256,15 @@ export function calculateMonthlyTotal(selectedCapabilities: CapabilityId[]): num
 export function getEffectiveCapabilities(selectedCapabilities: CapabilityId[] = []): CapabilityId[] {
   const effective = new Set<CapabilityId>();
   
-  // Free core is always included
+  // Free core and Studio Marketplace are always included for every studio
   effective.add('OMS_BASIC');
   effective.add('OMS_CORE');
+  effective.add('MARKETPLACE');
+  effective.add('STUDIO_MARKETPLACE');
+  effective.add('MARKETPLACE_CONFIGURATION');
+  effective.add('MARKETPLACE_PUBLIC');
+  effective.add('BOOKING_REQUESTS');
+  effective.add('NEGOTIATION');
 
   for (const capId of selectedCapabilities) {
     effective.add(capId);
@@ -336,8 +338,8 @@ export const PLAN_PRICES: Record<string, number> = {
 export const TRIAL_DURATION_DAYS = 30;
 
 export const PLAN_CAPABILITIES: Record<string, CapabilityId[]> = {
-  FREE: ['OMS_BASIC', 'OMS_CORE'],
-  STARTER: ['OMS_BASIC', 'OMS_CORE', 'CUSTOMER_BASIC', 'CREW_BASIC', 'WHATSAPP_NOTIFICATIONS'],
+  FREE: ['OMS_BASIC', 'OMS_CORE', 'MARKETPLACE', 'STUDIO_MARKETPLACE'],
+  STARTER: ['OMS_BASIC', 'OMS_CORE', 'CUSTOMER_BASIC', 'CREW_BASIC', 'MARKETPLACE', 'WHATSAPP_NOTIFICATIONS'],
   PROFESSIONAL: ['OMS_BASIC', 'OMS_CORE', 'CUSTOMER_ADVANCED', 'CREW_BASIC', 'MARKETPLACE', 'DRIVE_CLIENT_REVIEW', 'WHATSAPP_NOTIFICATIONS'],
   COMPLETE: ['OMS_BASIC', 'OMS_CORE', 'CUSTOMER_ADVANCED', 'CREW_ADVANCED', 'MARKETPLACE', 'DRIVE_CLIENT_REVIEW', 'WHATSAPP_OPERATIONS'],
 };

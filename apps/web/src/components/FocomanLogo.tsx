@@ -9,10 +9,9 @@ export function FocomanLogo({
   showStudiosSuffix?: boolean;
   variant?: "light" | "dark";
 }) {
-  const reactId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
-  const shieldBgId = `foco-shield-bg-${reactId}`;
-  const fCyanId = `foco-cyan-${reactId}`;
-  const purpleBorderId = `foco-purple-${reactId}`;
+  const shieldBgId = "foco-shield-bg";
+  const fCyanId = "foco-cyan";
+  const purpleBorderId = "foco-purple";
 
   const focoTextColor = variant === "dark" ? "#FFFFFF" : "#111827";
   const studiosTextColor = variant === "dark" ? "#CBD5E1" : "#4B5563";

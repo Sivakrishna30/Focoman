@@ -129,12 +129,8 @@ export function DashboardOverviewView({
   const [ordersStatusFilter, setOrdersStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
   const [ordersSearchQuery, setOrdersSearchQuery] = useState("");
 
-  // 4. Marketplace Leads state (only if marketplace capability is enabled)
-  const isMarketplaceEnabled = Boolean(
-    studio?.features?.marketplace ||
-    studio?.planInfo?.selectedCapabilities?.includes("MARKETPLACE") ||
-    (studio as any)?.capabilities?.includes("MARKETPLACE")
-  );
+  // 4. Marketplace Leads state (Marketplace is 100% Free for everyone)
+  const isMarketplaceEnabled = true;
 
   const [marketplaceLeads, setMarketplaceLeads] = useState<BookingRequest[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);

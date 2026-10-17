@@ -1,85 +1,217 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
 export function RetroHeroVisual() {
-  const [windowHeight, setWindowHeight] = useState(800);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const animationRef = useRef<ReturnType<typeof animate> | null>(null);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const progress = useMotionValue(0);
+
+  // ── PHASE 1: CHAOS SECTIONS (EXCEL, DIARY, CHAT) ──
+  // Starts crisp, then blurs & fades away as text arrives
+  const chaosOpacity = useTransform(progress, [0, 0.22, 0.36, 0.75, 0.81], [1, 1, 0.18, 0.10, 0]);
+  const chaosScale = useTransform(progress, [0.22, 0.75], [1, 0.94]);
+  const chaosFilter = useTransform(progress, (v) => {
+    if (v < 0.22) return "blur(0px)";
+    if (v < 0.38) return `blur(${((v - 0.22) / 0.16 * 5).toFixed(1)}px)`;
+    if (v < 0.75) return `blur(${(5 + (v - 0.38) / 0.37 * 5).toFixed(1)}px)`;
+    return "blur(12px)";
+  });
+
+  // ── PHASE 2A: THE PROBLEM QUESTION ("Tired of...") ──
+  // Arrives line by line between 0.18 and 0.38, dwells until 0.48, then slowly fades out between 0.48 and 0.54
+  const qContainerOpacity = useTransform(progress, [0.17, 0.20, 0.48, 0.54], [0, 1, 1, 0]);
+
+  // Sequential question lines: 2 words per line one by one
+  // 1: "Tired of"
+  const qLine1Opacity = useTransform(progress, [0.18, 0.22, 0.48, 0.54], [0, 1, 1, 0]);
+  const qLine1Y = useTransform(progress, [0.18, 0.22, 0.48, 0.54], [18, 0, 0, -14]);
+
+  // 2: "handling business"
+  const qLine2Opacity = useTransform(progress, [0.22, 0.26, 0.48, 0.54], [0, 1, 1, 0]);
+  const qLine2Y = useTransform(progress, [0.22, 0.26, 0.48, 0.54], [18, 0, 0, -14]);
+
+  // 3: "across sheets,"
+  const qLine3Opacity = useTransform(progress, [0.26, 0.30, 0.48, 0.54], [0, 1, 1, 0]);
+  const qLine3Y = useTransform(progress, [0.26, 0.30, 0.48, 0.54], [18, 0, 0, -14]);
+
+  // 4: "notes, and"
+  const qLine4Opacity = useTransform(progress, [0.30, 0.34, 0.48, 0.54], [0, 1, 1, 0]);
+  const qLine4Y = useTransform(progress, [0.30, 0.34, 0.48, 0.54], [18, 0, 0, -14]);
+
+  // 5: "chats?"
+  const qLine5Opacity = useTransform(progress, [0.34, 0.38, 0.48, 0.54], [0, 1, 1, 0]);
+  const qLine5Y = useTransform(progress, [0.34, 0.38, 0.48, 0.54], [18, 0, 0, -14]);
+
+  // ── PHASE 2B: THE RESOLUTION ("Focoman brings everything inside a single tool.") ──
+  // Arrives one by one in the same size between 0.54 and 0.68, dwells until 0.77, then slowly fades out between 0.77 and 0.83
+  const sContainerOpacity = useTransform(progress, [0.53, 0.56, 0.77, 0.83], [0, 1, 1, 0]);
+
+  // 1: "Focoman brings"
+  const sLine1Opacity = useTransform(progress, [0.54, 0.58, 0.77, 0.83], [0, 1, 1, 0]);
+  const sLine1Y = useTransform(progress, [0.54, 0.58, 0.77, 0.83], [18, 0, 0, -14]);
+
+  // 2: "everything inside"
+  const sLine2Opacity = useTransform(progress, [0.58, 0.62, 0.77, 0.83], [0, 1, 1, 0]);
+  const sLine2Y = useTransform(progress, [0.58, 0.62, 0.77, 0.83], [18, 0, 0, -14]);
+
+  // 3: "a single tool."
+  const sLine3Opacity = useTransform(progress, [0.62, 0.67, 0.77, 0.83], [0, 1, 1, 0]);
+  const sLine3Y = useTransform(progress, [0.62, 0.67, 0.77, 0.83], [18, 0, 0, -14]);
+
+  // ── PHASE 3: WHITE SCREEN FADE & DASHBOARD TRANSITION ──
+  // Soft white screen wash that emerges as texts fade and dissolves into dashboard
+  const whiteWashOpacity = useTransform(progress, [0.76, 0.82, 0.90], [0, 0.75, 0]);
+
+  // Dashboard Container: emerges blurred and faded from white screen, then resolves to full clarity
+  const dashboardContainerOpacity = useTransform(progress, [0.81, 0.91], [0, 1]);
+  const dashboardContainerScale = useTransform(progress, [0.81, 0.93], [0.94, 1.0]);
+  const dashboardFilter = useTransform(progress, (v) => {
+    if (v < 0.81) return "blur(14px)";
+    if (v < 0.93) {
+      const b = ((0.93 - v) / 0.12) * 14;
+      return `blur(${Math.max(0, b).toFixed(1)}px)`;
+    }
+    return "blur(0px)";
+  });
+
+  // Dashboard Sub-elements Stagger
+  const headerOpacity = useTransform(progress, [0.84, 0.92], [0, 1]);
+  const headerY = useTransform(progress, [0.84, 0.92], [4, 0]);
+
+  const kpiOpacity = useTransform(progress, [0.87, 0.94], [0, 1]);
+  const kpiY = useTransform(progress, [0.87, 0.94], [16, 0]);
+
+  const filtersOpacity = useTransform(progress, [0.90, 0.96], [0, 1]);
+  const filtersX = useTransform(progress, [0.90, 0.96], [-14, 0]);
+
+  const tableOpacity = useTransform(progress, [0.93, 1.00], [0, 1]);
+  const tableY = useTransform(progress, [0.93, 1.00], [16, 0]);
+
+  // ── AUTOMATED TIMELINE FUNCTION (16.5s DURATION FOR GENEROUS READING TIME) ──
+  const startAutoplay = useCallback((duration = 16.5) => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+    progress.set(0);
+    setIsFinished(false);
+    setIsPlaying(true);
+
+    animationRef.current = animate(progress, 1, {
+      duration,
+      ease: [0.2, 0, 0.2, 1],
+      onComplete: () => {
+        setIsFinished(true);
+        setIsPlaying(false);
+      },
+    });
+  }, [progress]);
+
+  // ── HYBRID AUTO-PLAY + SCROLL CONTROLLER ──
   useEffect(() => {
-    setWindowHeight(window.innerHeight);
-    const handleResize = () => setWindowHeight(window.innerHeight);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    setIsMounted(true);
 
-  const { scrollY } = useScroll();
+    // Check prefers-reduced-motion
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      progress.set(1);
+      setIsFinished(true);
+      return;
+    }
 
-  // Progress from 0 to 1 as the user scrolls over extended distance for cinematic pacing
-  const progress = useTransform(scrollY, [0, windowHeight * 1.7], [0, 1]);
+    // Auto-play starts initially if at top
+    if (window.scrollY < 30) {
+      startAutoplay(16.5);
+    } else {
+      progress.set(1);
+      setIsFinished(true);
+    }
 
-  // ── PHASE 1: CHAOS SECTIONS EXIT ONE-BY-ONE ──
-  // 1. Spreadsheet Exits First (lifts upward with gentle tilt and fade)
-  const spreadsheetOpacity = useTransform(progress, [0.08, 0.28], [1, 0]);
-  const spreadsheetY = useTransform(progress, [0.08, 0.28], [0, -60]);
-  const spreadsheetScale = useTransform(progress, [0.08, 0.28], [1, 0.95]);
-  const spreadsheetRotate = useTransform(progress, [0.08, 0.28], [0, -1]);
+    const handleScroll = () => {
+      const heroSection = document.getElementById("home");
+      if (!heroSection) return;
 
-  // 2. Diary Exits Second (slides down-left)
-  const diaryOpacity = useTransform(progress, [0.22, 0.44], [1, 0]);
-  const diaryX = useTransform(progress, [0.22, 0.44], [0, -55]);
-  const diaryY = useTransform(progress, [0.22, 0.44], [0, 35]);
-  const diaryScale = useTransform(progress, [0.22, 0.44], [1, 0.94]);
-  const diaryRotate = useTransform(progress, [0.22, 0.44], [0, -2.5]);
+      const rect = heroSection.getBoundingClientRect();
+      const heroTop = window.scrollY + rect.top;
+      const heroScrollDistance = heroSection.offsetHeight - window.innerHeight;
 
-  // 3. Messaging App Exits Third (slides down-right)
-  const messagesOpacity = useTransform(progress, [0.36, 0.56], [1, 0]);
-  const messagesX = useTransform(progress, [0.36, 0.56], [0, 55]);
-  const messagesY = useTransform(progress, [0.36, 0.56], [0, 35]);
-  const messagesScale = useTransform(progress, [0.36, 0.56], [1, 0.94]);
-  const messagesRotate = useTransform(progress, [0.36, 0.56], [0, 2.5]);
+      if (heroScrollDistance <= 0) return;
 
+      const currentScrollWithinHero = window.scrollY - heroTop;
+      const fraction = Math.min(1, Math.max(0, currentScrollWithinHero / heroScrollDistance));
 
-  // ── PHASE 2: DASHBOARD SECTIONS ARRIVE ONE-BY-ONE ──
-  // Dashboard Container Base
-  const dashboardContainerOpacity = useTransform(progress, [0.44, 0.58], [0, 1]);
-  const dashboardContainerScale = useTransform(progress, [0.44, 0.58], [0.96, 1]);
+      // User initiated a scroll
+      isScrollingRef.current = true;
+      if (animationRef.current) {
+        animationRef.current.stop();
+        setIsPlaying(false);
+      }
 
-  // 1. Dashboard Header Arrives First (descends from top)
-  const headerOpacity = useTransform(progress, [0.48, 0.64], [0, 1]);
-  const headerY = useTransform(progress, [0.48, 0.64], [-24, 0]);
+      // Sync progress directly to scroll
+      progress.set(fraction);
 
-  // 2. Top 3 KPI Cards Arrive Second (pop up from bottom)
-  const kpiOpacity = useTransform(progress, [0.58, 0.74], [0, 1]);
-  const kpiY = useTransform(progress, [0.58, 0.74], [28, 0]);
-  const kpiScale = useTransform(progress, [0.58, 0.74], [0.96, 1]);
+      if (fraction >= 0.98) {
+        setIsFinished(true);
+      } else {
+        setIsFinished(false);
+      }
 
-  // 3. Order Status Filter Chips Arrive Third (glide in from left)
-  const filtersOpacity = useTransform(progress, [0.68, 0.84], [0, 1]);
-  const filtersX = useTransform(progress, [0.68, 0.84], [-24, 0]);
+      // If user scrolled all the way back to top (scrollY <= 15), return to chaos
+      if (window.scrollY <= 15) {
+        progress.set(0);
+        setIsFinished(false);
 
-  // 4. Orders Table Arrives Fourth to complete final view (glides in firmly from bottom)
-  const tableOpacity = useTransform(progress, [0.78, 0.94], [0, 1]);
-  const tableY = useTransform(progress, [0.78, 0.94], [32, 0]);
+        // Reset scroll timeout to allow autoplay if idle at top
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+          if (window.scrollY <= 15 && !isPlaying) {
+            startAutoplay(16.5);
+          }
+        }, 1200);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (animationRef.current) animationRef.current.stop();
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, [progress, startAutoplay, isPlaying]);
+
+  if (!isMounted) {
+    return (
+      <div
+        className="relative mx-auto w-full max-w-[760px] h-[375px] xs:h-[395px] sm:h-[425px] md:h-[460px] lg:h-[495px] xl:h-[520px] select-none rounded-2xl bg-[#FAF7F2] border border-[#D8D2C4]"
+      />
+    );
+  }
 
   return (
-    <div className="relative mx-auto w-full max-w-[780px] h-[310px] sm:h-[390px] md:h-[430px] lg:h-[470px] xl:h-[495px] select-none perspective-1000">
+    <div
+      className="relative mx-auto w-full max-w-[760px] h-[375px] xs:h-[395px] sm:h-[425px] md:h-[460px] lg:h-[495px] xl:h-[520px] select-none perspective-1000 overflow-hidden rounded-2xl"
+    >
       
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 1. CHAOS SECTION: 3 INDEPENDENTLY ANIMATING SEGMENTS          */}
+      {/* 1. CHAOS SECTION: SPREADSHEET, DIARY & MESSAGING APP          */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none gap-1.5 sm:gap-2.5">
+      <motion.div
+        style={{
+          opacity: chaosOpacity,
+          scale: chaosScale,
+          filter: chaosFilter,
+        }}
+        className="absolute inset-0 flex flex-col pointer-events-none gap-2 sm:gap-2.5"
+      >
         
-        {/* ── SEGMENT 1: SPREADSHEET (EXITS FIRST ON SCROLL) ── */}
-        <motion.div
-          style={{
-            opacity: spreadsheetOpacity,
-            y: spreadsheetY,
-            scale: spreadsheetScale,
-            rotate: spreadsheetRotate,
-          }}
-          className="w-full h-[152px] sm:h-[195px] md:h-[215px] lg:h-[235px] xl:h-[245px] rounded-xl sm:rounded-2xl border border-emerald-600/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col"
-        >
+        {/* ── SEGMENT 1: SPREADSHEET (TRADITIONAL EXCEL BOOKING SHEET) ── */}
+        <div className="w-full flex-[1.08] min-h-0 rounded-xl sm:rounded-2xl border border-emerald-600/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
           {/* Excel Title Bar */}
           <div className="bg-[#107C41] px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-white text-[9.5px] sm:text-[11px] font-sans shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
@@ -101,64 +233,65 @@ export function RetroHeroVisual() {
             </span>
           </div>
 
-          {/* Full Traditional Excel Table with ALL Columns */}
-          <div className="flex-1 overflow-x-auto bg-white font-sans text-[8.5px] sm:text-[10px]">
-            <table className="w-full min-w-[480px] sm:min-w-full text-left border-collapse border border-[#D4D4D4]">
-              <thead>
-                <tr className="bg-[#E1DFDD] text-gray-700 text-[8px] sm:text-[9px] border-b border-[#D4D4D4]">
-                  <th className="p-0.5 sm:p-1 px-1 sm:px-1.5 border-r border-[#D4D4D4] w-5 sm:w-6 text-center font-normal bg-[#D0CECB]"> </th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Order</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Customer</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Event / Shoot</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Date</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Status</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-right font-semibold">Amount</th>
-                  <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-semibold">Balance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E5E5E5] text-[8.5px] sm:text-[9.5px] text-gray-800">
-                <tr className="hover:bg-gray-50">
-                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">1</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-010906</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Priya and Arjun</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹1,50,000</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹50,000</td>
-                </tr>
-                <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
-                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">2</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004803</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Vikram Sharma</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Reception</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-06</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-red-700 font-semibold bg-red-50/60">Pending Payment</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹80,000</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-bold">₹30,000</td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">3</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004647</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Divya Ramesh</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Pre-Wedding</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹45,000</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹15,000</td>
-                </tr>
-                <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
-                  <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">4</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-003234</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Siva Krishna</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹3,20,000</td>
-                  <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-700 font-bold bg-amber-50">₹1,00,000</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Full Traditional Excel Table with ALL Columns - Scaled/Zoomed out on mobile so all columns fit without cutoff */}
+          <div className="flex-1 overflow-x-auto sm:overflow-x-visible overflow-y-hidden bg-white font-sans">
+            <div className="w-[140%] xs:w-[122%] sm:w-full origin-top-left scale-[0.714] xs:scale-[0.82] sm:scale-100 text-[8px] xs:text-[8.5px] sm:text-[10px]">
+              <table className="w-full text-left border-collapse border border-[#D4D4D4]">
+                <thead>
+                  <tr className="bg-[#E1DFDD] text-gray-700 text-[8px] sm:text-[9px] border-b border-[#D4D4D4]">
+                    <th className="p-0.5 sm:p-1 px-1 sm:px-1.5 border-r border-[#D4D4D4] w-5 sm:w-6 text-center font-normal bg-[#D0CECB]"> </th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Order</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Customer</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Event / Shoot</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Date</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] font-semibold">Status</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-right font-semibold">Amount</th>
+                    <th className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-semibold">Balance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E5E5] text-[8.5px] sm:text-[9.5px] text-gray-800">
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">1</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-010906</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Priya and Arjun</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹1,50,000</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹50,000</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
+                    <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">2</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004803</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Vikram Sharma</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Reception</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-06</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-red-700 font-semibold bg-red-50/60">Pending Payment</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹80,000</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-bold">₹30,000</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">3</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-004647</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Divya Ramesh</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Pre-Wedding</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-gray-600 border-r border-[#D4D4D4]">2026-10-07</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹45,000</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-600 font-medium">₹15,000</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 bg-[#FBFBFA]">
+                    <td className="p-0.5 sm:p-1 px-1 sm:px-1.5 bg-[#F3F2F1] text-gray-500 text-center border-r border-[#D4D4D4] font-mono text-[8px] sm:text-[9px]">4</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-mono text-blue-700 underline border-r border-[#D4D4D4]">ORD-TES-261008-003234</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 font-medium border-r border-[#D4D4D4]">Siva Krishna</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4]">Wedding</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 border-r border-[#D4D4D4] text-gray-700">Post-Event In Progress</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono border-r border-[#D4D4D4]">₹3,20,000</td>
+                    <td className="p-0.5 sm:p-1 px-1.5 sm:px-2 text-right font-mono text-red-700 font-bold bg-amber-50">₹1,00,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Traditional Excel Sheet Tabs & Status Bar */}
@@ -171,23 +304,13 @@ export function RetroHeroVisual() {
             </div>
             <span className="text-red-600 font-mono font-bold text-[8px] sm:text-[9px]">Unreconciled Due: ₹1,95,000</span>
           </div>
-        </motion.div>
-
+        </div>
 
         {/* ── BOTTOM ROW: DIARY & MESSAGING APP ── */}
-        <div className="w-full h-[148px] sm:h-[185px] md:h-[205px] lg:h-[225px] xl:h-[238px] flex items-stretch justify-between gap-1.5 sm:gap-2.5">
+        <div className="w-full flex-1 min-h-0 flex items-stretch justify-between gap-1.5 sm:gap-2.5">
           
-          {/* ── SEGMENT 2: 62% HANDWRITTEN DIARY (EXITS SECOND ON SCROLL) ── */}
-          <motion.div
-            style={{
-              opacity: diaryOpacity,
-              x: diaryX,
-              y: diaryY,
-              scale: diaryScale,
-              rotate: diaryRotate,
-            }}
-            className="w-[62%] sm:w-[65%] h-full rounded-xl sm:rounded-2xl border border-amber-800/25 sm:border-2 bg-[#FAF5E8] shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between"
-          >
+          {/* ── SEGMENT 2: 62% HANDWRITTEN DIARY ── */}
+          <div className="w-[62%] sm:w-[65%] h-full rounded-xl sm:rounded-2xl border border-amber-800/25 sm:border-2 bg-[#FAF5E8] shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between">
             {/* Diary Printed Top Header */}
             <div className="bg-[#F3EBD8] border-b border-[#D8D0BE] px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-[#8C5D35] font-mono text-[8.5px] sm:text-[9.5px] font-bold shrink-0">
               <div className="flex items-center gap-1.5 sm:gap-2 truncate">
@@ -231,20 +354,10 @@ export function RetroHeroVisual() {
               <span>Studio Crew Logbook</span>
               <span className="text-gray-600 font-semibold">3 Shoots Pending</span>
             </div>
-          </motion.div>
+          </div>
 
-
-          {/* ── SEGMENT 3: 35% MESSAGING APP (EXITS THIRD ON SCROLL) ── */}
-          <motion.div
-            style={{
-              opacity: messagesOpacity,
-              x: messagesX,
-              y: messagesY,
-              scale: messagesScale,
-              rotate: messagesRotate,
-            }}
-            className="w-[35%] sm:w-[32%] h-full rounded-xl sm:rounded-2xl border border-blue-500/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between"
-          >
+          {/* ── SEGMENT 3: 35% MESSAGING APP ── */}
+          <div className="w-[35%] sm:w-[32%] h-full rounded-xl sm:rounded-2xl border border-blue-500/30 sm:border-2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-between">
             {/* Header */}
             <div className="bg-[#F8FAFC] border-b border-gray-200 px-1.5 sm:px-2.5 py-1 sm:py-1.5 text-gray-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1 sm:gap-1.5 truncate">
@@ -294,48 +407,134 @@ export function RetroHeroVisual() {
                 ↑
               </div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
-      </div>
-
+      </motion.div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2. DASHBOARD SECTION: ARRIVES IN ASSEMBLED STAGGERED SEQUENCE */}
+      {/* 2A. PROBLEM QUESTION: "Tired of..." (APPEARS & FADES OUT)    */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <motion.div
+        style={{
+          opacity: qContainerOpacity,
+          pointerEvents: "none",
+        }}
+        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-6 text-center select-none"
+      >
+        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center">
+          {/* Sequential 2 words per line question */}
+          <motion.div style={{ opacity: qLine1Opacity, y: qLine1Y }}>
+            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              Tired of
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: qLine2Opacity, y: qLine2Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[36px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              handling business
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: qLine3Opacity, y: qLine3Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[38px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              across sheets,
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: qLine4Opacity, y: qLine4Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              notes, and
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: qLine5Opacity, y: qLine5Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              chats?
+            </span>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 2B. RESOLUTION: "Focoman brings everything inside a single tool." (SAME SIZE, ONE BY ONE) */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <motion.div
+        style={{
+          opacity: sContainerOpacity,
+          pointerEvents: "none",
+        }}
+        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-6 text-center select-none"
+      >
+        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center">
+          <motion.div style={{ opacity: sLine1Opacity, y: sLine1Y }}>
+            <span className="retro-serif-heading text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-brand-orange-primary leading-[1.04] tracking-tight drop-shadow-sm block">
+              Focoman brings
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: sLine2Opacity, y: sLine2Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[36px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              everything inside
+            </span>
+          </motion.div>
+
+          <motion.div style={{ opacity: sLine3Opacity, y: sLine3Y }} className="mt-0.5 sm:mt-1">
+            <span className="retro-serif-heading text-[38px] min-[380px]:text-[42px] xs:text-[50px] sm:text-[52px] md:text-[56px] lg:text-[66px] font-black text-[#1C1917] leading-[1.04] tracking-tight drop-shadow-sm block">
+              a single tool.
+            </span>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* Soft White Screen Fade Transition                            */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <motion.div
+        style={{
+          opacity: whiteWashOpacity,
+          pointerEvents: "none",
+        }}
+        className="absolute inset-0 z-25 bg-[#FAF7F2]/90 backdrop-blur-md"
+      />
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 3. DASHBOARD SECTION: EMERGES BLURRED AND CLARIFIES TO FULL  */}
       {/* ───────────────────────────────────────────────────────────── */}
       <motion.div
         style={{
           opacity: dashboardContainerOpacity,
           scale: dashboardContainerScale,
+          filter: dashboardFilter,
         }}
-        className="absolute inset-0 flex items-center justify-center"
+        className="absolute inset-0 p-1.5 xs:p-2 sm:p-2.5 md:p-3 flex flex-col justify-start z-30 overflow-hidden"
       >
         <div className="w-full rounded-xl sm:rounded-2xl border border-[#D8D2C4] sm:border-2 bg-white shadow-[0_12px_40px_rgba(28,25,23,0.10)] overflow-hidden flex flex-col">
           
-          {/* ── STAGE 1: DASHBOARD HEADER (ARRIVES FIRST) ── */}
+          {/* ── STAGE 1: DASHBOARD HEADER ── */}
           <motion.div
             style={{
               opacity: headerOpacity,
               y: headerY,
             }}
-            className="flex items-center justify-between p-2 sm:p-3 lg:p-3.5 border-b border-border-default bg-[#FAF7F2] shrink-0"
+            className="flex items-center justify-between px-2.5 py-1.5 sm:px-3 sm:py-2 border-b border-border-default bg-[#FAF7F2] shrink-0"
           >
             <div>
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
-                <span className="badge-brand-blue text-[8px] sm:text-[9.5px] py-0.2 sm:py-0.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary animate-pulse" />
-                  Studio workspace • test-studio
-                </span>
-                <span className="badge-status-neutral text-[8px] sm:text-[9px]">
-                  OS Active
-                </span>
-              </div>
               <h2 className="text-xs sm:text-sm lg:text-base font-extrabold text-text-primary tracking-tight">
                 Studio Business Dashboard
               </h2>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => startAutoplay(16.5)}
+                className="inline-flex items-center gap-1 rounded-md border border-[#D8D2C4] bg-white px-2 sm:px-2.5 py-1 text-[9px] sm:text-[11px] font-bold text-[#57534E] shadow-[0_1.5px_0_#C4BCAB] hover:bg-[#FAF7F2] active:translate-y-[1px] active:shadow-none transition cursor-pointer"
+                title="Replay transformation animation"
+              >
+                <span>↺</span>
+                <span className="hidden xs:inline">Replay</span>
+              </button>
               <span className="hidden sm:inline-flex rounded-xl bg-brand-blue-primary text-white text-xs font-bold py-1.5 px-3 shadow-xs">
                 Open OMS →
               </span>
@@ -343,14 +542,13 @@ export function RetroHeroVisual() {
           </motion.div>
 
           {/* Dashboard Body Container */}
-          <div className="p-2 sm:p-3 lg:p-3.5 bg-white space-y-1.5 sm:space-y-2.5">
+          <div className="p-1.5 sm:p-2.5 lg:p-3 bg-white space-y-1 sm:space-y-2">
             
-            {/* ── STAGE 2: TOP 3 KPI CARDS (ARRIVE SECOND) ── */}
+            {/* ── STAGE 2: TOP 3 KPI CARDS ── */}
             <motion.div
               style={{
                 opacity: kpiOpacity,
                 y: kpiY,
-                scale: kpiScale,
               }}
               className="grid grid-cols-3 gap-1.5 sm:gap-2.5"
             >
@@ -426,8 +624,8 @@ export function RetroHeroVisual() {
 
               {/* Metric 3: Pending Collections */}
               <div className="rounded-lg sm:rounded-xl border border-amber-200 bg-amber-50/50 p-1.5 sm:p-2.5">
-                <span className="text-[7.5px] sm:text-[9px] font-bold uppercase tracking-wider text-brand-orange-primary truncate block">
-                  Collections
+                <span className="text-[7px] xs:text-[7.5px] sm:text-[9px] font-bold uppercase tracking-tight sm:tracking-wider text-brand-orange-primary block leading-tight">
+                  Pending Collections
                 </span>
                 <div className="mt-0.5 sm:mt-1 text-xs sm:text-base md:text-lg lg:text-xl font-black text-brand-orange-primary tracking-tight truncate">
                   ₹1,80,000
@@ -438,7 +636,7 @@ export function RetroHeroVisual() {
               </div>
             </motion.div>
 
-            {/* ── STAGE 3: ORDER STATUS ACTION CHIPS (ARRIVE THIRD) ── */}
+            {/* ── STAGE 3: ORDER STATUS ACTION CHIPS ── */}
             <motion.div
               style={{
                 opacity: filtersOpacity,
@@ -469,7 +667,7 @@ export function RetroHeroVisual() {
               </div>
             </motion.div>
 
-            {/* ── STAGE 4: AUTHENTIC ORDERS TABLE (ARRIVES FOURTH TO COMPLETE THE VIEW) ── */}
+            {/* ── STAGE 4: AUTHENTIC ORDERS TABLE ── */}
             <motion.div
               style={{
                 opacity: tableOpacity,
@@ -477,63 +675,63 @@ export function RetroHeroVisual() {
               }}
               className="rounded-lg sm:rounded-xl border border-border-default bg-white overflow-hidden shadow-2xs"
             >
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[420px] sm:min-w-full text-left border-collapse text-[8px] sm:text-[9px]">
+              <div className="w-full overflow-hidden">
+                <table className="w-full table-fixed text-left border-collapse text-[6.5px] xs:text-[7px] sm:text-[8.5px]">
                   <thead>
-                    <tr className="bg-[#FAF7F2] text-text-secondary font-bold border-b border-border-default uppercase tracking-wider text-[7.5px] sm:text-[8px]">
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Order</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Customer</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Event / Shoot</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Date</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2">Status</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right">Amount</th>
-                      <th className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right">Balance</th>
+                    <tr className="bg-[#FAF7F2] text-text-secondary font-bold border-b border-border-default uppercase tracking-wider text-[5.5px] xs:text-[6.5px] sm:text-[8px] leading-tight">
+                      <th className="w-[22%] sm:w-[24%] py-1 sm:py-1.5 px-0.5 sm:px-1.5 whitespace-normal break-words">Order</th>
+                      <th className="w-[19%] sm:w-[20%] py-1 sm:py-1.5 px-0.5 sm:px-1.5 whitespace-normal break-words">Customer</th>
+                      <th className="w-[11%] sm:w-[12%] py-1 sm:py-1.5 px-0.5 sm:px-1.5 whitespace-normal break-words">Event</th>
+                      <th className="w-[12%] sm:w-[12%] py-1 sm:py-1.5 px-0.5 sm:px-1.5 whitespace-normal break-words">Date</th>
+                      <th className="w-[18%] sm:w-[17%] py-1 sm:py-1.5 px-0.5 sm:px-1.5 whitespace-normal break-words">Status</th>
+                      <th className="w-[9%] sm:w-[8%] py-1 sm:py-1.5 px-0.5 sm:px-1 text-right whitespace-normal break-words">Amount</th>
+                      <th className="w-[9%] sm:w-[7%] py-1 sm:py-1.5 px-0.5 sm:px-1 text-right whitespace-normal break-words">Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border-default/60 font-mono text-[7.5px] sm:text-[8.5px]">
+                  <tbody className="divide-y divide-border-default/60 font-mono text-[6.5px] xs:text-[7px] sm:text-[8.5px]">
                     <tr className="hover:bg-[#FAF7F2] transition">
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-010906</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Priya and Arjun</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-07</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
-                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-bold text-brand-blue-primary truncate">ORD-TES-261008-010906</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans font-semibold text-text-primary truncate">Priya and Arjun</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans text-text-secondary truncate">Wedding</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 text-text-tertiary truncate">2026-10-07</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 truncate">
+                        <span className="badge-brand-orange text-[5.5px] xs:text-[6.5px] sm:text-[7.5px] py-0.2 px-0.5 sm:px-1 inline-block truncate max-w-full">Post-Event In Progress</span>
                       </td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹1,50,000</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-brand-orange-primary">₹50,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-text-primary truncate">₹1,50,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-brand-orange-primary truncate">₹50,000</td>
                     </tr>
                     <tr className="hover:bg-[#FAF7F2] transition">
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-004803</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Vikram Sharma</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Reception</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-06</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
-                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-bold text-brand-blue-primary truncate">ORD-TES-261008-004803</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans font-semibold text-text-primary truncate">Vikram Sharma</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans text-text-secondary truncate">Reception</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 text-text-tertiary truncate">2026-10-06</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 truncate">
+                        <span className="badge-brand-orange text-[5.5px] xs:text-[6.5px] sm:text-[7.5px] py-0.2 px-0.5 sm:px-1 inline-block truncate max-w-full">Post-Event In Progress</span>
                       </td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹80,000</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-brand-orange-primary">₹30,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-text-primary truncate">₹80,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-brand-orange-primary truncate">₹30,000</td>
                     </tr>
                     <tr className="hover:bg-[#FAF7F2] transition bg-amber-50/20">
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261008-003234</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-bold text-text-primary">Siva Krishna</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-07</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
-                        <span className="badge-brand-orange text-[7px] sm:text-[7.5px] py-0.2">Post-Event In Progress</span>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-bold text-brand-blue-primary truncate">ORD-TES-261008-003234</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans font-bold text-text-primary truncate">Siva Krishna</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans text-text-secondary truncate">Wedding</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 text-text-tertiary truncate">2026-10-07</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 truncate">
+                        <span className="badge-brand-orange text-[5.5px] xs:text-[6.5px] sm:text-[7.5px] py-0.2 px-0.5 sm:px-1 inline-block truncate max-w-full">Post-Event In Progress</span>
                       </td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹3,20,000</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-black text-brand-orange-primary">₹1,00,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-text-primary truncate">₹3,20,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-black text-brand-orange-primary truncate">₹1,00,000</td>
                     </tr>
                     <tr className="hover:bg-[#FAF7F2] transition">
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-bold text-brand-blue-primary">ORD-TES-261007-235733</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans font-semibold text-text-primary">Ananya and Rohit</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 font-sans text-text-secondary">Wedding</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-text-tertiary">2026-10-14</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2">
-                        <span className="badge-brand-blue text-[7px] sm:text-[7.5px] py-0.2">Awaiting Event</span>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-bold text-brand-blue-primary truncate">ORD-TES-261007-235733</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans font-semibold text-text-primary truncate">Ananya and Rohit</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 font-sans text-text-secondary truncate">Wedding</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 text-text-tertiary truncate">2026-10-14</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1.5 truncate">
+                        <span className="badge-brand-blue text-[5.5px] xs:text-[6.5px] sm:text-[7.5px] py-0.2 px-0.5 sm:px-1 inline-block truncate max-w-full">Awaiting Event</span>
                       </td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-text-primary">₹2,50,000</td>
-                      <td className="p-1 sm:p-1.5 px-1.5 sm:px-2 text-right font-bold text-emerald-700 bg-emerald-50/60">Paid</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-text-primary truncate">₹2,50,000</td>
+                      <td className="py-0.5 sm:py-1.5 px-0.5 sm:px-1 text-right font-bold text-emerald-700 bg-emerald-50/60 truncate">Paid</td>
                     </tr>
                   </tbody>
                 </table>

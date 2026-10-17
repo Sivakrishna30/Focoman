@@ -347,49 +347,75 @@ export function CheckoutBuilder() {
           </div>
         </div>
 
-        {/* OMS - Basic - Free Core Panel */}
-        <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-lg font-extrabold text-text-primary">Order Management System (OMS) - Basic</h4>
-                <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                  Core Engine · Included Free
-                </span>
+        {/* Free Core Panels: OMS Basic & Studio Marketplace */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* OMS - Basic */}
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-extrabold text-text-primary">OMS Basic</h4>
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                    Core · Free
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-text-primary">₹0</span>
+                  <span className="text-[11px] text-text-tertiary font-bold"> / forever</span>
+                </div>
               </div>
-              <p className="text-xs text-text-secondary mt-1">
-                Track and manage orders and their status across every milestone, from lead and inquiry through booking, event, production, and final delivery.
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Track and manage studio orders, workflows, deliverable milestones, event details, and payment balances with unlimited orders.
               </p>
             </div>
-            <div className="shrink-0 text-left sm:text-right">
-              <span className="text-2xl font-black text-text-primary">₹0</span>
-              <span className="text-xs text-text-tertiary font-bold"> / forever</span>
+            <div className="grid gap-2 text-[11px] text-text-secondary pt-1 border-t border-slate-200/50">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Unlimited orders, shoots, and event records</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Milestone workflows from lead to final album delivery</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Client passkey live status tracking portal</span>
+              </div>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 text-xs text-text-secondary">
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>Create and manage confirmed studio orders</span>
+
+          {/* Studio Marketplace - 100% Free */}
+          <div className="bg-emerald-50/40 border border-emerald-200/80 rounded-3xl p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-emerald-200/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-extrabold text-text-primary">Studio Marketplace</h4>
+                  <span className="rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                    100% Free For Everyone
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-emerald-700">₹0</span>
+                  <span className="text-[11px] text-emerald-800 font-bold"> / free</span>
+                </div>
+              </div>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Publish your studio public profile, customizable service packages, and receive direct inquiries &amp; client booking requests.
+              </p>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>Pre-event &amp; post-event workflow tracking</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>Log event info, package pricing, &amp; customer details</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>Record advance payments &amp; outstanding balances</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>Client passkey tracking for event progress</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-emerald-600 font-black">•</span>
-              <span>No order limits or hidden subscription charges</span>
+            <div className="grid gap-2 text-[11px] text-text-secondary pt-1 border-t border-emerald-200/50">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Public studio profile &amp; verified portfolio showcase</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Custom packages, pricing, &amp; in-app negotiations</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-600 font-black">✓</span>
+                <span>Direct client booking inquiries in your city</span>
+              </div>
             </div>
           </div>
         </div>
@@ -556,7 +582,7 @@ export function CheckoutBuilder() {
             <span className="text-3xl font-extrabold text-emerald-600">
               ₹{cartPricing.finalPayableTotal}
             </span>
-            <span className="text-xs text-emerald-700 font-bold">/ month (Limited Time)</span>
+            <span className="text-xs text-emerald-700 font-bold">/ month (Limited Period)</span>
           </div>
         </div>
 

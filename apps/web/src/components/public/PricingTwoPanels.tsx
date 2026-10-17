@@ -37,10 +37,10 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
 
             <div>
               <h2 className="retro-serif-heading text-2xl sm:text-3xl font-black text-[#1C1917]">
-                Basic Order management
+                Basic Order Management &amp; Studio Marketplace
               </h2>
               <p className="mt-1.5 text-xs sm:text-sm text-[#57534E] leading-relaxed">
-                Essential Order Management System for photography and videography studios.
+                Essential Order Management System &amp; Public Studio Marketplace for photography and videography studios.
               </p>
             </div>
 
@@ -111,7 +111,7 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
                 <div className="mt-0.5 flex items-baseline gap-2">
                   <span className="font-mono text-lg line-through text-[#8C857B] font-bold">₹299</span>
                   <span className="retro-serif-heading text-3xl sm:text-4xl font-black tracking-tight text-brand-orange-primary">₹0</span>
-                  <span className="font-mono text-xs text-brand-orange-primary font-bold">/limited time</span>
+                  <span className="font-mono text-xs text-brand-orange-primary font-bold">/limited period</span>
                 </div>
               </div>
             </div>
@@ -164,15 +164,6 @@ export function PricingTwoPanels({ hasMultiStudios = false }: PricingTwoPanelsPr
                   </span>
                   <span className="text-[#1C1917] font-medium leading-tight">
                     WhatsApp Alerts and Operations Bot
-                  </span>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[11px] font-extrabold text-brand-orange-primary mt-0.5 border border-orange-200">
-                    ✓
-                  </span>
-                  <span className="text-[#1C1917] font-medium leading-tight">
-                    Studio Marketplace Showcase
                   </span>
                 </div>
               </div>
