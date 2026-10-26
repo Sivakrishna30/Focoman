@@ -36,9 +36,11 @@ import {
   saveCustomer,
   getCustomersByStudio,
   updateCustomer,
+  getMemberById,
 } from "@focoman/db";
 import { CustomerTrackingView, Order, Task, StudioMember, OrderStatus, TaskStatus, PaymentStatus, OrderCollaborator, OrderInstallment, OrderAuditEntry } from "@focoman/types";
 import { requireVerifiedUser, requireStudioMember, requireStudioOwner, getAdminAuthInstance } from "@/lib/serverAuth";
+import { sendOrderConfirmedCustomerEmail, sendCrewShootAssignedEmail, sendPipelineStatusUpdateEmail, sendGalleryReadyCustomerEmail, sendPaymentReminderCustomerEmail } from "@/services/emailService";
 
 /**
  * Server Actions for Order Lifecycle, Tasks & Post-Event Production Pipeline (OMS)
@@ -219,6 +221,26 @@ export async function createOrderAction(rawInput: unknown): Promise<{
       saveTasks(workflowTasks),
       customerPersistence,
     ]);
+
+    if (customerEmail) {
+      void (async () => {
+        try {
+          const studio = await getStudioBySlug(validated.studioId);
+          await sendOrderConfirmedCustomerEmail({
+            toEmail: customerEmail,
+            customerName: validated.customerName,
+            orderId: newOrder.id,
+            eventTitle: validated.eventType,
+            eventDate: validated.eventDate,
+            passkey: finalPasskey,
+            studioName: studio?.name || validated.studioId,
+            studioPhone: studio?.ownerPhone,
+          });
+        } catch (emailErr) {
+          console.error("[createOrderAction] Customer confirmation email dispatch failed:", emailErr);
+        }
+      })();
+    }
 
     return { success: true, order: newOrder, tasks: workflowTasks };
   } catch (err: unknown) {
@@ -654,6 +676,94 @@ export async function updateTaskStatusAction(rawInput: unknown): Promise<{
           auditLog: [...(order.auditLog || []), taskAudit],
         });
       }
+
+      // Background Email Notifications for Status Change
+      void (async () => {
+        try {
+          const studio = await getStudioBySlug(studioId);
+          const studioName = studio?.name || studioId;
+
+          // 1. Notify Customer
+          if (order.customer?.email) {
+            if (validated.status === "COMPLETED" && (existingTask.title.toLowerCase().includes("final delivery") || existingTask.title.toLowerCase().includes("gallery"))) {
+              await sendGalleryReadyCustomerEmail({
+                toEmail: order.customer.email,
+                studioName,
+                customerName: order.customer.name,
+                orderId: order.id,
+                eventTitle: order.eventType,
+                passkey: order.trackingPasskey,
+              });
+            } else {
+              await sendPipelineStatusUpdateEmail({
+                toEmail: order.customer.email,
+                studioName,
+                studioSlug: studioId,
+                recipientName: order.customer.name,
+                orderId: order.id,
+                eventTitle: order.eventType,
+                taskTitle: existingTask.title,
+                newStatus: validated.status,
+                details: validated.reworkNotes,
+                passkey: order.trackingPasskey,
+              });
+            }
+
+            // Trigger Payment Due email if Album Design or Final Delivery workflow task is completed AND there is a pending balance
+            const isAlbumOrFinalTask = existingTask.serviceCategory === "ALBUM" ||
+              existingTask.title.toLowerCase().includes("album") ||
+              existingTask.title.toLowerCase().includes("final delivery") ||
+              existingTask.title.toLowerCase().includes("gallery");
+
+            if (validated.status === "COMPLETED" && isAlbumOrFinalTask && order.pricing.remainingAmount > 0 && order.paymentStatus !== "PAID") {
+              await sendPaymentReminderCustomerEmail({
+                toEmail: order.customer.email,
+                studioName,
+                customerName: order.customer.name,
+                orderId: order.id,
+                eventTitle: order.eventType,
+                amountDue: `₹${order.pricing.remainingAmount.toLocaleString()}`,
+                dueDate: order.eventDate,
+              });
+            }
+          }
+
+          // 2. Notify Assigned Crew Member (if any)
+          if (existingTask.assignedMemberId && existingTask.assignedMemberId !== "unassigned") {
+            const member = await getMemberById(existingTask.assignedMemberId);
+            if (member?.email) {
+              await sendPipelineStatusUpdateEmail({
+                toEmail: member.email,
+                studioName,
+                studioSlug: studioId,
+                recipientName: member.name,
+                orderId: order.id,
+                eventTitle: order.eventType,
+                taskTitle: existingTask.title,
+                newStatus: validated.status,
+                details: validated.reworkNotes,
+              });
+            }
+          }
+
+          // 3. Notify Studio Owner
+          if (studio?.ownerEmail) {
+            await sendPipelineStatusUpdateEmail({
+              toEmail: studio.ownerEmail,
+              studioName,
+              studioSlug: studioId,
+              recipientName: studio.ownerName || "Studio Owner",
+              orderId: order.id,
+              eventTitle: order.eventType,
+              taskTitle: existingTask.title,
+              newStatus: validated.status,
+              details: validated.reworkNotes,
+            });
+          }
+        } catch (mailErr) {
+          console.warn("[updateTaskStatusAction] Status change email notification error:", mailErr);
+        }
+      })();
     }
 
     return { success: true, task: updatedTask, newOrderStatus };
@@ -986,6 +1096,30 @@ export async function assignResourceAction(rawInput: unknown): Promise<{
       }
     }
 
+    if (!isUnassign && validated.memberId && !validated.memberId.startsWith("temp_") && !validated.memberId.startsWith("temp-")) {
+      void (async () => {
+        try {
+          const member = await getMemberById(validated.memberId);
+          if (member?.email) {
+            const studio = await getStudioBySlug(targetStudioId || existingOrder.studioId);
+            await sendCrewShootAssignedEmail({
+              toEmail: member.email,
+              studioName: studio?.name || existingOrder.studioId,
+              studioSlug: existingOrder.studioId,
+              memberName: validated.memberName,
+              orderNumber: existingOrder.orderNumber || existingOrder.id,
+              eventType: existingOrder.eventType,
+              eventDate: existingOrder.eventDate,
+              skill: validated.skill,
+              eventLocation: existingOrder.eventLocation,
+            });
+          }
+        } catch (assignMailErr) {
+          console.warn("[assignResourceAction] Shoot assignment email notification error:", assignMailErr);
+        }
+      })();
+    }
+
     return { success: true, order: updatedOrder || undefined };
   } catch (err: unknown) {
     console.error("[assignResourceAction] Error:", err);
@@ -1041,6 +1175,30 @@ export async function assignTaskCrewAction(rawInput: {
       await updateOrder(rawInput.orderId, {
         auditLog: [...(existingOrder.auditLog || []), assignAudit],
       });
+
+      if (rawInput.memberId && rawInput.memberId !== "unassigned") {
+        void (async () => {
+          try {
+            const member = await getMemberById(rawInput.memberId);
+            if (member?.email) {
+              const studio = await getStudioBySlug(studioId);
+              await sendCrewShootAssignedEmail({
+                toEmail: member.email,
+                studioName: studio?.name || studioId,
+                studioSlug: studioId,
+                memberName: rawInput.memberName,
+                orderNumber: existingOrder.orderNumber || existingOrder.id,
+                eventType: existingOrder.eventType,
+                eventDate: existingOrder.eventDate,
+                skill: existingTask.title,
+                eventLocation: existingOrder.eventLocation,
+              });
+            }
+          } catch (mailErr) {
+            console.warn("[assignTaskCrewAction] Task assignment email error:", mailErr);
+          }
+        })();
+      }
     }
 
     return { success: true, task: updatedTask || undefined };
@@ -1302,4 +1460,73 @@ export async function checkIsStudioStaffAction(input: {
     return { isStaff: false };
   }
 }
+
+export async function sendManualPaymentReminderAction(input: {
+  orderId: string;
+  studioId: string;
+  idToken: string;
+}): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(input.idToken);
+    await requireStudioOwner(decoded.uid, input.studioId);
+
+    const order = await getOrderById(input.orderId);
+    if (!order) {
+      return { success: false, error: "Order not found." };
+    }
+    if (order.studioId.toLowerCase() !== input.studioId.toLowerCase()) {
+      return { success: false, error: "Unauthorized: Order belongs to another studio." };
+    }
+
+    if (order.paymentStatus === "PAID" || order.pricing.remainingAmount <= 0) {
+      return { success: false, error: "This order has no pending balance. Payment is fully completed." };
+    }
+
+    if (!order.customer?.email) {
+      return { success: false, error: "No customer email address registered for this order." };
+    }
+
+    const studio = await getStudioBySlug(input.studioId);
+    const studioName = studio?.name || input.studioId;
+
+    const emailRes = await sendPaymentReminderCustomerEmail({
+      toEmail: order.customer.email,
+      studioName,
+      customerName: order.customer.name,
+      orderId: order.id,
+      eventTitle: order.eventType,
+      amountDue: `₹${order.pricing.remainingAmount.toLocaleString()}`,
+      dueDate: order.eventDate,
+    });
+
+    if (!emailRes.success) {
+      return { success: false, error: emailRes.error || "Failed to send payment reminder email." };
+    }
+
+    const reminderAudit: OrderAuditEntry = {
+      id: `audit_${Date.now()}_payment_reminder`,
+      timestamp: getStudioTimestampIST(new Date()),
+      actorName: decoded.name || decoded.email || "Studio Owner",
+      actorRole: "Owner",
+      action: "Payment Reminder Sent",
+      details: `Sent manual payment reminder email to ${order.customer.email} for pending balance of ₹${order.pricing.remainingAmount.toLocaleString()}`,
+    };
+
+    await updateOrder(order.id, {
+      auditLog: [...(order.auditLog || []), reminderAudit],
+    });
+
+    return {
+      success: true,
+      message: `Payment reminder email sent successfully to ${order.customer.email}!`,
+    };
+  } catch (err: unknown) {
+    console.error("[sendManualPaymentReminderAction] Error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to send payment reminder email",
+    };
+  }
+}
+
 

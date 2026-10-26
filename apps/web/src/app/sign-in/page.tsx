@@ -21,60 +21,72 @@ function SignInContent() {
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showTroubleOptions, setShowTroubleOptions] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    console.log("[SignInPage] Mounted. Checking redirect and auth state...");
 
-    // Check if we returned from a Google OAuth redirect
+    // Check if returning from a Google OAuth redirect
     handleRedirectAuth()
       .then(async (credential) => {
-        const hadPendingRedirect = typeof window !== "undefined" && sessionStorage.getItem("focoman_auth_redirect_pending") === "true";
-        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
+        const hadPendingRedirect =
+          typeof window !== "undefined" &&
+          sessionStorage.getItem("focoman_auth_redirect_pending") === "true";
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("focoman_auth_redirect_pending");
+        }
 
         if (credential?.user && isMounted) {
-          console.log("[SignInPage] Google redirect returned valid user:", credential.user.email);
-          const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
-          if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+          const savedTarget =
+            typeof window !== "undefined"
+              ? sessionStorage.getItem("focoman_auth_redirect")
+              : null;
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("focoman_auth_redirect");
+          }
 
           const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
           const finalUrl = autoSync
             ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
             : effectiveTarget;
 
-          console.log("[SignInPage] Redirecting to target via window.location:", finalUrl);
           window.location.href = finalUrl;
         } else if (hadPendingRedirect && !credential?.user && isMounted) {
-          console.warn("[SignInPage] Redirect completed but no user credential was found in storage.");
           setAuthError("Sign-in redirect completed without session credentials. Please try signing in again.");
           setIsSigningIn(false);
         }
       })
       .catch((err) => {
-        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
-        console.error("[SignInPage] handleRedirectAuth error:", err);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("focoman_auth_redirect_pending");
+        }
         if (isMounted) {
           const msg = err instanceof Error ? err.message : String(err);
-          setAuthError(msg || "Failed to process Google sign-in redirect.");
+          setAuthError(msg || "Failed to process Google sign-in.");
           setIsSigningIn(false);
         }
       });
 
-    // Listen to auth state changes as fallback or for active sessions
+    // Listen to active auth state
     const unsubscribe = subscribeToAuthState(async (user) => {
-      console.log("[SignInPage] subscribeToAuthState user:", user ? user.email : "null");
       if (user && isMounted) {
-        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("focoman_auth_redirect_pending");
+        }
         await syncServerSession();
-        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
-        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+        const savedTarget =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("focoman_auth_redirect")
+            : null;
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("focoman_auth_redirect");
+        }
 
         const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
         const finalUrl = autoSync
           ? `${effectiveTarget}${effectiveTarget.includes("?") ? "&" : "?"}autoSync=true`
           : effectiveTarget;
 
-        console.log("[SignInPage] AuthState active, redirecting to:", finalUrl);
         window.location.href = finalUrl;
       }
     });
@@ -90,19 +102,19 @@ function SignInContent() {
       setIsSigningIn(true);
       setAuthError(null);
 
-      // Save the target redirect URL in sessionStorage across page navigation
       if (typeof window !== "undefined") {
         if (redirectUrl) sessionStorage.setItem("focoman_auth_redirect", redirectUrl);
         sessionStorage.setItem("focoman_auth_redirect_pending", "true");
       }
 
-      console.log("[SignInPage] Triggering primary same-tab signInWithGoogle...");
       const res = await signInWithGoogle();
       if (res && "user" in res && res.user) {
-        console.log("[SignInPage] Immediate user credential received:", res.user.email);
         if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
-        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
-        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+        const savedTarget =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("focoman_auth_redirect")
+            : null;
+        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect");
 
         const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
         const finalUrl = autoSync
@@ -111,31 +123,34 @@ function SignInContent() {
 
         window.location.href = finalUrl;
       }
-      // In production, the browser now navigates to Google accounts and redirects back
     } catch (err: unknown) {
       if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
       setIsSigningIn(false);
-      console.error("[SignInPage] signInWithGoogle error:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("auth/unauthorized-domain")) {
         const domain = typeof window !== "undefined" ? window.location.hostname : "current domain";
-        setAuthError(`Domain "${domain}" is not authorized. Please add it in Firebase Console.`);
-      } else if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
-        setAuthError(errorMessage || "Sign-in redirect failed. You can use popup fallback below.");
+        setAuthError(`Domain "${domain}" is not authorized in Firebase settings.`);
+      } else if (
+        !errorMessage.includes("auth/popup-closed-by-user") &&
+        !errorMessage.includes("auth/cancelled-popup-request")
+      ) {
+        setAuthError(errorMessage || "Sign-in request could not be completed.");
       }
     }
   };
 
-  const handleGooglePopupFallback = async () => {
+  const handleGoogleAlternateSignIn = async () => {
     try {
       setIsSigningIn(true);
       setAuthError(null);
-      console.log("[SignInPage] Triggering popup fallback sign-in...");
       const res = await signInWithGooglePopup();
       if (res?.user) {
         if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect_pending");
-        const savedTarget = typeof window !== "undefined" ? sessionStorage.getItem("focoman_auth_redirect") : null;
-        if (savedTarget) sessionStorage.removeItem("focoman_auth_redirect");
+        const savedTarget =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("focoman_auth_redirect")
+            : null;
+        if (typeof window !== "undefined") sessionStorage.removeItem("focoman_auth_redirect");
 
         const effectiveTarget = redirectUrl || savedTarget || "/dashboard";
         const finalUrl = autoSync
@@ -146,10 +161,12 @@ function SignInContent() {
       }
     } catch (err: unknown) {
       setIsSigningIn(false);
-      console.error("[SignInPage] popup fallback error:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
-      if (!errorMessage.includes("auth/popup-closed-by-user") && !errorMessage.includes("auth/cancelled-popup-request")) {
-        setAuthError(errorMessage || "Popup sign-in failed. Please try again.");
+      if (
+        !errorMessage.includes("auth/popup-closed-by-user") &&
+        !errorMessage.includes("auth/cancelled-popup-request")
+      ) {
+        setAuthError(errorMessage || "Sign-in request failed. Please try again.");
       }
     }
   };
@@ -165,7 +182,7 @@ function SignInContent() {
         </h1>
         <p className="mx-auto mt-2 text-sm text-text-secondary">
           {redirectUrl
-            ? "Sign in with Google to automatically link this order and view real-time deliverables."
+            ? "Sign in with Google to link this order and view real-time deliverables."
             : "Sign in to access your studio operations and team dashboard."}
         </p>
       </div>
@@ -175,32 +192,34 @@ function SignInContent() {
           <h2 className="text-lg font-bold text-text-primary">
             Sign In to Focoman
           </h2>
-          
+
+          {/* Clean error display without technical terms */}
           {authError && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left space-y-2.5">
               <p>{authError}</p>
               <button
                 type="button"
-                onClick={handleGooglePopupFallback}
+                onClick={handleGoogleAlternateSignIn}
                 disabled={isSigningIn}
-                className="w-full rounded-lg bg-red-600 text-white font-bold py-2 px-3 text-xs shadow-xs hover:bg-red-700 active:translate-y-[1px] transition text-center"
+                className="w-full rounded-lg bg-text-primary text-white font-bold py-2 px-3 text-xs shadow-xs hover:bg-black active:translate-y-[1px] transition text-center cursor-pointer"
               >
-                Sign In with Popup Window (Fallback) →
+                Try alternate method →
               </button>
             </div>
           )}
-          
+
           <div className="mt-6 flex flex-col items-center gap-3.5">
+            {/* Primary Sign-In Button */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
-              className="inline-flex w-full justify-center items-center gap-3 rounded-xl border border-border-default bg-white px-6 py-3 text-sm font-bold text-text-primary shadow-xs transition hover:bg-gray-50 hover:shadow-sm disabled:opacity-60"
+              className="inline-flex w-full justify-center items-center gap-3 rounded-xl border border-border-default bg-white px-6 py-3 text-sm font-bold text-text-primary shadow-xs transition hover:bg-gray-50 hover:shadow-sm disabled:opacity-60 cursor-pointer"
             >
               {isSigningIn ? (
                 <>
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-orange-primary border-t-transparent" />
-                  <span>Redirecting to Google...</span>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-purple-primary border-t-transparent" />
+                  <span>Connecting to Google...</span>
                 </>
               ) : (
                 <>
@@ -227,17 +246,30 @@ function SignInContent() {
               )}
             </button>
 
-            {/* Popup window fallback if same-tab redirect encounters environment or iframe blocks */}
-            <button
-              type="button"
-              onClick={handleGooglePopupFallback}
-              disabled={isSigningIn}
-              className="text-[11px] font-semibold text-text-tertiary hover:text-brand-orange-primary transition underline decoration-dotted cursor-pointer"
-            >
-              Sign-in redirect blocked? Try popup fallback
-            </button>
+            {/* Trouble signing in toggle option (Hidden initially, shown only if user clicks) */}
+            {!showTroubleOptions ? (
+              <button
+                type="button"
+                onClick={() => setShowTroubleOptions(true)}
+                className="text-[11px] font-medium text-text-tertiary hover:text-text-secondary transition cursor-pointer mt-1"
+              >
+                Having trouble signing in?
+              </button>
+            ) : (
+              <div className="w-full mt-1 p-3 bg-white border border-border-default rounded-xl space-y-2 text-center animate-in fade-in">
+                <p className="text-[11px] text-text-secondary">If same-tab redirection is restricted in your browser:</p>
+                <button
+                  type="button"
+                  onClick={handleGoogleAlternateSignIn}
+                  disabled={isSigningIn}
+                  className="w-full rounded-lg bg-text-primary text-white font-bold py-2 px-3 text-xs shadow-xs hover:bg-black transition text-center cursor-pointer"
+                >
+                  Try alternate method →
+                </button>
+              </div>
+            )}
 
-            <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-1">
+            <p className="text-[10px] sm:text-xs text-text-tertiary max-w-xs mt-2">
               By signing in, you agree to our{" "}
               <Link href="/terms" className="underline hover:text-text-primary transition">
                 Terms and Conditions
@@ -263,11 +295,13 @@ export default function SignInPage() {
         <div className="w-full max-w-lg mb-6 self-start md:self-auto md:w-full">
           <BackButton fallbackHref="/" />
         </div>
-        <Suspense fallback={
-          <div className="w-full max-w-lg rounded-3xl border border-border-default bg-white p-8 text-center text-sm text-text-secondary">
-            Loading authentication portal...
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="w-full max-w-lg rounded-3xl border border-border-default bg-white p-8 text-center text-sm text-text-secondary">
+              Loading authentication portal...
+            </div>
+          }
+        >
           <SignInContent />
         </Suspense>
       </main>

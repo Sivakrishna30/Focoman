@@ -31,6 +31,7 @@ import {
   verifyInvitationPasscode,
 } from "@/lib/invitationPasscode";
 import { updatePendingInvitationLinkTokenHash } from "@focoman/db";
+import { sendCrewInvitationEmail, sendCrewAcceptedOwnerEmail, sendCrewWelcomeMemberEmail } from "@/services/emailService";
 
 /**
  * Server Actions for Studio Crew & Resource Management (ERP)
@@ -356,6 +357,19 @@ export async function createMemberAction(input: {
 
       try {
         await saveInvitation(invitation);
+
+        if (email) {
+          void sendCrewInvitationEmail({
+            toEmail: email,
+            studioName,
+            memberName: input.name.trim(),
+            inviteCode,
+            skills: input.skills,
+          }).catch((mailErr) =>
+            console.error("[createMemberAction] Background invite email failed:", mailErr)
+          );
+        }
+
         return {
           success: true,
           invitation: toInvitationSummary(invitation),
@@ -569,6 +583,38 @@ export async function acceptInvitationAction(input: {
     if (!res.success) {
       return { success: false, error: res.error || "Failed to accept invitation." };
     }
+
+    // Trigger owner notification email & member welcome email in background
+    void (async () => {
+      try {
+        const studio = await getStudioBySlug(invitation.studioId);
+        const studioName = studio?.name || invitation.studioName;
+
+        // 1. Send notice to Studio Owner
+        if (studio?.ownerEmail) {
+          await sendCrewAcceptedOwnerEmail({
+            ownerEmail: studio.ownerEmail,
+            studioSlug: invitation.studioId,
+            studioName,
+            ownerName: studio.ownerName || "Studio Owner",
+            memberName: invitation.name || "Crew Member",
+            memberEmail: userEmail,
+            skills: invitation.skills || [],
+            acceptedAt: new Date().toISOString(),
+          });
+        }
+
+        // 2. Send Welcome email to Crew Member
+        await sendCrewWelcomeMemberEmail({
+          toEmail: userEmail,
+          studioName,
+          studioSlug: invitation.studioId,
+          memberName: invitation.name || "Crew Member",
+        });
+      } catch (emailErr) {
+        console.error("[acceptInvitationAction] Invitation acceptance emails failed:", emailErr);
+      }
+    })();
 
     return {
       success: true,

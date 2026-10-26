@@ -13,6 +13,7 @@ import {
   assignTaskCrewAction,
   cancelOrderAction,
   deleteOrderAction,
+  sendManualPaymentReminderAction,
 } from "@/actions/orderActions";
 import { getStudioMembersAction } from "@/actions/memberActions";
 import { getStudioCustomersAction } from "@/actions/customerActions";
@@ -167,6 +168,7 @@ export default function OmsPage({
   const [newOrderForm, setNewOrderForm] = useState(DEFAULT_ORDER_FORM);
   const [showServicesDropdown, setShowServicesDropdown] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
   const [editConfirmedPrice, setEditConfirmedPrice] = useState("");
   const [editAdvanceAmount, setEditAdvanceAmount] = useState("");
@@ -671,6 +673,34 @@ export default function OmsPage({
       setIsUpdatingPayment(false);
       setOrders(previousOrders);
       alert(err instanceof Error ? err.message : "Failed to update payment status");
+    }
+  };
+
+  const handleSendPaymentReminder = async () => {
+    if (!selected || isSendingReminder) return;
+    setIsSendingReminder(true);
+    try {
+      const token = (await getIdToken(false)) ?? workspaceToken;
+      if (!token) {
+        alert("Authentication error. Please sign in again.");
+        setIsSendingReminder(false);
+        return;
+      }
+      const res = await sendManualPaymentReminderAction({
+        orderId: selected.id,
+        studioId: studioSlug,
+        idToken: token,
+      });
+      setIsSendingReminder(false);
+      if (res.success) {
+        alert(res.message || "Payment reminder email sent successfully!");
+        await loadOrders();
+      } else {
+        alert(res.error || "Failed to send payment reminder email.");
+      }
+    } catch (err: unknown) {
+      setIsSendingReminder(false);
+      alert(err instanceof Error ? err.message : "Failed to send payment reminder.");
     }
   };
 
@@ -1372,6 +1402,18 @@ export default function OmsPage({
                       >
                         <span>✓</span>
                         <span>{isUpdatingPayment ? "Updating..." : "Mark Paid"}</span>
+                      </button>
+                    )}
+                    {selected.pricing.remainingAmount > 0 && selected.paymentStatus !== "PAID" && (
+                      <button
+                        type="button"
+                        disabled={isSendingReminder || isUpdatingPayment}
+                        onClick={() => void handleSendPaymentReminder()}
+                        className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-900 hover:bg-amber-100 shadow-2xs transition disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                        title="Send manual payment reminder email to customer"
+                      >
+                        <span>✉</span>
+                        <span>{isSendingReminder ? "Sending..." : "Send Reminder"}</span>
                       </button>
                     )}
                     <button

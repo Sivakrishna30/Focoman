@@ -1235,25 +1235,28 @@ export async function restoreMarketplaceProfile(studioId: string): Promise<boole
 
 export async function searchMarketplaceProfiles(
   filters: { city?: string; tags?: string[] },
-  limitCount = 20
+  limitCount = 50
 ): Promise<MarketplaceProfile[]> {
   const db = getFirestoreServerInstance();
   let query: FirebaseFirestore.Query = db
     .collection('marketplace_profiles')
     .where('isVisible', '==', true);
 
-  if (filters.city) {
-    query = query.where('city', '==', filters.city);
-  }
-
   if (filters.tags && filters.tags.length > 0) {
     query = query.where('tags', 'array-contains-any', filters.tags);
   }
 
   const snapshot = await query.limit(limitCount).get();
+  const searchCity = filters.city?.trim().toLowerCase();
+
   return snapshot.docs
     .map((doc) => doc.data() as MarketplaceProfile)
-    .filter((profile) => !profile.isDeleted);
+    .filter((profile) => !profile.isDeleted)
+    .filter((profile) => {
+      if (!searchCity) return true;
+      const profileCity = (profile.city || "").trim().toLowerCase();
+      return profileCity.includes(searchCity) || searchCity.includes(profileCity);
+    });
 }
 
 // ============================================================================
