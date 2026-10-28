@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect, useCallback, use, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
-import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion, Customer, OrderInstallment, StudioMember } from "@focoman/types";
+import Link from "next/link";
+import { OrderStatus, TaskStatus, Order, Task, PaymentStatus, ResourceSuggestion, Customer, OrderInstallment, StudioMember, StudioServiceConfig, StudioPackage } from "@focoman/types";
 import {
   getStudioOrdersAction,
   getOrderTasksAction,
@@ -17,6 +18,8 @@ import {
 } from "@/actions/orderActions";
 import { getStudioMembersAction } from "@/actions/memberActions";
 import { getStudioCustomersAction } from "@/actions/customerActions";
+import { getStudioServicesAction } from "@/actions/studioActions";
+import { DEFAULT_STUDIO_SERVICES } from "@/lib/studioServices";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
 import { AddCrewMemberModal } from "@/components/AddCrewMemberModal";
 import { OrderVerticalWorkflow } from "@/components/workflow/OrderVerticalWorkflow";
@@ -83,12 +86,7 @@ const DEFAULT_ORDER_FORM = {
   customEventType: "",
   eventDate: "",
   eventLocation: "",
-  services: [
-    "Traditional Photography",
-    "Candid Photography",
-    "Traditional Videography",
-    "Premium Photobook Album",
-  ] as string[],
+  services: [] as string[],
   customServiceInput: "",
   finalConfirmedPrice: "" as unknown as number,
   advanceAmount: "" as unknown as number,
@@ -109,7 +107,7 @@ export default function OmsPage({
     [orders, selectedId]
   );
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | OrderStatus>("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "MARKETPLACE" | OrderStatus>("ALL");
   const [sortBy, setSortBy] = useState<"DATE_ASC" | "DATE_DESC" | "PRICE_ASC" | "PRICE_DESC">("DATE_ASC");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -209,6 +207,83 @@ export default function OmsPage({
   const [studioCustomers, setStudioCustomers] = useState<Customer[]>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
+  // Studio Services & Packages for Order Registration
+  const [studioServicesList, setStudioServicesList] = useState<StudioServiceConfig[]>(
+    studio.configuredServices && studio.configuredServices.length > 0
+      ? studio.configuredServices
+      : DEFAULT_STUDIO_SERVICES
+  );
+  const [studioPackagesList, setStudioPackagesList] = useState<StudioPackage[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+
+  const activeStudioPackages = useMemo(() => {
+    return studioPackagesList.filter(
+      (pkg) => pkg.isPublished !== false && !pkg.isDeleted
+    );
+  }, [studioPackagesList]);
+
+  // Show all current studio services (including custom services), do not show deleted ones, do not hide disabled ones
+  const availableServices = useMemo(() => {
+    return studioServicesList;
+  }, [studioServicesList]);
+
+  // Calculate order total based on selected package and services
+  const calculateOrderPrice = useCallback(
+    (selectedServices: string[], packageId?: string) => {
+      const pkg = packageId ? activeStudioPackages.find((p) => p.id === packageId) : null;
+      if (pkg) {
+        let total = pkg.price;
+        const pkgServicesLower = pkg.services.map((s) => s.toLowerCase());
+        selectedServices.forEach((svcName) => {
+          if (!pkgServicesLower.includes(svcName.toLowerCase())) {
+            const match = studioServicesList.find(
+              (s) => s.name.toLowerCase() === svcName.toLowerCase()
+            );
+            // Only add price if the service is enabled/active and has defaultPrice > 0
+            if (match && match.enabled && match.defaultPrice > 0) {
+              total += match.defaultPrice;
+            }
+          }
+        });
+        return total;
+      }
+
+      let total = 0;
+      selectedServices.forEach((svcName) => {
+        const match = studioServicesList.find(
+          (s) => s.name.toLowerCase() === svcName.toLowerCase()
+        );
+        // Only add price if the service is enabled/active and has defaultPrice > 0
+        if (match && match.enabled && match.defaultPrice > 0) {
+          total += match.defaultPrice;
+        }
+      });
+      return total;
+    },
+    [activeStudioPackages, studioServicesList]
+  );
+
+  const handleSelectPackage = (pkgId: string) => {
+    setSelectedPackageId(pkgId);
+    if (!pkgId) {
+      const autoPrice = calculateOrderPrice(newOrderForm.services, "");
+      setNewOrderForm((prev) => ({
+        ...prev,
+        finalConfirmedPrice: autoPrice > 0 ? autoPrice : ("" as unknown as number),
+      }));
+      return;
+    }
+
+    const pkg = activeStudioPackages.find((p) => p.id === pkgId);
+    if (pkg) {
+      setNewOrderForm((prev) => ({
+        ...prev,
+        services: Array.from(new Set([...pkg.services])),
+        finalConfirmedPrice: pkg.price,
+      }));
+    }
+  };
+
   const [studioMembers, setStudioMembers] = useState<StudioMember[]>([]);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [addMemberInitialName, setAddMemberInitialName] = useState<string>("");
@@ -248,10 +323,25 @@ export default function OmsPage({
 
   const temporaryCrewList = useMemo(() => {
     const map = new Map<string, { id: string; name: string; isTemporary: true }>();
+    const ownerName = (studio?.ownerName || workspaceUser?.displayName || "").toLowerCase();
+
+    const isOwnerCrew = (id?: string, name?: string) => {
+      const n = (name || "").toLowerCase().trim();
+      const i = (id || "").toLowerCase().trim();
+      return (
+        i.startsWith("owner-") ||
+        n.includes("(owner)") ||
+        (ownerName && (n === ownerName || n.includes(ownerName)))
+      );
+    };
 
     (studio?.temporaryCrew || []).forEach((t) => {
+      if (isOwnerCrew(t.id, t.name)) return;
       const isRegistered = allSelectableCrew.some(
-        (c) => c.name.toLowerCase() === t.name.toLowerCase() || c.id === t.id
+        (c) =>
+          c.name.toLowerCase() === t.name.toLowerCase() ||
+          c.id === t.id ||
+          `${c.name.toLowerCase()} (owner)` === t.name.toLowerCase()
       );
       if (!isRegistered && t.name && !t.name.toLowerCase().includes("unassigned")) {
         map.set(t.name.toLowerCase(), {
@@ -264,8 +354,12 @@ export default function OmsPage({
 
     orders.forEach((o) => {
       (o.assignedResources || []).forEach((r) => {
+        if (isOwnerCrew(r.memberId, r.memberName)) return;
         const isRegistered = allSelectableCrew.some(
-          (c) => c.name.toLowerCase() === (r.memberName || "").toLowerCase() || c.id === r.memberId
+          (c) =>
+            c.name.toLowerCase() === (r.memberName || "").toLowerCase() ||
+            c.id === r.memberId ||
+            `${c.name.toLowerCase()} (owner)` === (r.memberName || "").toLowerCase()
         );
         if (!isRegistered && r.memberName && !r.memberName.toLowerCase().includes("unassigned")) {
           const key = r.memberName.toLowerCase();
@@ -281,13 +375,17 @@ export default function OmsPage({
     });
 
     return Array.from(map.values());
-  }, [studio, orders, allSelectableCrew]);
+  }, [studio, orders, allSelectableCrew, workspaceUser]);
 
   const handleOpenCreateModal = useCallback(() => {
     setNewOrderForm({
       ...DEFAULT_ORDER_FORM,
+      services: [],
+      finalConfirmedPrice: "" as unknown as number,
+      advanceAmount: "" as unknown as number,
       passkeyPin: Math.floor(100000 + Math.random() * 900000).toString(),
     });
+    setSelectedPackageId("");
     setFormError(null);
     setShowServicesDropdown(false);
     setShowCustomerDropdown(false);
@@ -347,10 +445,15 @@ export default function OmsPage({
   const toggleService = (svc: string) => {
     setNewOrderForm((prev) => {
       const exists = prev.services.includes(svc);
-      const next = exists
+      const nextServices = exists
         ? prev.services.filter((s) => s !== svc)
         : [...prev.services, svc];
-      return { ...prev, services: next };
+      const autoPrice = calculateOrderPrice(nextServices, selectedPackageId);
+      return {
+        ...prev,
+        services: nextServices,
+        finalConfirmedPrice: autoPrice > 0 ? autoPrice : ("" as unknown as number),
+      };
     });
   };
 
@@ -358,10 +461,13 @@ export default function OmsPage({
     e.preventDefault();
     const custom = newOrderForm.customServiceInput.trim();
     if (custom && !newOrderForm.services.includes(custom)) {
+      const nextServices = [...newOrderForm.services, custom];
+      const autoPrice = calculateOrderPrice(nextServices, selectedPackageId);
       setNewOrderForm((prev) => ({
         ...prev,
-        services: [...prev.services, custom],
+        services: nextServices,
         customServiceInput: "",
+        finalConfirmedPrice: autoPrice > 0 ? autoPrice : prev.finalConfirmedPrice,
       }));
     }
   };
@@ -373,14 +479,23 @@ export default function OmsPage({
         setLoading(false);
         return;
       }
-      const [data, customersData, membersData] = await Promise.all([
+      const [data, customersData, membersData, servicesRes] = await Promise.all([
         getStudioOrdersAction(studioSlug, token),
         getStudioCustomersAction(studioSlug, token),
         getStudioMembersAction(studioSlug, token).catch(() => []),
+        getStudioServicesAction(studioSlug, token).catch(() => null),
       ]);
       setOrders(data);
       setStudioCustomers(customersData);
       setStudioMembers(membersData || []);
+      if (servicesRes && servicesRes.success) {
+        if (Array.isArray(servicesRes.services)) {
+          setStudioServicesList(servicesRes.services);
+        }
+        if (Array.isArray(servicesRes.packages)) {
+          setStudioPackagesList(servicesRes.packages);
+        }
+      }
     } catch (err) {
       console.error("[OmsPage] Failed to load orders:", err);
     } finally {
@@ -826,7 +941,12 @@ export default function OmsPage({
     const trimmed = enteredName.trim();
     // Check if entered name matches an existing member or owner in allSelectableCrew
     const matchedMember = allSelectableCrew.find(
-      (m) => (m.name || "").toLowerCase() === trimmed.toLowerCase() || m.id === trimmed
+      (m) =>
+        (m.name || "").toLowerCase() === trimmed.toLowerCase() ||
+        m.id === trimmed ||
+        (m.role === "Owner" &&
+          (m.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+            trimmed.toLowerCase().includes(m.name.replace(/\s*\(owner\)/i, "").trim().toLowerCase())))
     );
 
     const memberId = matchedMember ? matchedMember.id : `temp_${Date.now()}`;
@@ -901,26 +1021,59 @@ export default function OmsPage({
     }
   };
 
-  const handleAssignTaskCrew = async (taskId: string, memberId: string) => {
+  const handleAssignTaskCrew = async (taskId: string, memberIdentifier: string) => {
     if (!selected) return;
     const token = (await getIdToken(false)) ?? workspaceToken;
     if (!token) return;
 
-    const member = allSelectableCrew.find((m) => m.id === memberId) || studioMembers.find((m) => m.id === memberId);
-    if (!member) return;
+    const trimmed = memberIdentifier.trim();
+    if (!trimmed) return;
+
+    if (trimmed === "unassigned") {
+      const res = await assignTaskCrewAction({
+        orderId: selected.id,
+        studioId: studioSlug,
+        taskId,
+        memberId: "unassigned",
+        memberName: "",
+        idToken: token,
+      });
+      if (res.success && res.task) {
+        setSelectedTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
+      }
+      return;
+    }
+
+    const matchedMember =
+      allSelectableCrew.find(
+        (m) =>
+          (m.name || "").toLowerCase() === trimmed.toLowerCase() ||
+          m.id === trimmed ||
+          (m.role === "Owner" &&
+            (m.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+              trimmed.toLowerCase().includes(m.name.replace(/\s*\(owner\)/i, "").trim().toLowerCase())))
+      ) ||
+      studioMembers.find(
+        (m) => (m.name || "").toLowerCase() === trimmed.toLowerCase() || m.id === trimmed
+      ) ||
+      temporaryCrewList.find(
+        (t) => (t.name || "").toLowerCase() === trimmed.toLowerCase() || t.id === trimmed
+      );
+
+    const memberId = matchedMember ? matchedMember.id : `temp_${Date.now()}`;
+    const memberName = matchedMember ? matchedMember.name : trimmed;
 
     const res = await assignTaskCrewAction({
       orderId: selected.id,
       studioId: studioSlug,
       taskId,
-      memberId: member.id,
-      memberName: member.name,
+      memberId,
+      memberName,
       idToken: token,
     });
 
     if (res.success && res.task) {
       setSelectedTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
-      await loadOrders();
     } else {
       alert(res.error || "Failed to assign crew to task");
     }
@@ -1029,7 +1182,7 @@ export default function OmsPage({
   const filtered = useMemo(() => {
     const list = orders.filter(
       (order) =>
-        (statusFilter === "ALL" || order.orderStatus === statusFilter) &&
+        (statusFilter === "ALL" || (statusFilter === "MARKETPLACE" ? Boolean(order.bookingRequestId) : order.orderStatus === statusFilter)) &&
         (!query ||
           `${order.customer.name} ${order.orderNumber} ${order.eventType}`
             .toLowerCase()
@@ -1131,11 +1284,12 @@ export default function OmsPage({
                 suppressHydrationWarning
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(e.target.value as "ALL" | OrderStatus)
+                  setStatusFilter(e.target.value as "ALL" | "MARKETPLACE" | OrderStatus)
                 }
                 className="rounded-xl border border-border-default bg-surface-app px-3 py-2 text-xs font-semibold text-text-primary focus:bg-white focus:outline-none focus:border-brand-blue-primary focus:ring-2 focus:ring-brand-blue-soft"
               >
                 <option value="ALL">All States</option>
+                <option value="MARKETPLACE">Studio Marketplace Orders</option>
                 {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((key) => (
                   <option key={key} value={key}>
                     {STATUS_LABELS[key]}
@@ -1192,6 +1346,11 @@ export default function OmsPage({
                       <span className="font-mono text-xs font-bold text-brand-blue-primary">
                         {order.orderNumber}
                       </span>
+                      {order.bookingRequestId && (
+                        <span className="rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
+                          Marketplace
+                        </span>
+                      )}
                       {order.paymentStatus === "PAID" && (
                         <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-status-success border border-emerald-200">
                           PAID
@@ -1250,7 +1409,14 @@ export default function OmsPage({
                 </svg>
               </button>
               <div className="min-w-0">
-                <span className="font-mono text-xs font-bold text-brand-blue-primary block">{selected.orderNumber}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-brand-blue-primary block">{selected.orderNumber}</span>
+                  {selected.bookingRequestId && (
+                    <span className="rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
+                      Marketplace Booking: {selected.bookingRequestId}
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-lg font-extrabold text-text-primary truncate">{selected.customer.name}</h2>
               </div>
             </div>
@@ -1276,6 +1442,7 @@ export default function OmsPage({
             onAssignCrew={handleCommitCrewAssignment}
             onUnassignCrew={handleUnassignService}
             onOpenErpWizard={openErpWizardForService}
+            onAssignTaskCrew={handleAssignTaskCrew}
           />
 
           {/* Production Aging and Turnaround SLA Banner (Placed below Post-Event Production Tasks) */}
@@ -2341,10 +2508,6 @@ export default function OmsPage({
             {/* Modal Header (Pinned at Top) */}
             <div className="flex items-center justify-between p-6 pb-4 border-b border-border-default shrink-0">
               <div>
-                <div className="badge-brand-blue mb-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-blue-primary" />
-                  New Confirmed Order
-                </div>
                 <h3 className="text-lg font-bold text-text-primary">Register Confirmed Order</h3>
                 <p className="text-xs text-text-secondary">Begins automated 3-state production workflow</p>
               </div>
@@ -2383,7 +2546,7 @@ export default function OmsPage({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Ramesh and Ananya (Search existing or type new)"
+                      placeholder="e.g. Ramesh Kumar (Search existing or type new)"
                       value={newOrderForm.customerName}
                       onFocus={() => setShowCustomerDropdown(true)}
                       onChange={(e) => {
@@ -2608,6 +2771,36 @@ export default function OmsPage({
                   />
                 </div>
 
+                {/* Studio Package / Combo Quick Selector */}
+                {activeStudioPackages.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-text-primary">
+                        Package / Combo <span className="font-normal text-text-tertiary">(Optional)</span>
+                      </label>
+                      <Link
+                        href={`/${studioSlug}/dashboard/services`}
+                        target="_blank"
+                        className="text-[10px] text-brand-blue-primary font-semibold hover:underline"
+                      >
+                        Manage Catalog ↗
+                      </Link>
+                    </div>
+                    <select
+                      value={selectedPackageId}
+                      onChange={(e) => handleSelectPackage(e.target.value)}
+                      className="w-full rounded-xl border border-brand-blue-soft bg-brand-blue-50/50 px-3.5 py-2 text-xs font-semibold text-text-primary outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
+                    >
+                      <option value="">-- Custom Order (Choose Services Below) --</option>
+                      {activeStudioPackages.map((pkg) => (
+                        <option key={pkg.id} value={pkg.id}>
+                          {pkg.name} — ₹{pkg.price.toLocaleString("en-IN")} ({pkg.services.length} services)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Studio Services and Deliverables Dropdown with Multi-Select */}
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between mb-1">
@@ -2635,10 +2828,13 @@ export default function OmsPage({
                           e.preventDefault();
                           const custom = newOrderForm.customServiceInput.trim();
                           if (custom && !newOrderForm.services.includes(custom)) {
+                            const nextServices = [...newOrderForm.services, custom];
+                            const autoPrice = calculateOrderPrice(nextServices, selectedPackageId);
                             setNewOrderForm({
                               ...newOrderForm,
-                              services: [...newOrderForm.services, custom],
+                              services: nextServices,
                               customServiceInput: "",
+                              finalConfirmedPrice: autoPrice > 0 ? autoPrice : newOrderForm.finalConfirmedPrice,
                             });
                           }
                         }
@@ -2663,7 +2859,7 @@ export default function OmsPage({
                     {showServicesDropdown && (
                       <div className="absolute top-full z-20 left-0 right-0 mt-1.5 rounded-2xl border border-border-default bg-white shadow-xl p-2.5 space-y-1.5 animate-in fade-in zoom-in-95 duration-100">
                         <div className="flex items-center justify-between px-2 pb-1 border-b border-border-default text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-                          <span>Select Services ({newOrderForm.services.length} selected)</span>
+                          <span>Studio Services ({newOrderForm.services.length} selected)</span>
                           <button
                             type="button"
                             onClick={() => setShowServicesDropdown(false)}
@@ -2673,15 +2869,15 @@ export default function OmsPage({
                           </button>
                         </div>
 
-                        <div className="max-h-52 overflow-y-auto space-y-0.5 pr-1">
-                          {PRESET_STUDIO_SERVICES
-                            .filter((svc) => svc.toLowerCase().includes(newOrderForm.customServiceInput.toLowerCase()))
+                        <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1">
+                          {availableServices
+                            .filter((svc) => svc.name.toLowerCase().includes(newOrderForm.customServiceInput.toLowerCase()))
                             .map((svc) => {
-                            const isSvcSelected = newOrderForm.services.includes(svc);
+                            const isSvcSelected = newOrderForm.services.includes(svc.name);
                             return (
                               <label
-                                key={svc}
-                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition select-none ${
+                                key={svc.id}
+                                className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition select-none ${
                                   isSvcSelected
                                     ? "bg-brand-blue-50/80 text-brand-blue-primary"
                                     : "text-text-primary hover:bg-surface-app"
@@ -2691,21 +2887,35 @@ export default function OmsPage({
                                   <input
                                     type="checkbox"
                                     checked={isSvcSelected}
-                                    onChange={() => toggleService(svc)}
+                                    onChange={() => toggleService(svc.name)}
                                     className="h-3.5 w-3.5 rounded border-border-default text-brand-blue-primary focus:ring-brand-blue-primary shrink-0"
                                   />
-                                  <span className="truncate">{svc}</span>
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="truncate">{svc.name}</span>
+                                    {svc.isDeliverable && (
+                                      <span className="rounded bg-amber-50 border border-amber-200 px-1 py-0.2 text-[8px] font-bold text-amber-700">
+                                        Deliverable
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                {isSvcSelected && (
-                                  <span className="text-[10px] font-bold text-brand-blue-primary shrink-0 ml-2">Selected</span>
-                                )}
+                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                  {svc.enabled && svc.defaultPrice > 0 && (
+                                    <span className="text-[10px] font-semibold text-text-tertiary">
+                                      ₹{svc.defaultPrice.toLocaleString("en-IN")}
+                                    </span>
+                                  )}
+                                  {isSvcSelected && (
+                                    <span className="text-[10px] font-bold text-brand-blue-primary">✓</span>
+                                  )}
+                                </div>
                               </label>
                             );
                           })}
 
-                          {/* Custom Services Added by User */}
+                          {/* Custom Services Added on the fly by User */}
                           {newOrderForm.services
-                            .filter((s) => !PRESET_STUDIO_SERVICES.includes(s as any))
+                            .filter((s) => !availableServices.some((svc) => svc.name.toLowerCase() === s.toLowerCase()))
                             .map((customSvc) => (
                               <label
                                 key={customSvc}
@@ -2724,9 +2934,9 @@ export default function OmsPage({
                               </label>
                             ))}
                             
-                          {/* Prompt to press enter if typing custom that doesn't match presets */}
+                          {/* Prompt to press enter if typing custom that doesn't match studio presets */}
                           {newOrderForm.customServiceInput.trim() && 
-                           !PRESET_STUDIO_SERVICES.some(s => s.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
+                           !availableServices.some(s => s.name.toLowerCase() === newOrderForm.customServiceInput.trim().toLowerCase()) &&
                            !newOrderForm.services.includes(newOrderForm.customServiceInput.trim()) && (
                             <div className="px-2.5 py-1.5 text-[10px] font-medium text-text-tertiary italic">
                               Press Enter to add &quot;{newOrderForm.customServiceInput.trim()}&quot;
@@ -2740,27 +2950,36 @@ export default function OmsPage({
                   {/* Selected Options Displayed Below the Input Field */}
                   {newOrderForm.services.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {newOrderForm.services.map((svc) => (
-                        <span
-                          key={svc}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue-primary border border-brand-blue-soft"
-                        >
-                          <span>{svc}</span>
+                      {newOrderForm.services.map((svc) => {
+                        const matchedConfig = studioServicesList.find(s => s.name.toLowerCase() === svc.toLowerCase());
+                        return (
                           <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleService(svc);
-                            }}
-                            className="text-xs font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5 leading-none"
-                            title={`Remove ${svc}`}
+                            key={svc}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-blue-50 px-2.5 py-1 text-xs font-semibold text-brand-blue-primary border border-brand-blue-soft"
                           >
-                            ×
+                            <span>{svc}</span>
+                            {matchedConfig && matchedConfig.enabled && matchedConfig.defaultPrice > 0 && (
+                              <span className="text-[10px] font-normal text-text-tertiary">
+                                (₹{matchedConfig.defaultPrice.toLocaleString("en-IN")})
+                              </span>
+                            )}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleService(svc);
+                              }}
+                              className="text-xs font-bold text-brand-blue-primary hover:text-red-500 cursor-pointer ml-0.5 leading-none"
+                              title={`Remove ${svc}`}
+                            >
+                              ×
+                            </span>
                           </span>
-                        </span>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
+
                 {/* Pricing and Advance with Validation */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -2779,6 +2998,14 @@ export default function OmsPage({
                       }
                       className="mt-1 w-full rounded-xl border border-border-default px-3.5 py-2 text-xs outline-none focus:border-brand-blue-primary focus:ring-1 focus:ring-brand-blue-primary"
                     />
+                    {/* Informative Note for Confirmed Total Price without emoji */}
+                    {newOrderForm.services.length > 0 && (
+                      <p className="mt-1 text-[11px] leading-tight text-text-tertiary">
+                        {Number(newOrderForm.finalConfirmedPrice) > 0
+                          ? "Auto-calculated from selected items above · Review and edit if needed"
+                          : "Enter agreed total price for selected services"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-text-primary">Advance Received (₹) *</label>

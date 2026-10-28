@@ -10,9 +10,15 @@ import {
   hardDeleteStudio,
   leaveStudioMembership,
   restoreStudio,
+  getFirestoreServerInstance,
+  getUserDefaultStudio,
+  setUserDefaultStudio,
+  getStudioPackages,
+  saveStudioPackage,
 } from "@focoman/db";
-import { Studio, StudioMembership, StudioPlan } from "@focoman/types";
-import { requireVerifiedUser, requireStudioMember } from "@/lib/serverAuth";
+import { Studio, StudioMembership, StudioPlan, StudioServiceConfig, StudioPackage } from "@focoman/types";
+import { requireVerifiedUser, requireStudioMember, getAdminAuthInstance } from "@/lib/serverAuth";
+import { DEFAULT_STUDIO_SERVICES, getDefaultStudioPackages } from "@/lib/studioServices";
 
 /**
  * Server Actions for Studio Registration, Workspaces & Settings
@@ -136,6 +142,7 @@ export async function updateStudioAction(input: {
     logoUrl?: string;
     website?: string;
     instagram?: string;
+    configuredServices?: StudioServiceConfig[];
     features?: Partial<Studio['features']>;
   };
   idToken: string;
@@ -150,6 +157,7 @@ export async function updateStudioAction(input: {
       ...(input.updates.logoUrl !== undefined ? { logoUrl: input.updates.logoUrl.trim() } : {}),
       ...(input.updates.website !== undefined ? { website: input.updates.website.trim() } : {}),
       ...(input.updates.instagram !== undefined ? { instagram: input.updates.instagram.trim() } : {}),
+      ...(input.updates.configuredServices ? { configuredServices: input.updates.configuredServices } : {}),
       ...(input.updates.features ? { features: input.updates.features as any } : {}),
     });
 
@@ -157,6 +165,78 @@ export async function updateStudioAction(input: {
   } catch (err: unknown) {
     console.error("[updateStudioAction] Error:", err);
     return { success: false, error: err instanceof Error ? err.message : "Failed to update studio." };
+  }
+}
+
+export async function updateStudioServicesAction(
+  studioSlug: string,
+  services: StudioServiceConfig[],
+  idToken: string
+): Promise<{ success: boolean; studio?: Studio; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    const updated = await updateStudio(studioSlug, {
+      configuredServices: services,
+    });
+    return { success: true, studio: updated || undefined };
+  } catch (err: unknown) {
+    console.error("[updateStudioServicesAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update studio services." };
+  }
+}
+
+export async function getStudioServicesAction(
+  studioSlug: string,
+  idToken: string
+): Promise<{ success: boolean; services: StudioServiceConfig[]; packages: StudioPackage[]; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug);
+    const studio = await getStudioBySlug(studioSlug);
+    if (!studio) return { success: false, services: [], packages: [], error: "Studio not found" };
+
+    const services = Array.isArray(studio.configuredServices)
+      ? studio.configuredServices
+      : DEFAULT_STUDIO_SERVICES;
+
+    let packages = await getStudioPackages(studioSlug);
+    // Only inject default starter packages if the studio has never configured services or packages
+    if ((!packages || packages.length === 0) && !Array.isArray(studio.configuredServices)) {
+      packages = getDefaultStudioPackages(studioSlug);
+    }
+
+    return { success: true, services, packages };
+  } catch (err: unknown) {
+    return { success: false, services: [], packages: [], error: err instanceof Error ? err.message : "Failed to load services" };
+  }
+}
+
+export async function saveStudioPackagesAction(
+  studioSlug: string,
+  packages: StudioPackage[],
+  idToken: string
+): Promise<{ success: boolean; packages?: StudioPackage[]; error?: string }> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    await requireStudioMember(decoded.uid, studioSlug, "STUDIO_OWNER");
+
+    const saved: StudioPackage[] = [];
+    for (const pkg of packages) {
+      const packageDoc: StudioPackage = {
+        ...pkg,
+        studioId: studioSlug.toLowerCase(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveStudioPackage(packageDoc);
+      saved.push(packageDoc);
+    }
+
+    return { success: true, packages: saved };
+  } catch (err: unknown) {
+    console.error("[saveStudioPackagesAction] Error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to save packages." };
   }
 }
 
@@ -286,3 +366,89 @@ export async function saveStudioCapabilitiesAction(
     return { success: false, error: err instanceof Error ? err.message : "Failed to save studio capabilities." };
   }
 }
+
+/**
+ * Permanently deletes a user's account and personal session data.
+ * Cleans up owned studio associations, releases claimed orders, and removes auth credentials.
+ */
+export async function deleteUserAccountAction(idToken: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    const uid = decoded.uid;
+    const adminAuth = getAdminAuthInstance();
+    const firestore = getFirestoreServerInstance();
+
+    // 1. Fetch all memberships for this user
+    const memberships = await getMembershipsByUid(uid);
+
+    // 2. For studios where this user is the STUDIO_OWNER, soft-delete the studio
+    for (const m of memberships) {
+      if (m.role === "STUDIO_OWNER") {
+        try {
+          await softDeleteStudio(m.studioId, uid);
+        } catch (e) {
+          console.warn(`[deleteUserAccountAction] Soft delete studio ${m.studioId} warning:`, e);
+        }
+      }
+      try {
+        await leaveStudioMembership(uid, m.studioId);
+      } catch (e) {
+        console.warn(`[deleteUserAccountAction] Leave studio ${m.studioId} warning:`, e);
+      }
+    }
+
+    // 3. Clear customerUid on claimed orders so orders remain with studios but detach from deleted user
+    try {
+      const ordersSnap = await firestore
+        .collection("orders")
+        .where("customerUid", "==", uid)
+        .get();
+      if (!ordersSnap.empty) {
+        const batch = firestore.batch();
+        ordersSnap.docs.forEach((doc) => {
+          batch.update(doc.ref, { customerUid: null });
+        });
+        await batch.commit();
+      }
+    } catch (e) {
+      console.warn("[deleteUserAccountAction] Clear customerUid on orders warning:", e);
+    }
+
+    // 4. Delete user in Firebase Authentication
+    await adminAuth.deleteUser(uid);
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[deleteUserAccountAction] Error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to delete user account.",
+    };
+  }
+}
+
+export async function getUserDefaultStudioAction(idToken: string): Promise<string | null> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    return await getUserDefaultStudio(decoded.uid);
+  } catch {
+    return null;
+  }
+}
+
+export async function setUserDefaultStudioAction(
+  studioId: string | null,
+  idToken: string
+): Promise<boolean> {
+  try {
+    const decoded = await requireVerifiedUser(idToken);
+    return await setUserDefaultStudio(decoded.uid, studioId);
+  } catch {
+    return false;
+  }
+}
+
+

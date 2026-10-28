@@ -24,37 +24,31 @@ export function RetroHeroVisual() {
   });
 
   // ── PHASE 2A: THE PROBLEM QUESTION ("Tired of...") ──
-  // Arrives line by line between 0.18 and 0.38, dwells until 0.46, then slowly fades out between 0.46 and 0.52
+  // Arrives line by line between 0.18 and 0.36, dwells until 0.46, then smoothly fades out between 0.46 and 0.52
   const qContainerOpacity = useTransform(progress, [0.17, 0.20, 0.46, 0.52], [0, 1, 1, 0]);
 
-  // Sequential question lines
-  const qLine1Opacity = useTransform(progress, [0.18, 0.22, 0.46, 0.52], [0, 1, 1, 0]);
-  const qLine1Y = useTransform(progress, [0.18, 0.22, 0.46, 0.52], [18, 0, 0, -14]);
+  // Sequential question lines (3 balanced lines)
+  const qLine1Opacity = useTransform(progress, [0.18, 0.23, 0.46, 0.52], [0, 1, 1, 0]);
+  const qLine1Y = useTransform(progress, [0.18, 0.23, 0.46, 0.52], [14, 0, 0, -10]);
 
-  const qLine2Opacity = useTransform(progress, [0.22, 0.26, 0.46, 0.52], [0, 1, 1, 0]);
-  const qLine2Y = useTransform(progress, [0.22, 0.26, 0.46, 0.52], [18, 0, 0, -14]);
+  const qLine2Opacity = useTransform(progress, [0.24, 0.29, 0.46, 0.52], [0, 1, 1, 0]);
+  const qLine2Y = useTransform(progress, [0.24, 0.29, 0.46, 0.52], [14, 0, 0, -10]);
 
-  const qLine3Opacity = useTransform(progress, [0.26, 0.30, 0.46, 0.52], [0, 1, 1, 0]);
-  const qLine3Y = useTransform(progress, [0.26, 0.30, 0.46, 0.52], [18, 0, 0, -14]);
-
-  const qLine4Opacity = useTransform(progress, [0.30, 0.34, 0.46, 0.52], [0, 1, 1, 0]);
-  const qLine4Y = useTransform(progress, [0.30, 0.34, 0.46, 0.52], [18, 0, 0, -14]);
-
-  const qLine5Opacity = useTransform(progress, [0.34, 0.38, 0.46, 0.52], [0, 1, 1, 0]);
-  const qLine5Y = useTransform(progress, [0.34, 0.38, 0.46, 0.52], [18, 0, 0, -14]);
+  const qLine3Opacity = useTransform(progress, [0.30, 0.36, 0.46, 0.52], [0, 1, 1, 0]);
+  const qLine3Y = useTransform(progress, [0.30, 0.36, 0.46, 0.52], [14, 0, 0, -10]);
 
   // ── PHASE 2B: THE RESOLUTION ("Focoman brings everything inside a single tool.") ──
-  // Arrives sequentially between 0.52 and 0.64, dwells until 0.72, then smoothly fades out while dashboard emerges
+  // Arrives sequentially between 0.52 and 0.68, dwells until 0.72, then smoothly fades out while dashboard emerges
   const sContainerOpacity = useTransform(progress, [0.51, 0.54, 0.72, 0.78], [0, 1, 1, 0]);
 
-  const sLine1Opacity = useTransform(progress, [0.52, 0.56, 0.72, 0.78], [0, 1, 1, 0]);
-  const sLine1Y = useTransform(progress, [0.52, 0.56, 0.72, 0.78], [18, 0, 0, -14]);
+  const sLine1Opacity = useTransform(progress, [0.52, 0.57, 0.72, 0.78], [0, 1, 1, 0]);
+  const sLine1Y = useTransform(progress, [0.52, 0.57, 0.72, 0.78], [14, 0, 0, -10]);
 
-  const sLine2Opacity = useTransform(progress, [0.56, 0.60, 0.72, 0.78], [0, 1, 1, 0]);
-  const sLine2Y = useTransform(progress, [0.56, 0.60, 0.72, 0.78], [18, 0, 0, -14]);
+  const sLine2Opacity = useTransform(progress, [0.58, 0.63, 0.72, 0.78], [0, 1, 1, 0]);
+  const sLine2Y = useTransform(progress, [0.58, 0.63, 0.72, 0.78], [14, 0, 0, -10]);
 
-  const sLine3Opacity = useTransform(progress, [0.60, 0.65, 0.72, 0.78], [0, 1, 1, 0]);
-  const sLine3Y = useTransform(progress, [0.60, 0.65, 0.72, 0.78], [18, 0, 0, -14]);
+  const sLine3Opacity = useTransform(progress, [0.64, 0.69, 0.72, 0.78], [0, 1, 1, 0]);
+  const sLine3Y = useTransform(progress, [0.64, 0.69, 0.72, 0.78], [14, 0, 0, -10]);
 
   // ── PHASE 3: DASHBOARD TRANSITION ──
   // Dashboard starts emerging right as FOCOMAN BRINGS finishes, smoothly morphing into view
@@ -403,87 +397,75 @@ export function RetroHeroVisual() {
       </motion.div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2A. PROBLEM QUESTION: "TIRED OF HANDLING BUSINESS ACROSS..." */}
+      {/* 2A. PROBLEM QUESTION: "Tired of handling business across..."  */}
       {/* ───────────────────────────────────────────────────────────── */}
       <motion.div
         style={{
           opacity: qContainerOpacity,
           pointerEvents: "none",
         }}
-        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-1 sm:p-2 md:p-3 text-center select-none w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(250,247,242,0.96)_35%,rgba(250,247,242,0.80)_70%,rgba(250,247,242,0.40)_100%)] backdrop-blur-xs rounded-2xl overflow-hidden"
+        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 text-center select-none w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(250,247,242,0.97)_35%,rgba(250,247,242,0.85)_70%,rgba(250,247,242,0.45)_100%)] backdrop-blur-xs rounded-2xl overflow-hidden"
       >
-        <div className="w-full max-w-full my-auto flex flex-col items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 leading-none">
+        <div className="w-full max-w-xl mx-auto my-auto flex flex-col items-center justify-center gap-1 xs:gap-1.5 sm:gap-2.5 md:gap-3 leading-snug px-3 sm:px-6">
           <motion.div style={{ opacity: qLine1Opacity, y: qLine1Y }} className="w-full">
-            <span className="text-3xl min-[390px]:text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-[102px] xl:text-[120px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              TIRED OF
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight block text-center leading-[1.15]">
+              Tired of handling business
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine2Opacity, y: qLine2Y }} className="w-full">
-            <span className="text-2xl min-[390px]:text-3xl xs:text-4xl sm:text-6xl md:text-[76px] lg:text-[88px] xl:text-[104px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              HANDLING BUSINESS
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight block text-center leading-[1.15]">
+              across sheets, notes,
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: qLine3Opacity, y: qLine3Y }} className="w-full">
-            <span className="text-2xl min-[390px]:text-3xl xs:text-4xl sm:text-6xl md:text-[76px] lg:text-[88px] xl:text-[104px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              ACROSS SHEETS,
-            </span>
-          </motion.div>
-
-          <motion.div style={{ opacity: qLine4Opacity, y: qLine4Y }} className="w-full">
-            <span className="text-3xl min-[390px]:text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-[102px] xl:text-[120px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              NOTES
-            </span>
-          </motion.div>
-
-          <motion.div style={{ opacity: qLine5Opacity, y: qLine5Y }} className="w-full">
-            <span className="text-3xl min-[390px]:text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-[102px] xl:text-[120px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              AND CHATS?
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight block text-center leading-[1.15]">
+              and endless chats?
             </span>
           </motion.div>
         </div>
       </motion.div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2B. RESOLUTION: "FOCOMAN BRINGS EVERYTHING INSIDE A SINGLE TOOL" */}
+      {/* 2B. RESOLUTION: "FOCOMAN brings everything together..."       */}
       {/* ───────────────────────────────────────────────────────────── */}
       <motion.div
         style={{
           opacity: sContainerOpacity,
           pointerEvents: "none",
         }}
-        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-1 sm:p-2 md:p-3 text-center select-none w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(250,247,242,0.96)_35%,rgba(250,247,242,0.80)_70%,rgba(250,247,242,0.40)_100%)] backdrop-blur-xs rounded-2xl overflow-hidden"
+        className="absolute inset-0 z-20 flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 text-center select-none w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(250,247,242,0.97)_35%,rgba(250,247,242,0.85)_70%,rgba(250,247,242,0.45)_100%)] backdrop-blur-xs rounded-2xl overflow-hidden"
       >
-        <div className="w-full max-w-full my-auto flex flex-col items-center justify-center gap-1 sm:gap-1.5 md:gap-2 leading-none">
-          <motion.div style={{ opacity: sLine1Opacity, y: sLine1Y }} className="w-full flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-            <span className="text-3xl min-[390px]:text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-[100px] xl:text-[118px] font-sans font-black text-brand-orange-primary uppercase tracking-tight inline-block leading-[0.86]">
+        <div className="w-full max-w-xl mx-auto my-auto flex flex-col items-center justify-center gap-1 xs:gap-1.5 sm:gap-2.5 md:gap-3 leading-snug px-3 sm:px-6">
+          <motion.div style={{ opacity: sLine1Opacity, y: sLine1Y }} className="w-full flex items-center justify-center gap-2 sm:gap-3.5 flex-wrap">
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-brand-orange-primary uppercase tracking-tight inline-block leading-[1.15]">
               FOCOMAN
             </span>
-            <span className="text-3xl min-[390px]:text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-[100px] xl:text-[118px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight inline-block leading-[0.86]">
-              BRINGS
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight inline-block leading-[1.15]">
+              brings
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: sLine2Opacity, y: sLine2Y }} className="w-full">
-            <span className="text-2xl min-[390px]:text-3xl xs:text-4xl sm:text-6xl md:text-[76px] lg:text-[88px] xl:text-[104px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              EVERYTHING INSIDE
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight block text-center leading-[1.15]">
+              everything together
             </span>
           </motion.div>
 
           <motion.div style={{ opacity: sLine3Opacity, y: sLine3Y }} className="w-full">
-            <span className="text-2xl min-[390px]:text-3xl xs:text-4xl sm:text-6xl md:text-[76px] lg:text-[88px] xl:text-[104px] font-sans font-extrabold text-[#0f172a] uppercase tracking-tight block leading-[0.86]">
-              A SINGLE TOOL
+            <span className="retro-serif-heading text-xl min-[360px]:text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[44px] xl:text-[50px] font-black text-[#1C1917] tracking-tight block text-center leading-[1.15]">
+              inside a single tool
             </span>
           </motion.div>
 
           {/* Down Arrow Pointing to Dashboard Preview */}
           <motion.div
             style={{ opacity: sLine3Opacity, y: sLine3Y }}
-            className="mt-1 text-brand-orange-primary flex items-center justify-center"
+            className="mt-1 sm:mt-2 text-brand-orange-primary flex items-center justify-center"
           >
             <svg
-              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 stroke-current animate-bounce"
+              className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 stroke-current animate-bounce"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth="3.5"

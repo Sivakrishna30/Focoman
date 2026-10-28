@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
 import { signOutUser, subscribeToAuthState } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction } from "@/actions/studioActions";
+import { getLocalDefaultWorkspace, subscribeToDefaultWorkspaceChanges } from "@/lib/workspaceDefaults";
 
 export type Plan = "basic" | "professional" | "complete";
 
@@ -48,17 +49,28 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, studioLog
   const switchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let unsubEvents: (() => void) | undefined;
     const unsub = subscribeToAuthState(async (user) => {
+      if (unsubEvents) unsubEvents();
       if (user) {
-        const stored = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
-        if (stored && stored !== "__cleared__") {
-          setDefaultStudioId(stored);
-        } else if (!stored && workspacesList.length > 0) {
+        const { studioId } = getLocalDefaultWorkspace(user.uid);
+        if (studioId) {
+          setDefaultStudioId(studioId);
+        } else if (workspacesList.length > 0) {
           setDefaultStudioId(workspacesList[0].studioId);
+        } else {
+          setDefaultStudioId(null);
         }
+
+        unsubEvents = subscribeToDefaultWorkspaceChanges(user.uid, (newDefault) => {
+          setDefaultStudioId(newDefault);
+        });
       }
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      if (unsubEvents) unsubEvents();
+    };
   }, [workspacesList]);
 
   useEffect(() => {
@@ -188,8 +200,20 @@ export function DashboardSidebar({ studioSlug, role, plan, studioName, studioLog
       ),
     },
     {
+      label: "Services & Packages",
+      sublabel: "Catalog & Pricing",
+      key: "services",
+      href: (slug: string) => `/${slug}/dashboard/services`,
+      module: null as null,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      ),
+    },
+    {
       label: "Studio Settings",
-      sublabel: "Preferences & Danger Zone",
+      sublabel: "Preferences & Workspace",
       key: "settings",
       href: (slug: string) => `/${slug}/dashboard/settings`,
       module: null as null,

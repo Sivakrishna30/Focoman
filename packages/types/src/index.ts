@@ -318,6 +318,16 @@ export interface TemporaryCrewMember {
   lastUsedService?: string;
 }
 
+export interface StudioServiceConfig {
+  id: string;
+  name: string;
+  category: string;
+  defaultPrice: number;
+  isDeliverable?: boolean;
+  enabled: boolean;
+  priceDisabled?: boolean;
+}
+
 export interface Studio extends SoftDeletable {
   id: string;
   name: string;
@@ -334,6 +344,7 @@ export interface Studio extends SoftDeletable {
   ownerPhone?: string;
   temporaryCrew?: TemporaryCrewMember[];
   whatsappConfig?: Record<string, boolean>;
+  configuredServices?: StudioServiceConfig[];
   features?: {
     oms: boolean;
     crm: boolean;

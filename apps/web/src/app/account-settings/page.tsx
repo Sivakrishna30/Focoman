@@ -9,7 +9,13 @@ import { getCustomerAuthorizedOrdersHistoryAction } from "@/actions/customerActi
 import { getCustomerBookingRequestsAction } from "@/actions/marketplaceActions";
 import { CustomerOrderView, BookingRequest, StudioMembership, Studio } from "@focoman/types";
 import { User, updateProfile } from "firebase/auth";
-import { getUserWorkspacesAction, getStudioAction } from "@/actions/studioActions";
+import { getUserWorkspacesAction, getStudioAction, deleteUserAccountAction } from "@/actions/studioActions";
+import {
+  resolveAndSyncDefaultWorkspace,
+  setDefaultWorkspace,
+  clearDefaultWorkspace,
+  subscribeToDefaultWorkspaceChanges,
+} from "@/lib/workspaceDefaults";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
@@ -30,6 +36,12 @@ export default function AccountSettingsPage() {
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [nameSaveLoading, setNameSaveLoading] = useState(false);
   const [nameSaveSuccess, setNameSaveSuccess] = useState(false);
+
+  // Account Deletion
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(async (currentUser) => {
@@ -63,26 +75,17 @@ export default function AccountSettingsPage() {
           setWorkspaces(workspacesData);
         }
         
-        let initialDefault = null;
-        if (typeof window !== "undefined") {
-          const stored = localStorage.getItem(`focoman_default_workspace_${currentUser.uid}`);
-          if (stored && stored !== "__cleared__" && stored.trim() !== "") {
-            initialDefault = stored;
-            setDefaultStudio(stored);
-            setSelectedDefaultStudio(stored);
-          } else {
-            setDefaultStudio(null);
-            if (workspacesData && workspacesData.length > 0) {
-              setSelectedDefaultStudio(workspacesData[0].studioId);
-            }
-          }
-        }
-        
+        const initialDefault = await resolveAndSyncDefaultWorkspace(currentUser.uid, workspacesData || [], token);
+        setDefaultStudio(initialDefault);
         if (initialDefault) {
-           const studioRes = await getStudioAction(initialDefault, token);
-           if (studioRes.success && studioRes.studio) {
-              setDefaultStudioDetails(studioRes.studio);
-           }
+          setSelectedDefaultStudio(initialDefault);
+          const studioRes = await getStudioAction(initialDefault, token);
+          if (studioRes.success && studioRes.studio) {
+            setDefaultStudioDetails(studioRes.studio);
+          }
+        } else if (workspacesData && workspacesData.length > 0) {
+          setSelectedDefaultStudio(workspacesData[0].studioId);
+          setDefaultStudioDetails(null);
         }
       } catch (err) {
         console.error("Failed to load customer order history", err);
@@ -92,6 +95,27 @@ export default function AccountSettingsPage() {
     });
     return () => unsubscribe();
   }, [router]);
+
+  // Subscribe to default workspace changes across tabs and in-tab
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToDefaultWorkspaceChanges(user.uid, async (newDefault) => {
+      setDefaultStudio(newDefault);
+      if (newDefault) {
+        setSelectedDefaultStudio(newDefault);
+        try {
+          const token = await user.getIdToken();
+          const studioRes = await getStudioAction(newDefault, token);
+          if (studioRes.success && studioRes.studio) {
+            setDefaultStudioDetails(studioRes.studio);
+          }
+        } catch {}
+      } else {
+        setDefaultStudioDetails(null);
+      }
+    });
+    return () => unsub();
+  }, [user]);
 
   const handleSaveName = async () => {
     if (!user || !displayNameInput.trim()) return;
@@ -111,17 +135,17 @@ export default function AccountSettingsPage() {
 
   const handleSetDefault = async (studioId: string) => {
     if (!user) return;
+    const token = await user.getIdToken();
     if (studioId === "") {
-      localStorage.setItem(`focoman_default_workspace_${user.uid}`, "__cleared__");
+      await clearDefaultWorkspace(user.uid, token);
       setDefaultStudio(null);
       setDefaultStudioDetails(null);
     } else {
-      localStorage.setItem(`focoman_default_workspace_${user.uid}`, studioId);
+      await setDefaultWorkspace(user.uid, studioId, token);
       setDefaultStudio(studioId);
-      const token = await user.getIdToken();
       const studioRes = await getStudioAction(studioId, token);
       if (studioRes.success && studioRes.studio) {
-         setDefaultStudioDetails(studioRes.studio);
+        setDefaultStudioDetails(studioRes.studio);
       }
     }
   };
@@ -152,6 +176,31 @@ export default function AccountSettingsPage() {
   const handleSignOut = async () => {
     await signOutUser();
     router.push("/");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmationInput.trim().toLowerCase() !== "delete") return;
+    if (!user) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const token = await user.getIdToken();
+      const res = await deleteUserAccountAction(token);
+
+      if (res.success) {
+        await clearDefaultWorkspace(user.uid);
+        await signOutUser();
+        router.replace("/sign-in?deleted=true");
+      } else {
+        setDeleteError(res.error || "Failed to delete account. Please try again.");
+        setIsDeleting(false);
+      }
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+      setIsDeleting(false);
+    }
   };
 
   const handleBack = () => {
@@ -556,6 +605,96 @@ export default function AccountSettingsPage() {
             Sign Out
           </button>
         </div>
+
+        {/* Panel 4: Delete Account */}
+        <div className="rounded-3xl border border-red-200 bg-red-50/40 p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-base font-extrabold text-text-primary">Delete User Account</h4>
+              <p className="text-xs text-text-secondary mt-1 max-w-xl">
+                Permanently delete all data associated with the account including studios, orders, customers, and crew with no recovery option.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeleteConfirmationInput("");
+                setDeleteError(null);
+              }}
+              className="rounded-xl border border-red-300 bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 active:scale-[0.98] transition whitespace-nowrap cursor-pointer shadow-xs"
+            >
+              Delete User Account
+            </button>
+          </div>
+        </div>
+
+        {/* Delete User Account Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-red-200 animate-in fade-in zoom-in duration-150 space-y-5">
+              <div className="flex items-start justify-between">
+                <h3 className="text-base font-extrabold text-text-primary">Delete User Account</h3>
+                <button
+                  type="button"
+                  onClick={() => !isDeleting && setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="text-text-tertiary hover:text-text-primary p-1 rounded-lg"
+                  aria-label="Close dialog"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-red-200 bg-red-50/60 p-4 text-xs text-red-900 space-y-1.5 leading-relaxed">
+                <p className="font-bold">Warning: This action cannot be undone.</p>
+                <p>
+                  Deleting your account will permanently delete all data associated with the account including studios, orders, customers, and crew with no recovery option.
+                </p>
+              </div>
+
+              {deleteError && (
+                <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-700">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-text-primary">
+                  To confirm, type <span className="font-mono text-red-600 font-extrabold">&quot;delete&quot;</span> in the box below:
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={deleteConfirmationInput}
+                  onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                  placeholder='Type "delete" to confirm'
+                  disabled={isDeleting}
+                  className="w-full rounded-xl border border-border-default px-3.5 py-2.5 text-xs font-mono font-bold text-text-primary outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border-divider">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="rounded-xl border border-border-default px-4 py-2 text-xs font-semibold text-text-secondary hover:bg-surface-app transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmationInput.trim().toLowerCase() !== "delete" || isDeleting}
+                  className="rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                >
+                  {isDeleting ? "Deleting Account..." : "Permanently Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}

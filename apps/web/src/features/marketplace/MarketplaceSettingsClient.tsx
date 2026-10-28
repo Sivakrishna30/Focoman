@@ -653,6 +653,14 @@ export function MarketplaceSettingsClient({ studioId }: { studioId: string }) {
                           <span className="rounded-full bg-surface-app px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary border border-border-default">
                             {b.bookingStatus}
                           </span>
+                          {b.orderId && (
+                            <a
+                              href={`/${studioId}/dashboard/oms`}
+                              className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200 hover:bg-purple-100 transition"
+                            >
+                              <span>OMS: {b.orderId} →</span>
+                            </a>
+                          )}
                         </div>
                         <h4 className="text-base font-bold text-text-primary mt-1">
                           {b.customerName} — {b.packageName || b.eventType}

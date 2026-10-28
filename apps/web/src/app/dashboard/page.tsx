@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { subscribeToAuthState, syncServerSession } from "@/lib/firebaseAuth";
 import { getUserWorkspacesAction } from "@/actions/studioActions";
+import { resolveAndSyncDefaultWorkspace } from "@/lib/workspaceDefaults";
 import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
@@ -20,23 +21,11 @@ export default function GlobalDashboardRedirect() {
           const idToken = await user.getIdToken();
           const workspaces = await getUserWorkspacesAction(idToken);
           
-          const activeWorkspaces = workspaces.filter((workspace) => workspace.status === "ACTIVE");
-          const stored = typeof window !== "undefined"
-            ? localStorage.getItem(`focoman_default_workspace_${user.uid}`)
-            : null;
-          const wasCleared = stored === '__cleared__';
-          const defaultStudio = (!stored || wasCleared) ? null : stored;
+          const defaultStudio = await resolveAndSyncDefaultWorkspace(user.uid, workspaces, idToken);
 
-          if (defaultStudio && activeWorkspaces.some((w) => w.studioId.toLowerCase() === defaultStudio.toLowerCase())) {
-            // Explicit default set — go straight there
+          if (defaultStudio) {
             router.replace(`/${defaultStudio}/dashboard`);
-          } else if (!wasCleared && activeWorkspaces.length > 0) {
-            // Never configured — auto-set first studio as default
-            const firstStudio = activeWorkspaces[0].studioId;
-            localStorage.setItem(`focoman_default_workspace_${user.uid}`, firstStudio);
-            router.replace(`/${firstStudio}/dashboard`);
           } else {
-            // Explicitly cleared — let user pick
             router.replace("/workspaces");
           }
         } catch (error) {

@@ -25,6 +25,7 @@ import {
   getPaymentById,
   updatePaymentVerification,
   saveOrder,
+  saveTasks,
   getMembersByStudio,
   getOrdersByStudio,
 } from "@focoman/db";
@@ -35,8 +36,10 @@ import {
   PaymentRecord,
   PaymentMethod,
   Order,
+  Task,
 } from "@focoman/types";
-import { performPreflightCheck, generateResourceSuggestions } from "@focoman/domain";
+import { performPreflightCheck, generateResourceSuggestions, generateWorkflowTasks } from "@focoman/domain";
+import { generateTimestampDigits } from "@/lib/invitationPasscode";
 import {
   CreatePackageSchema,
   UpdatePackageSchema,
@@ -480,16 +483,51 @@ export async function verifyPaymentAction(input: unknown, idToken: string) {
           resourceSuggestions: suggestions,
           preflightReport: preflight,
           trackingPasskey,
+          auditLog: [
+            {
+              id: `audit_${Date.now()}_mkt`,
+              timestamp: now,
+              actorName: decoded.name || decoded.email || "Studio Owner",
+              actorRole: "Owner",
+              action: "Marketplace Order Confirmed",
+              details: `Confirmed booking from Marketplace inquiry for ${booking.packageName || booking.eventType} · Agreed Price: ₹${booking.agreedPrice.toLocaleString("en-IN")}`,
+            },
+            {
+              id: `audit_${Date.now() + 1000}_adv`,
+              timestamp: now,
+              actorName: decoded.name || decoded.email || "Studio Owner",
+              actorRole: "Owner",
+              action: "Advance Payment Verified",
+              details: `Verified advance payment of ₹${updatedPayment.amount.toLocaleString("en-IN")} (${updatedPayment.method})`,
+            },
+          ],
           createdAt: now,
           updatedAt: now,
         };
 
-        await saveOrder(newOrder);
-
-        await updateBookingRequest(booking.id, {
-          bookingStatus: 'BOOKING_CONFIRMED',
-          orderId,
+        const studioPrefix = parsed.studioId.slice(0, 4).toUpperCase();
+        const workflowTasks: Task[] = generateWorkflowTasks(orderId, parsed.studioId, newOrder.services).map((t, idx) => {
+          const { dateStamp, timeStamp } = generateTimestampDigits(new Date());
+          const seqSuffix = String(idx + 1).padStart(2, "0");
+          return {
+            ...t,
+            id: `TSK-${studioPrefix}-${dateStamp}-${timeStamp}-${seqSuffix}`,
+            assignedMemberId: t.assignedMemberId || "",
+            assignedMemberName: t.assignedMemberName || "Unassigned",
+            createdAt: now,
+            updatedAt: now,
+            isDeleted: false,
+          };
         });
+
+        await Promise.all([
+          saveOrder(newOrder),
+          saveTasks(workflowTasks),
+          updateBookingRequest(booking.id, {
+            bookingStatus: 'BOOKING_CONFIRMED',
+            orderId,
+          }),
+        ]);
       }
     }
 

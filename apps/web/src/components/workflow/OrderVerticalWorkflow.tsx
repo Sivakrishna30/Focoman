@@ -30,6 +30,7 @@ interface OrderVerticalWorkflowProps {
   onAssignCrew?: (serviceName: string, memberName: string) => Promise<void>;
   onUnassignCrew?: (serviceName: string) => Promise<void>;
   onOpenErpWizard?: (serviceName: string, query?: string) => void;
+  onAssignTaskCrew?: (taskId: string, memberName: string) => Promise<void>;
 }
 
 type PhaseId = "phase_lead" | "phase_pre_event" | "phase_event_day" | "phase_post_event" | "phase_delivery" | "phase_completed";
@@ -44,6 +45,7 @@ export function OrderVerticalWorkflow({
   onAssignCrew,
   onUnassignCrew,
   onOpenErpWizard,
+  onAssignTaskCrew,
 }: OrderVerticalWorkflowProps) {
   const isOms = variant === "oms";
   const fullOrder = isOms ? (order as Order) : null;
@@ -184,17 +186,10 @@ export function OrderVerticalWorkflow({
   const assignedResources = fullOrder?.assignedResources || [];
   const assignedServicesCount = useMemo(() => {
     return services.filter((svcName) => {
-      const svcLower = svcName.toLowerCase();
-      return assignedResources.some((r) => {
-        const rSkill = (r.skill || "").toLowerCase();
-        return (
-          rSkill === svcLower ||
-          (svcLower.includes("photo") && rSkill.includes("photo")) ||
-          (svcLower.includes("video") && (rSkill.includes("video") || rSkill.includes("cinemat"))) ||
-          (svcLower.includes("drone") && rSkill.includes("drone")) ||
-          (svcLower.includes("album") && rSkill.includes("album"))
-        );
-      });
+      const svcLower = svcName.trim().toLowerCase();
+      return assignedResources.some(
+        (r) => (r.skill || "").trim().toLowerCase() === svcLower
+      );
     }).length;
   }, [services, assignedResources]);
 
@@ -263,13 +258,62 @@ export function OrderVerticalWorkflow({
       await onAssignCrew(svcName, crewName);
       setActiveCrewDropdown(null);
       setEditingCrewService(null);
+      setCrewSearchQuery((prev) => ({ ...prev, [svcName]: "" }));
     }
   };
 
   const handleUnassign = async (svcName: string) => {
     if (onUnassignCrew) {
       await onUnassignCrew(svcName);
+      setCrewSearchQuery((prev) => ({ ...prev, [svcName]: "" }));
     }
+  };
+
+  // Task-level crew assignment state for Phase 3
+  const [editingTaskCrewId, setEditingTaskCrewId] = useState<string | null>(null);
+
+  const getDefaultCrewForTask = (task: Task): { name: string; isAuto: boolean } | null => {
+    if (task.assignedMemberName) {
+      return { name: task.assignedMemberName, isAuto: false };
+    }
+    const cat = (task.serviceCategory || "").toUpperCase();
+    const title = (task.title || "").toLowerCase();
+
+    // 1. Photography tasks
+    if (cat === "PHOTOGRAPHY" || title.includes("photo") || title.includes("raw") || title.includes("cull")) {
+      const match = assignedResources.find((r) => (r.skill || "").toLowerCase().includes("photo"));
+      if (match?.memberName) return { name: match.memberName, isAuto: true };
+    }
+
+    // 2. Videography tasks
+    if (
+      cat === "VIDEOGRAPHY" ||
+      title.includes("video") ||
+      title.includes("cinemat") ||
+      title.includes("teaser") ||
+      title.includes("reel") ||
+      title.includes("footage")
+    ) {
+      const match = assignedResources.find(
+        (r) => (r.skill || "").toLowerCase().includes("video") || (r.skill || "").toLowerCase().includes("cinemat")
+      );
+      if (match?.memberName) return { name: match.memberName, isAuto: true };
+    }
+
+    // 3. Album tasks
+    if (cat === "ALBUM" || title.includes("album")) {
+      const match =
+        assignedResources.find((r) => (r.skill || "").toLowerCase().includes("album")) ||
+        assignedResources.find((r) => (r.skill || "").toLowerCase().includes("photo"));
+      if (match?.memberName) return { name: match.memberName, isAuto: true };
+    }
+
+    // Fallback: first available assigned resource if any
+    if (assignedResources.length > 0 && assignedResources[0]?.memberName) {
+      return { name: assignedResources[0].memberName, isAuto: true };
+    }
+
+    return null;
   };
 
   // Origin path distinction
@@ -494,21 +538,33 @@ export function OrderVerticalWorkflow({
                   ) : (
                     <div className="divide-y divide-border-default/60 rounded-xl border border-border-default/80 bg-white overflow-hidden text-xs">
                       {services.map((svcName) => {
-                        const svcLower = svcName.toLowerCase();
+                        const svcLower = svcName.trim().toLowerCase();
                         const assignedRes = assignedResources.find((r) => {
-                          const rSkill = (r.skill || "").toLowerCase();
-                          return (
-                            rSkill === svcLower ||
-                            (svcLower.includes("photo") && rSkill.includes("photo")) ||
-                            (svcLower.includes("video") &&
-                              (rSkill.includes("video") || rSkill.includes("cinemat"))) ||
-                            (svcLower.includes("drone") && rSkill.includes("drone")) ||
-                            (svcLower.includes("album") && rSkill.includes("album"))
-                          );
+                          return (r.skill || "").trim().toLowerCase() === svcLower;
                         });
+
+                        const isOwner = Boolean(
+                          assignedRes &&
+                            ((assignedRes.memberId && assignedRes.memberId.startsWith("owner-")) ||
+                              (assignedRes.memberName && assignedRes.memberName.toLowerCase().includes("(owner)")))
+                        );
+
+                        const isRegisteredMember =
+                          isOwner ||
+                          allSelectableCrew.some(
+                            (c) =>
+                              (assignedRes?.memberId && c.id === assignedRes.memberId) ||
+                              (assignedRes?.memberName &&
+                                c.name.toLowerCase() === assignedRes.memberName.toLowerCase()) ||
+                              (c.role === "Owner" &&
+                                assignedRes?.memberName &&
+                                c.name.toLowerCase().includes(assignedRes.memberName.toLowerCase()))
+                          );
 
                         const isTempAssigned = Boolean(
                           assignedRes &&
+                            !isOwner &&
+                            !isRegisteredMember &&
                             (assignedRes.memberId.startsWith("temp_") ||
                               temporaryCrewList.some(
                                 (t) => t.name.toLowerCase() === assignedRes.memberName.toLowerCase()
@@ -517,19 +573,30 @@ export function OrderVerticalWorkflow({
 
                         const isEditingThis = !assignedRes || editingCrewService === svcName;
                         const currentQuery = crewSearchQuery[svcName] ?? "";
+                        const trimmedQuery = currentQuery.trim();
+
                         const matchingCrewForService = allSelectableCrew.filter((m) => {
-                          if (!currentQuery.trim()) return true;
-                          const q = currentQuery.toLowerCase();
+                          if (!trimmedQuery) return true;
+                          const q = trimmedQuery.toLowerCase();
                           return (
                             (m.name || "").toLowerCase().includes(q) ||
                             (m.role || "").toLowerCase().includes(q) ||
                             (m.skills || []).some((s) => (s || "").toLowerCase().includes(q))
                           );
                         });
+
                         const matchingTemporaryCrew = temporaryCrewList.filter((t) => {
-                          if (!currentQuery.trim()) return true;
-                          return t.name.toLowerCase().includes(currentQuery.toLowerCase());
+                          if (!trimmedQuery) return true;
+                          return t.name.toLowerCase().includes(trimmedQuery.toLowerCase());
                         });
+
+                        const hasExactMatch =
+                          matchingCrewForService.some(
+                            (c) => c.name.toLowerCase() === trimmedQuery.toLowerCase()
+                          ) ||
+                          matchingTemporaryCrew.some(
+                            (t) => t.name.toLowerCase() === trimmedQuery.toLowerCase()
+                          );
 
                         const isDropdownOpen = activeCrewDropdown === svcName;
 
@@ -551,7 +618,7 @@ export function OrderVerticalWorkflow({
                                     <span>{assignedRes.memberName}</span>
                                     {isTempAssigned && (
                                       <span className="rounded bg-amber-100 text-amber-800 border border-amber-200 px-1 py-0.2 text-[9px] font-bold">
-                                        Temp
+                                        Freelancer
                                       </span>
                                     )}
                                     <button
@@ -575,11 +642,11 @@ export function OrderVerticalWorkflow({
                                   </div>
                                 ) : (
                                   <div className="relative flex items-center gap-1.5">
-                                    <div className="relative min-w-[180px]">
+                                    <div className="relative min-w-[200px]">
                                       <input
                                         type="text"
                                         placeholder={
-                                          assignedRes ? "Change crew..." : "Select crew or type..."
+                                          assignedRes ? "Change crew..." : "Select crew or type name..."
                                         }
                                         value={currentQuery}
                                         onFocus={() => setActiveCrewDropdown(svcName)}
@@ -590,8 +657,8 @@ export function OrderVerticalWorkflow({
                                         onKeyDown={(e) => {
                                           if (e.key === "Enter") {
                                             e.preventDefault();
-                                            if (currentQuery.trim()) {
-                                              void handleCommitCrew(svcName, currentQuery.trim());
+                                            if (trimmedQuery) {
+                                              void handleCommitCrew(svcName, trimmedQuery);
                                             }
                                           }
                                         }}
@@ -603,47 +670,81 @@ export function OrderVerticalWorkflow({
                                             className="fixed inset-0 z-30"
                                             onClick={() => setActiveCrewDropdown(null)}
                                           />
-                                          <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-xl border border-border-default bg-white p-1.5 shadow-xl max-h-48 overflow-y-auto">
-                                            {matchingCrewForService.map((c) => (
+                                          <div className="absolute top-full left-0 right-0 z-40 mt-1 rounded-xl border border-border-default bg-white p-1.5 shadow-xl max-h-56 overflow-y-auto">
+                                            {/* 1. Quick Free Text Option */}
+                                            {trimmedQuery && !hasExactMatch && (
                                               <div
-                                                key={c.id}
-                                                onClick={() => void handleCommitCrew(svcName, c.name)}
-                                                className="flex items-center justify-between px-2 py-1 rounded-lg text-xs hover:bg-blue-50 cursor-pointer"
+                                                onClick={() => void handleCommitCrew(svcName, trimmedQuery)}
+                                                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-amber-50 cursor-pointer bg-amber-50/50 border border-amber-200/70 mb-1 transition"
                                               >
                                                 <span className="font-semibold text-text-primary truncate">
-                                                  {c.name}
+                                                  {trimmedQuery}
                                                 </span>
-                                                <span className="text-[9px] font-bold text-brand-blue-primary bg-blue-100/60 px-1.5 py-0.2 rounded">
+                                                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded shrink-0">
                                                   Assign
                                                 </span>
                                               </div>
-                                            ))}
-                                            {matchingTemporaryCrew.map((t) => (
-                                              <div
-                                                key={t.id}
-                                                onClick={() => void handleCommitCrew(svcName, t.name)}
-                                                className="flex items-center justify-between px-2 py-1 rounded-lg text-xs hover:bg-amber-50 cursor-pointer bg-amber-50/20"
-                                              >
-                                                <span className="font-semibold text-text-primary truncate">
-                                                  {t.name} (Temp)
-                                                </span>
-                                                <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
-                                                  Assign
-                                                </span>
+                                            )}
+
+                                            {/* 2. Registered ERP Studio Crew */}
+                                            {matchingCrewForService.length > 0 && (
+                                              <div className="space-y-0.5 mb-1">
+                                                <div className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary px-1 py-0.5">
+                                                  Studio Crew
+                                                </div>
+                                                {matchingCrewForService.map((c) => (
+                                                  <div
+                                                    key={c.id}
+                                                    onClick={() => void handleCommitCrew(svcName, c.name)}
+                                                    className="flex items-center justify-between px-2 py-1 rounded-lg text-xs hover:bg-blue-50 cursor-pointer"
+                                                  >
+                                                    <span className="font-semibold text-text-primary truncate">
+                                                      {c.name}
+                                                    </span>
+                                                    <span className="text-[9px] font-bold text-brand-blue-primary bg-blue-100/60 px-1.5 py-0.2 rounded">
+                                                      Assign
+                                                    </span>
+                                                  </div>
+                                                ))}
                                               </div>
-                                            ))}
+                                            )}
+
+                                            {/* 3. Known Freelancers / Temporary Crew */}
+                                            {matchingTemporaryCrew.length > 0 && (
+                                              <div className="space-y-0.5 mb-1">
+                                                <div className="text-[9px] font-bold uppercase tracking-wider text-amber-800/70 px-1 py-0.5">
+                                                  Freelancers & Temporary
+                                                </div>
+                                                {matchingTemporaryCrew.map((t) => (
+                                                  <div
+                                                    key={t.id}
+                                                    onClick={() => void handleCommitCrew(svcName, t.name)}
+                                                    className="flex items-center justify-between px-2 py-1 rounded-lg text-xs hover:bg-amber-100/60 cursor-pointer bg-amber-50/40"
+                                                  >
+                                                    <span className="font-semibold text-text-primary truncate">
+                                                      {t.name} (Freelancer)
+                                                    </span>
+                                                    <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                                                      Assign
+                                                    </span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+
+                                            {/* 4. ERP Full Member Registration */}
                                             {onOpenErpWizard && (
                                               <div
                                                 onClick={() => {
                                                   setActiveCrewDropdown(null);
                                                   setEditingCrewService(null);
-                                                  onOpenErpWizard(svcName, currentQuery.trim() || undefined);
+                                                  onOpenErpWizard(svcName, trimmedQuery || undefined);
                                                 }}
                                                 className="px-2 py-1.5 rounded-lg text-xs font-bold text-brand-purple-primary hover:bg-purple-50 cursor-pointer border-t border-border-default/60 mt-1 flex items-center justify-between"
                                               >
-                                                <span>+ Add New Member</span>
+                                                <span>+ Add as Permanent ERP Member</span>
                                                 <span className="text-[9px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded">
-                                                  ERP
+                                                  Full Profile
                                                 </span>
                                               </div>
                                             )}
@@ -1225,10 +1326,75 @@ export function OrderVerticalWorkflow({
               </span>
             )}
           </div>
-          {isOms && task.assignedMemberName && (
-            <p className="text-[10px] text-text-tertiary mt-0.5 truncate">
-              Assigned: <span className="font-semibold text-text-secondary">{task.assignedMemberName}</span>
-            </p>
+          {isOms && (
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span className="text-[10px] text-text-tertiary">Crew:</span>
+              {editingTaskCrewId === task.id ? (
+                <div className="relative inline-flex items-center gap-1">
+                  <select
+                    autoFocus
+                    defaultValue={task.assignedMemberName || getDefaultCrewForTask(task)?.name || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditingTaskCrewId(null);
+                      if (val && onAssignTaskCrew) {
+                        void onAssignTaskCrew(task.id, val);
+                      }
+                    }}
+                    onBlur={() => setEditingTaskCrewId(null)}
+                    className="rounded-md border border-border-default bg-white px-2 py-0.5 text-[10px] font-semibold text-text-primary outline-none focus:border-brand-blue-primary shadow-2xs"
+                  >
+                    <option value="">-- Select Crew --</option>
+                    {allSelectableCrew.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                    {temporaryCrewList.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name} (Freelancer)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTaskCrewId(null)}
+                    className="text-[10px] text-text-tertiary hover:text-text-primary cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                (() => {
+                  const crewInfo = getDefaultCrewForTask(task);
+                  return (
+                    <div className="inline-flex items-center gap-1 text-[10px]">
+                      {crewInfo?.name ? (
+                        <span className="font-semibold text-text-secondary bg-slate-100 rounded px-1.5 py-0.5">
+                          {crewInfo.name}
+                          {crewInfo.isAuto && (
+                            <span className="text-[9px] text-text-tertiary font-normal ml-1">
+                              (auto from Phase 1)
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-text-tertiary italic">Unassigned</span>
+                      )}
+                      {onAssignTaskCrew && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingTaskCrewId(task.id)}
+                          className="text-[10px] text-brand-blue-primary hover:underline font-medium cursor-pointer ml-0.5"
+                        >
+                          {crewInfo?.name ? "Change" : "Assign"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
           )}
         </div>
 

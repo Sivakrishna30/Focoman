@@ -59,6 +59,7 @@ export default async function DashboardLayout({
       ...studio.features,
       marketplace: true,
     },
+    configuredServices: studio.configuredServices || undefined,
     createdAt: studio.createdAt || new Date().toISOString(),
     updatedAt: studio.updatedAt || new Date().toISOString(),
   };

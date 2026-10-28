@@ -9,6 +9,12 @@ import {
   deleteStudioAction,
   leaveStudioAction,
 } from "@/actions/studioActions";
+import {
+  setDefaultWorkspace,
+  clearDefaultWorkspace,
+  getLocalDefaultWorkspace,
+  subscribeToDefaultWorkspaceChanges,
+} from "@/lib/workspaceDefaults";
 
 export default function StudioSettingsPage() {
   const params = useParams();
@@ -48,28 +54,33 @@ export default function StudioSettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Load default preference from localStorage
+  // Load default preference and listen for changes
   useEffect(() => {
     if (user && studioSlug) {
-      // null = never set (auto-default); '__cleared__' = explicitly cleared; otherwise = chosen default
-      const storedDefault = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
-      setIsDefaultStudio(!!storedDefault && storedDefault !== '__cleared__' && storedDefault.toLowerCase() === studioSlug.toLowerCase());
+      const { studioId } = getLocalDefaultWorkspace(user.uid);
+      setIsDefaultStudio(!!studioId && studioId.toLowerCase() === studioSlug.toLowerCase());
+
+      const unsub = subscribeToDefaultWorkspaceChanges(user.uid, (newDefault) => {
+        setIsDefaultStudio(!!newDefault && newDefault.toLowerCase() === studioSlug.toLowerCase());
+      });
+      return () => unsub();
     }
   }, [user, studioSlug]);
 
-  const handleSetDefaultStudio = () => {
+  const handleSetDefaultStudio = async () => {
     if (!user || !studioSlug) return;
-    localStorage.setItem(`focoman_default_workspace_${user.uid}`, studioSlug);
     setIsDefaultStudio(true);
+    const token = await getIdToken();
+    await setDefaultWorkspace(user.uid, studioSlug, token || undefined);
     setDefaultToast(`"/${studioSlug}" is now set as your default studio workspace.`);
     setTimeout(() => setDefaultToast(null), 4000);
   };
 
-  const handleClearDefaultStudio = () => {
+  const handleClearDefaultStudio = async () => {
     if (!user) return;
-    // Write '__cleared__' sentinel so app knows this was intentional (vs never configured)
-    localStorage.setItem(`focoman_default_workspace_${user.uid}`, '__cleared__');
     setIsDefaultStudio(false);
+    const token = await getIdToken();
+    await clearDefaultWorkspace(user.uid, token || undefined);
     setDefaultToast("Default workspace setting cleared.");
     setTimeout(() => setDefaultToast(null), 3000);
   };
@@ -163,10 +174,9 @@ export default function StudioSettingsPage() {
       }
 
       // If this was default studio, clear preference
-      const storedDefault = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
-      if (storedDefault?.toLowerCase() === studioSlug.toLowerCase()) {
-        localStorage.removeItem(`focoman_default_workspace_${user.uid}`);
-        localStorage.removeItem("focoman_default_workspace");
+      const { studioId } = getLocalDefaultWorkspace(user.uid);
+      if (studioId?.toLowerCase() === studioSlug.toLowerCase()) {
+        await clearDefaultWorkspace(user.uid, token || undefined);
       }
 
       router.push("/workspaces");
@@ -258,6 +268,32 @@ export default function StudioSettingsPage() {
                 Set as Default Studio
               </button>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Services & Packages Catalog Section */}
+      <div className="rounded-3xl border border-border-default bg-white p-6 shadow-sm sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-text-primary">Services &amp; Packages Catalog</h2>
+              <span className="rounded-full bg-brand-blue-50 border border-brand-blue-soft px-2.5 py-0.5 text-[10px] font-bold text-brand-blue-primary">
+                OMS &amp; Marketplace
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-text-secondary max-w-xl leading-relaxed">
+              Configure the photography &amp; videography services your studio provides, set base prices for automatic calculations, and create package combos for orders.
+            </p>
+          </div>
+
+          <div>
+            <Link
+              href={`/${studioSlug}/dashboard/services`}
+              className="rounded-xl bg-brand-blue-primary px-4 py-2.5 text-xs font-bold text-white hover:bg-brand-blue-hover transition shadow-xs inline-flex items-center gap-1.5"
+            >
+              Configure Services &amp; Packages →
+            </Link>
           </div>
         </div>
       </div>
@@ -460,10 +496,7 @@ export default function StudioSettingsPage() {
       <div className="rounded-3xl border border-red-200 bg-red-50/40 p-6 shadow-sm sm:p-8 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 block">
-              Danger Zone
-            </span>
-            <h2 className="text-base font-bold text-red-950 mt-0.5">
+            <h2 className="text-base font-bold text-red-950">
               {isOwner ? "Delete Studio Workspace" : "Leave Studio Workspace"}
             </h2>
             <p className="mt-1 text-xs text-red-900/80 max-w-xl leading-relaxed">

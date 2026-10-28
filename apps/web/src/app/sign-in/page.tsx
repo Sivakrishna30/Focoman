@@ -193,6 +193,13 @@ function SignInContent() {
             Sign In to Focoman
           </h2>
 
+          {/* Account deleted notice */}
+          {searchParams.get("deleted") === "true" && (
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-semibold text-emerald-800 text-left">
+              Your user account and personal session have been successfully deleted.
+            </div>
+          )}
+
           {/* Clean error display without technical terms */}
           {authError && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-600 text-left space-y-2.5">

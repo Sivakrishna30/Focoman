@@ -278,10 +278,25 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
   const temporaryCrewList = useMemo(() => {
     const map = new Map<string, { id: string; name: string; services: string[]; orderCount: number }>();
+    const ownerName = (studio?.ownerName || workspaceUser?.displayName || "").toLowerCase();
+
+    const isOwnerCrew = (id?: string, name?: string) => {
+      const n = (name || "").toLowerCase().trim();
+      const i = (id || "").toLowerCase().trim();
+      return (
+        i.startsWith("owner-") ||
+        n.includes("(owner)") ||
+        (ownerName && (n === ownerName || n.includes(ownerName)))
+      );
+    };
 
     (studio?.temporaryCrew || []).forEach((t) => {
+      if (isOwnerCrew(t.id, t.name)) return;
       const isRegistered = allCrew.some(
-        (c) => (c.name || "").toLowerCase() === t.name.toLowerCase() || c.id === t.id
+        (c) =>
+          (c.name || "").toLowerCase() === t.name.toLowerCase() ||
+          c.id === t.id ||
+          `${c.name.toLowerCase()} (owner)` === t.name.toLowerCase()
       );
       if (!isRegistered && t.name && !t.name.toLowerCase().includes("unassigned")) {
         map.set(t.name.toLowerCase(), {
@@ -295,8 +310,12 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
 
     orders.forEach((o) => {
       (o.assignedResources || []).forEach((r) => {
+        if (isOwnerCrew(r.memberId, r.memberName)) return;
         const isRegistered = allCrew.some(
-          (c) => (c.name || "").toLowerCase() === (r.memberName || "").toLowerCase()
+          (c) =>
+            (c.name || "").toLowerCase() === (r.memberName || "").toLowerCase() ||
+            c.id === r.memberId ||
+            `${c.name.toLowerCase()} (owner)` === (r.memberName || "").toLowerCase()
         );
         if (!isRegistered && r.memberName && !r.memberName.toLowerCase().includes("unassigned")) {
           const key = r.memberName.toLowerCase();
@@ -319,7 +338,7 @@ export default function ErpPage({ params }: { params: Promise<{ studioSlug: stri
     });
 
     return Array.from(map.values());
-  }, [studio, orders, allCrew]);
+  }, [studio, orders, allCrew, workspaceUser]);
 
   return (
     <div className="flex h-full bg-surface-app">

@@ -4,6 +4,61 @@ All meaningful changes to the Focoman codebase, documentation, architecture, or 
 
 ---
 
+## CHG-050 — Delete User Account in Account Settings with Typing Confirmation
+
+- **Task:** CHG-050 — Add Delete User Account danger zone and confirmation modal requiring user to type "delete" to confirm
+- **Date:** 2026-10-28
+- **Area:** `apps/web/src/app/account-settings/page.tsx`, `apps/web/src/actions/studioActions.ts`, `apps/web/src/app/sign-in/page.tsx`
+- **Change:**
+  1. **Danger Zone in Account Settings (`account-settings/page.tsx`)**:
+     - Added a dedicated "Danger Zone" card with a warning badge and "Delete User Account" button.
+     - Added an interactive confirmation modal with backdrop blur, warning notices, and a text input requiring the user to type `"delete"` (case-insensitive) before the delete button unlocks.
+  2. **Server Action for Account Deletion (`studioActions.ts`)**:
+     - Created `deleteUserAccountAction(idToken)`: verifies identity, soft-deletes owned studios to prevent orphaned workspaces, detaches user from claimed customer orders, removes studio memberships, and permanently deletes user record in Firebase Admin Authentication.
+  3. **Sign-In Page Notification (`sign-in/page.tsx`)**:
+     - Displays a confirmation banner notifying the user that their account and session have been successfully deleted when redirected with `?deleted=true`.
+- **Verification:** Unit tests passed 31/31 (`npm test`), TypeScript verification clean with 0 errors (`npx tsc --noEmit`).
+
+---
+
+## CHG-049 — WhatsApp Templates Registry, Operations Bot Engine & Webhook Route
+
+- **Task:** CHG-049 — Implement missing WhatsApp message templates, interactive operations bot parser, Meta webhook handler, and studio dashboard simulator
+- **Date:** 2026-10-28
+- **Area:** `apps/web/src/services/whatsappService.ts`, `apps/web/src/app/api/whatsapp/webhook/route.ts`, `apps/web/src/actions/whatsappActions.ts`, `apps/web/src/app/[studioSlug]/dashboard/whatsapp/page.tsx`
+- **Change:**
+  1. **WhatsApp Message Templates Engine (`whatsappService.ts`)**:
+     - Created 8 standardized operational lifecycle templates: Booking confirmation (with tracking PIN and portal link), 3-day pre-shoot call reminder, post-event start, RAW photo proofing gallery link, customer selection done alert, photobook album layout review link, final delivery readiness & balance notification, and crew call-time assignment.
+     - Added universal Click-to-Chat URL generator (`generateWhatsAppClickToChatUrl`) producing instant `https://wa.me/...` links for one-click manual or automated dispatches.
+  2. **Interactive Operations Bot Command Engine (`whatsappService.ts`)**:
+     - Restricted strictly to verified Studio Owners per pricing/entitlement specifications.
+     - Implemented command parsers: `HELP`/`MENU`, `TODAY` (shoots scheduled today in IST), `SHOOTS` (next 5 upcoming calendar events), `ORDERS` (active orders and balance sum), `STATUS <orderNumber|PIN>` (detailed order status lookup), and `CREW` (team roster and skills).
+  3. **Meta WhatsApp Cloud API Webhook (`/api/whatsapp/webhook/route.ts`)**:
+     - Added `GET` endpoint for Meta webhook challenge handshake verification (`hub.challenge`).
+     - Added `POST` endpoint validating inbound phone numbers against registered studio owners, executing bot queries, and dispatching formatted replies.
+  4. **Studio Dashboard WhatsApp Hub (`dashboard/whatsapp/page.tsx`)**:
+     - Upgraded UI with 3 dedicated tabs: Operational Triggers (master switch and per-module notification toggles), Interactive Bot Simulator (live simulated phone console to test bot queries directly), and Template Library (with dynamic previews, copy button, and one-click WhatsApp Web `wa.me` links).
+- **Verification:** Unit tests passed 31/31 (`npm test`), TypeScript verification clean with 0 errors (`npx tsc --noEmit`).
+
+---
+
+## CHG-048 — Hero Interstitial Typography Optimization & Prohibition of Automated Browser Subagents
+
+- **Task:** CHG-048 — Adaptive responsive hero typography and workspace agent rule prohibiting browser subagent UAT
+- **Date:** 2026-10-28
+- **Area:** `apps/web/src/components/home/RetroHeroVisual.tsx`, `Agents.md`, `.agents/rules/no-browser-testing.md`
+- **Change:**
+  1. **Hero Section Interstitial Typography (`RetroHeroVisual.tsx`)**:
+     - Condensed Phase 2A question into 3 balanced, symmetrical lines ("TIRED OF HANDLING", "BUSINESS ACROSS SHEETS,", "NOTES AND CHATS?").
+     - Rescaled font sizes across all breakpoints (`text-xl` to `lg:text-[44px] xl:text-[50px]`) with safe line height (`leading-[1.12]`) and safe vertical padding (`p-3 sm:p-5 md:p-6`), preventing desktop/laptop top-edge clipping.
+     - Symmetrically aligned Phase 2B resolution ("FOCOMAN BRINGS", "EVERYTHING INSIDE", "A SINGLE TOOL") with balanced pacing and centered animated down arrow.
+  2. **Agent Operating Rule: Strict Prohibition of Browser Subagents (`Agents.md`, `.agents/rules/no-browser-testing.md`)**:
+     - Added Rule 9 to `Agents.md` strictly prohibiting automated browser subagents, browser window spawning, and automated visual UAT to save time and tokens.
+     - Added permanent workspace rule `.agents/rules/no-browser-testing.md` ensuring all browser testing is reserved exclusively for the user.
+- **Verification:** TypeScript compilation clean (`npx tsc --noEmit`). Dev server running at `http://localhost:3000`.
+
+---
+
 ## CHG-047 — Dull Cold Black Dashboard Side Navigation (All Modules Unlocked)
 
 - **Task:** CHG-047 — Dull Cold Black Dashboard Left Navigation and Full Module Access for All Accounts

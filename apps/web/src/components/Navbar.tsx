@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FocomanLogo } from "@/components/FocomanLogo";
 import { subscribeToAuthState, signOutUser } from "@/lib/firebaseAuth";
 import { User } from "firebase/auth";
+import { getLocalDefaultWorkspace, subscribeToDefaultWorkspaceChanges } from "@/lib/workspaceDefaults";
 
 function UserDropdownMenu({ user }: { user: User }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,20 +15,16 @@ function UserDropdownMenu({ user }: { user: User }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && user) {
-      const checkDefault = () => {
-        const stored = localStorage.getItem(`focoman_default_workspace_${user.uid}`);
-        if (stored && stored !== "__cleared__" && stored.trim() !== "") {
-          setDefaultStudio(stored);
-        } else {
-          setDefaultStudio(null);
-        }
-      };
-      checkDefault();
-      window.addEventListener("storage", checkDefault);
-      return () => window.removeEventListener("storage", checkDefault);
+    if (user) {
+      const { studioId } = getLocalDefaultWorkspace(user.uid);
+      setDefaultStudio(studioId);
+
+      const unsub = subscribeToDefaultWorkspaceChanges(user.uid, (newDefault) => {
+        setDefaultStudio(newDefault);
+      });
+      return () => unsub();
     }
-  }, [user, isOpen]);
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

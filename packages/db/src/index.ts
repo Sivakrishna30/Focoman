@@ -339,6 +339,28 @@ export async function getMembershipsByStudio(
     .filter((m) => !m.isDeleted);
 }
 
+// USER PREFERENCES (Default Studio Workspace)
+export async function getUserDefaultStudio(uid: string): Promise<string | null> {
+  if (!uid) return null;
+  const firestore = getFirestoreServerInstance();
+  const snap = await firestore.collection('user_preferences').doc(uid).get();
+  if (!snap.exists) return null;
+  return snap.data()?.defaultStudioId || null;
+}
+
+export async function setUserDefaultStudio(uid: string, studioId: string | null): Promise<boolean> {
+  if (!uid) return false;
+  const firestore = getFirestoreServerInstance();
+  await firestore.collection('user_preferences').doc(uid).set(
+    {
+      defaultStudioId: studioId,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+  return true;
+}
+
 // ============================================================================
 // 2. ORDERS (OMS)
 // ============================================================================

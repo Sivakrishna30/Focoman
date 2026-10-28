@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton";
 import { subscribeToAuthState, getCurrentUserIdToken, syncServerSession } from "@/lib/firebaseAuth";
 import { registerStudioAction, checkStudioSlugAvailabilityAction } from "@/actions/studioActions";
+import { setDefaultWorkspace } from "@/lib/workspaceDefaults";
 import { User } from "firebase/auth";
 
 export default function RegisterStudioPage() {
@@ -144,8 +145,9 @@ export default function RegisterStudioPage() {
     setIsSubmitting(false);
 
     if (res.success && res.studio) {
+      await setDefaultWorkspace(currentUser.uid, res.studio.id, idToken);
       await syncServerSession();
-      router.push(`/${res.studio.id}/dashboard`);
+      router.push(`/${res.studio.id}/dashboard/services?onboarding=true`);
     } else {
       setErrorMessage(res.error || "Failed to register studio. Please choose another name.");
     }
