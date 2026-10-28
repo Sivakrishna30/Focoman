@@ -770,9 +770,23 @@ export function OrderVerticalWorkflow({
                             ) : (
                               /* Customer-Safe Read-Only View (No private wages or staff emails) */
                               <div className="flex items-center gap-1.5 text-xs">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                <span className="font-semibold text-text-primary">
-                                  {assignedRes ? "Crew & Equipment Confirmed" : "Preparation Scheduled"}
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    assignedRes && assignedRes.memberId !== "unassigned"
+                                      ? "bg-emerald-500"
+                                      : "bg-slate-300"
+                                  }`}
+                                />
+                                <span
+                                  className={`font-semibold ${
+                                    assignedRes && assignedRes.memberId !== "unassigned"
+                                      ? "text-text-primary"
+                                      : "text-text-tertiary"
+                                  }`}
+                                >
+                                  {assignedRes && assignedRes.memberId !== "unassigned"
+                                    ? "Crew & Equipment Confirmed"
+                                    : "Unassigned"}
                                 </span>
                               </div>
                             )}

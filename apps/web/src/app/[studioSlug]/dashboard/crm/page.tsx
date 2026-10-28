@@ -6,6 +6,7 @@ import { Customer, Order } from "@focoman/types";
 import { getStudioCustomersAction, createCustomerAction } from "@/actions/customerActions";
 import { getStudioOrdersAction, getDeletedStudioOrdersAction, restoreOrderAction } from "@/actions/orderActions";
 import { useStudioWorkspace } from "@/components/StudioWorkspaceProvider";
+import { isLifetimeProEmail } from "@/lib/proEntitlements";
 
 const STATUS_COLORS: Record<string, string> = {
   AWAITING_EVENT: "badge-brand-blue",
@@ -167,7 +168,7 @@ export default function CrmPage({ params }: { params: Promise<{ studioSlug: stri
   return (
     <div className="flex flex-col h-full bg-surface-app">
       {/* Free Plan Upgrade Banner */}
-      {studio && !studio.features?.crm && studio.planInfo?.plan !== "PROFESSIONAL" && studio.planInfo?.plan !== "COMPLETE" && (
+      {studio && !studio.features?.crm && studio.planInfo?.plan !== "PROFESSIONAL" && studio.planInfo?.plan !== "COMPLETE" && !isLifetimeProEmail(studio.ownerEmail) && (
         <div className="bg-orange-50 border-b border-orange-200 px-4 py-2.5 flex items-center justify-between shadow-2xs z-10 shrink-0">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-full bg-brand-orange-primary text-white">

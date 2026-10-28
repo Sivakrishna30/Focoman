@@ -8,6 +8,8 @@ import { User } from "firebase/auth";
 import { StudioPlan } from "@focoman/types";
 import { getStudioAction } from "@/actions/studioActions";
 
+import { isLifetimeProEmail } from "@/lib/proEntitlements";
+
 export function DashboardTopNav({
   role,
   planInfo: initialPlanInfo,
@@ -93,20 +95,25 @@ export function DashboardTopNav({
     return "Dashboard";
   })();
 
+  const isLifetimePro = isLifetimeProEmail(user?.email);
+
   const selectedCaps = (currentPlanInfo?.selectedCapabilities || []) as string[];
-  const hasCRM = selectedCaps.includes("CUSTOMER_CRM");
-  const hasERP = selectedCaps.includes("STUDIO_ERP");
-  const hasReports = selectedCaps.includes("BUSINESS_REPORTS");
-  const hasDrive = selectedCaps.includes("DRIVE_CLIENT_REVIEW");
+  const hasCRM = isLifetimePro || selectedCaps.includes("CUSTOMER_CRM");
+  const hasERP = isLifetimePro || selectedCaps.includes("STUDIO_ERP");
+  const hasReports = isLifetimePro || selectedCaps.includes("BUSINESS_REPORTS");
+  const hasDrive = isLifetimePro || selectedCaps.includes("DRIVE_CLIENT_REVIEW");
   const hasMarketplace = true; // Free for all studios
   const hasWhatsApp =
+    isLifetimePro ||
     selectedCaps.includes("WHATSAPP_NOTIFICATIONS") || selectedCaps.includes("WHATSAPP_OPERATIONS");
 
   const isFullySelected =
+    isLifetimePro ||
     (hasCRM && hasERP && hasReports && hasDrive && hasWhatsApp) ||
     currentPlanInfo?.plan === "COMPLETE";
 
   const hasAnySubscription =
+    isLifetimePro ||
     isFullySelected ||
     selectedCaps.length > 0 ||
     currentPlanInfo?.plan === "PROFESSIONAL";
@@ -154,16 +161,22 @@ export function DashboardTopNav({
                       </span>
                       <span
                         className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                          hasAnySubscription
+                          isLifetimePro
+                            ? "bg-purple-50 text-brand-purple-primary border border-purple-200"
+                            : hasAnySubscription
                             ? "bg-[#F0F9FF] text-[#0369A1] border border-[#7DD3FC]"
                             : "bg-[#ECE6DE] text-[#57534E] border border-[#D8D2C4]"
                         }`}
                       >
-                        {hasAnySubscription ? "PRO" : "FREE"}
+                        {isLifetimePro ? "LIFETIME PRO" : hasAnySubscription ? "PRO" : "FREE"}
                       </span>
                     </div>
 
-                    {!isFullySelected ? (
+                    {isLifetimePro ? (
+                      <div className="w-full text-center py-1.5 px-2 bg-emerald-50 rounded text-[11px] font-bold text-emerald-800 border border-emerald-200">
+                        ✓ VIP Test Account · All Pro Features Active
+                      </div>
+                    ) : !isFullySelected ? (
                       <Link
                         href={studioSlug ? `/checkout?studio=${studioSlug}` : "/checkout"}
                         onClick={() => setIsOpen(false)}

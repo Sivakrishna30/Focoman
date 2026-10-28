@@ -6,6 +6,8 @@ import { getStudioBySlug, getMembershipsByUid } from "@focoman/db";
 import { Studio } from "@focoman/types";
 import { requireDashboardStudioAccess } from "@/lib/dashboardAccess";
 
+import { isStudioProEntitled, getEffectiveStudioFeatures, isLifetimeProEmail } from "@/lib/proEntitlements";
+
 const APP_ENV = process.env.NEXT_PUBLIC_APP_ENV || "local";
 
 export const dynamic = "force-dynamic";
@@ -37,10 +39,8 @@ export default async function DashboardLayout({
       role: m.role,
     }));
 
-  const isProPlan =
-    studio.planInfo?.plan === "COMPLETE" ||
-    studio.planInfo?.plan === "PROFESSIONAL" ||
-    (studio.planInfo?.selectedCapabilities && studio.planInfo.selectedCapabilities.length > 0);
+  const isProPlan = isStudioProEntitled(studio.ownerEmail, studio.planInfo);
+  const effectiveFeatures = getEffectiveStudioFeatures(studio.ownerEmail, studio.features, studio.planInfo);
 
   const serializedStudio: Studio = {
     id: studio.id,
@@ -50,15 +50,7 @@ export default async function DashboardLayout({
     ownerId: studio.ownerId,
     ownerName: access?.membership.role === "STUDIO_OWNER" ? studio.ownerName : "Studio Owner",
     ownerEmail: access?.membership.role === "STUDIO_OWNER" ? studio.ownerEmail : "",
-    features: {
-      oms: studio.features?.oms ?? true,
-      crm: studio.features?.crm ?? true,
-      erp: studio.features?.erp ?? true,
-      whatsapp: studio.features?.whatsapp ?? true,
-      reports: studio.features?.reports ?? true,
-      ...studio.features,
-      marketplace: true,
-    },
+    features: effectiveFeatures,
     configuredServices: studio.configuredServices || undefined,
     createdAt: studio.createdAt || new Date().toISOString(),
     updatedAt: studio.updatedAt || new Date().toISOString(),
