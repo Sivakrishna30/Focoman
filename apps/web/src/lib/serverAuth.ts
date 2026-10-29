@@ -144,7 +144,7 @@ export async function requireStudioSessionMember(studioId: string): Promise<{
         uid: studio.ownerId || decoded.uid,
         role: 'STUDIO_OWNER',
         status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
     }
@@ -184,7 +184,7 @@ export async function requireStudioMember(
         uid: studio.ownerId || uid,
         role: 'STUDIO_OWNER',
         status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
     }
