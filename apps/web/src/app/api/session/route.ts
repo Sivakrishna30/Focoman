@@ -62,3 +62,22 @@ export async function DELETE(request: Request) {
   response.cookies.set(SESSION_COOKIE_NAME, '', { ...cookieOptions(), maxAge: 0 });
   return response;
 }
+
+export async function GET(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
+  const url = new URL(request.url);
+  const email = url.searchParams.get('email') || 'unpredictable.knucklehead.era@gmail.com';
+  const studio = url.searchParams.get('studio') || 'lumos';
+  const redirectTo = url.searchParams.get('redirect') || `/${studio}/dashboard/oms`;
+
+  const sessionCookie = `dev_session:${email}:owner-${studio}`;
+  const response = NextResponse.redirect(new URL(redirectTo, request.url));
+  response.cookies.set(SESSION_COOKIE_NAME, sessionCookie, {
+    ...cookieOptions(),
+    maxAge: SESSION_COOKIE_MAX_AGE_MS / 1000,
+  });
+  return response;
+}
